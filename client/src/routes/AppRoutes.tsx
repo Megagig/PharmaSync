@@ -12,9 +12,15 @@ import Register from '@/features/auth/pages/Register';
 // Main pages
 import Dashboard from '@/pages/Dashboard';
 
+// Patient pages
+import PatientList from '@/pages/Patients/PatientList';
+import PatientDetail from '@/pages/Patients/PatientDetail';
+import CreatePatient from '@/pages/Patients/CreatePatient';
+import EditPatient from '@/pages/Patients/EditPatient';
+import AddAllergy from '@/pages/Patients/AddAllergy';
+import AddMedicalCondition from '@/pages/Patients/AddMedicalCondition';
+
 // Placeholder for future pages
-const PatientList = () => <div>Patient List Page</div>;
-const PatientDetail = () => <div>Patient Detail Page</div>;
 const MedicationList = () => <div>Medication List Page</div>;
 const MedicationDetail = () => <div>Medication Detail Page</div>;
 const PrescriptionList = () => <div>Prescription List Page</div>;
@@ -40,29 +46,36 @@ const AppRoutes = () => {
         <Route element={<Layout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          
+
           {/* Patients */}
           <Route path="/patients" element={<PatientList />} />
+          <Route path="/patients/new" element={<CreatePatient />} />
           <Route path="/patients/:id" element={<PatientDetail />} />
-          
+          <Route path="/patients/:id/edit" element={<EditPatient />} />
+          <Route path="/patients/:id/allergies/new" element={<AddAllergy />} />
+          <Route
+            path="/patients/:id/conditions/new"
+            element={<AddMedicalCondition />}
+          />
+
           {/* Medications */}
           <Route path="/medications" element={<MedicationList />} />
           <Route path="/medications/:id" element={<MedicationDetail />} />
-          
+
           {/* Prescriptions */}
           <Route path="/prescriptions" element={<PrescriptionList />} />
           <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
-          
+
           {/* Dispensing */}
           <Route path="/dispensing" element={<DispensingList />} />
           <Route path="/dispensing/:id" element={<DispensingDetail />} />
-          
+
           {/* Inventory */}
           <Route path="/inventory" element={<Inventory />} />
-          
+
           {/* Reports */}
           <Route path="/reports" element={<Reports />} />
-          
+
           {/* Settings */}
           <Route path="/settings" element={<Settings />} />
         </Route>

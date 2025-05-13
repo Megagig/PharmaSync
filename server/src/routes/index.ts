@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
+import patientRoutes from './patient.routes';
 // Import other routes as they are created
-// import patientRoutes from './patient.routes';
 // import medicationRoutes from './medication.routes';
 // import prescriptionRoutes from './prescription.routes';
 
@@ -17,7 +17,7 @@ router.get('/health', (req, res) => {
 
 // Mount routes
 router.use('/auth', authRoutes);
-// router.use('/patients', patientRoutes);
+router.use('/patients', patientRoutes);
 // router.use('/medications', medicationRoutes);
 // router.use('/prescriptions', prescriptionRoutes);
 
