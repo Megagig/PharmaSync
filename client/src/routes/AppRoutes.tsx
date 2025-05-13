@@ -20,9 +20,12 @@ import EditPatient from '@/pages/Patients/EditPatient';
 import AddAllergy from '@/pages/Patients/AddAllergy';
 import AddMedicalCondition from '@/pages/Patients/AddMedicalCondition';
 
-// Placeholder for future pages
-const MedicationList = () => <div>Medication List Page</div>;
-const MedicationDetail = () => <div>Medication Detail Page</div>;
+// Medication pages
+import MedicationList from '@/pages/Medications/MedicationList';
+import MedicationDetail from '@/pages/Medications/MedicationDetail';
+import CreateMedication from '@/pages/Medications/CreateMedication';
+import EditMedication from '@/pages/Medications/EditMedication';
+import AddInventoryItem from '@/pages/Medications/AddInventoryItem';
 const PrescriptionList = () => <div>Prescription List Page</div>;
 const PrescriptionDetail = () => <div>Prescription Detail Page</div>;
 const DispensingList = () => <div>Dispensing List Page</div>;
@@ -60,7 +63,13 @@ const AppRoutes = () => {
 
           {/* Medications */}
           <Route path="/medications" element={<MedicationList />} />
+          <Route path="/medications/new" element={<CreateMedication />} />
           <Route path="/medications/:id" element={<MedicationDetail />} />
+          <Route path="/medications/:id/edit" element={<EditMedication />} />
+          <Route
+            path="/medications/:id/inventory/add"
+            element={<AddInventoryItem />}
+          />
 
           {/* Prescriptions */}
           <Route path="/prescriptions" element={<PrescriptionList />} />
