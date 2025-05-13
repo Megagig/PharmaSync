@@ -26,8 +26,13 @@ import MedicationDetail from '@/pages/Medications/MedicationDetail';
 import CreateMedication from '@/pages/Medications/CreateMedication';
 import EditMedication from '@/pages/Medications/EditMedication';
 import AddInventoryItem from '@/pages/Medications/AddInventoryItem';
-const PrescriptionList = () => <div>Prescription List Page</div>;
-const PrescriptionDetail = () => <div>Prescription Detail Page</div>;
+
+// Prescription pages
+import PrescriptionList from '@/pages/Prescriptions/PrescriptionList';
+import PrescriptionDetail from '@/pages/Prescriptions/PrescriptionDetail';
+import CreatePrescription from '@/pages/Prescriptions/CreatePrescription';
+import DispenseMedication from '@/pages/Prescriptions/DispenseMedication';
+
 const DispensingList = () => <div>Dispensing List Page</div>;
 const DispensingDetail = () => <div>Dispensing Detail Page</div>;
 const Inventory = () => <div>Inventory Page</div>;
@@ -73,7 +78,12 @@ const AppRoutes = () => {
 
           {/* Prescriptions */}
           <Route path="/prescriptions" element={<PrescriptionList />} />
+          <Route path="/prescriptions/new" element={<CreatePrescription />} />
           <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
+          <Route
+            path="/prescriptions/:id/dispense"
+            element={<DispenseMedication />}
+          />
 
           {/* Dispensing */}
           <Route path="/dispensing" element={<DispensingList />} />
