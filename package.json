@@ -1,0 +1,36 @@
+{
+  "name": "pharmasync",
+  "version": "1.0.0",
+  "description": "A professional pharmaceutical care web application for pharmacists in Nigeria",
+  "main": "index.js",
+  "scripts": {
+    "client": "cd client && npm run dev",
+    "server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install:client": "cd client && npm install",
+    "install:server": "cd server && npm install",
+    "install:all": "npm install && npm run install:client && npm run install:server",
+    "build:client": "cd client && npm run build",
+    "build:server": "cd server && npm run build",
+    "build": "npm run build:server && npm run build:client",
+    "start": "cd server && npm start",
+    "test:client": "cd client && npm test",
+    "test:server": "cd server && npm test",
+    "test": "npm run test:server && npm run test:client",
+    "prepare": "husky install"
+  },
+  "keywords": [
+    "pharmacy",
+    "pharmaceutical",
+    "healthcare",
+    "MERN",
+    "TypeScript",
+    "Nigeria"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "husky": "^8.0.3"
+  }
+}

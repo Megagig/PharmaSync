@@ -1,0 +1,77 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import PrivateRoute from './PrivateRoute';
+import PublicRoute from './PublicRoute';
+
+// Layout
+import Layout from '@/components/layout/Layout';
+
+// Auth pages
+import Login from '@/features/auth/pages/Login';
+import Register from '@/features/auth/pages/Register';
+
+// Main pages
+import Dashboard from '@/pages/Dashboard';
+
+// Placeholder for future pages
+const PatientList = () => <div>Patient List Page</div>;
+const PatientDetail = () => <div>Patient Detail Page</div>;
+const MedicationList = () => <div>Medication List Page</div>;
+const MedicationDetail = () => <div>Medication Detail Page</div>;
+const PrescriptionList = () => <div>Prescription List Page</div>;
+const PrescriptionDetail = () => <div>Prescription Detail Page</div>;
+const DispensingList = () => <div>Dispensing List Page</div>;
+const DispensingDetail = () => <div>Dispensing Detail Page</div>;
+const Inventory = () => <div>Inventory Page</div>;
+const Reports = () => <div>Reports Page</div>;
+const Settings = () => <div>Settings Page</div>;
+const NotFound = () => <div>404 - Page Not Found</div>;
+
+const AppRoutes = () => {
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
+
+      {/* Protected routes */}
+      <Route element={<PrivateRoute />}>
+        <Route element={<Layout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Patients */}
+          <Route path="/patients" element={<PatientList />} />
+          <Route path="/patients/:id" element={<PatientDetail />} />
+          
+          {/* Medications */}
+          <Route path="/medications" element={<MedicationList />} />
+          <Route path="/medications/:id" element={<MedicationDetail />} />
+          
+          {/* Prescriptions */}
+          <Route path="/prescriptions" element={<PrescriptionList />} />
+          <Route path="/prescriptions/:id" element={<PrescriptionDetail />} />
+          
+          {/* Dispensing */}
+          <Route path="/dispensing" element={<DispensingList />} />
+          <Route path="/dispensing/:id" element={<DispensingDetail />} />
+          
+          {/* Inventory */}
+          <Route path="/inventory" element={<Inventory />} />
+          
+          {/* Reports */}
+          <Route path="/reports" element={<Reports />} />
+          
+          {/* Settings */}
+          <Route path="/settings" element={<Settings />} />
+        </Route>
+      </Route>
+
+      {/* 404 route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+export default AppRoutes;
