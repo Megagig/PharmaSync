@@ -1,10 +1,10 @@
-import api from './api';
-import { 
-  IRole, 
-  IRoleCreate, 
-  IRoleUpdate, 
-  IUserRole, 
-  IUserRoleCreate 
+import api from '@/services/api';
+import {
+  IRole,
+  IRoleCreate,
+  IRoleUpdate,
+  IUserRole,
+  IUserRoleCreate,
 } from '@/types/role.types';
 
 const BASE_URL = '/roles';
@@ -14,34 +14,36 @@ const BASE_URL = '/roles';
  * @param params Query parameters
  * @returns Promise with roles data
  */
-export const getRoles = async (params: { 
-  page?: number; 
-  limit?: number; 
-  isActive?: boolean;
-  isDefault?: boolean;
-  type?: string;
-  name?: string;
-} = {}) => {
+export const getRoles = async (
+  params: {
+    page?: number;
+    limit?: number;
+    isActive?: boolean;
+    isDefault?: boolean;
+    type?: string;
+    name?: string;
+  } = {}
+) => {
   const { page = 1, limit = 10, isActive, isDefault, type, name } = params;
-  
+
   let url = `${BASE_URL}?page=${page}&limit=${limit}`;
-  
+
   if (isActive !== undefined) {
     url += `&isActive=${isActive}`;
   }
-  
+
   if (isDefault !== undefined) {
     url += `&isDefault=${isDefault}`;
   }
-  
+
   if (type) {
     url += `&type=${type}`;
   }
-  
+
   if (name) {
     url += `&name=${name}`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };
@@ -103,10 +105,15 @@ export const resetRolePermissions = async (id: string) => {
  * @param params Query parameters
  * @returns Promise with users data
  */
-export const getRoleUsers = async (id: string, params: { page?: number; limit?: number } = {}) => {
+export const getRoleUsers = async (
+  id: string,
+  params: { page?: number; limit?: number } = {}
+) => {
   const { page = 1, limit = 10 } = params;
-  
-  const response = await api.get(`${BASE_URL}/${id}/users?page=${page}&limit=${limit}`);
+
+  const response = await api.get(
+    `${BASE_URL}/${id}/users?page=${page}&limit=${limit}`
+  );
   return response.data;
 };
 
@@ -137,29 +144,31 @@ export const removeRoleFromUser = async (id: string, userId: string) => {
  * @param params Query parameters
  * @returns Promise with user roles data
  */
-export const getUserRoles = async (params: { 
-  page?: number; 
-  limit?: number; 
-  user?: string;
-  role?: string;
-  assignedBy?: string;
-} = {}) => {
+export const getUserRoles = async (
+  params: {
+    page?: number;
+    limit?: number;
+    user?: string;
+    role?: string;
+    assignedBy?: string;
+  } = {}
+) => {
   const { page = 1, limit = 10, user, role, assignedBy } = params;
-  
+
   let url = `/user-roles?page=${page}&limit=${limit}`;
-  
+
   if (user) {
     url += `&user=${user}`;
   }
-  
+
   if (role) {
     url += `&role=${role}`;
   }
-  
+
   if (assignedBy) {
     url += `&assignedBy=${assignedBy}`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };
@@ -181,7 +190,9 @@ export const getUserRolesByUserId = async (userId: string) => {
  * @returns Promise with user role data
  */
 export const assignRoleToUserById = async (userId: string, roleId: string) => {
-  const response = await api.post(`/user-roles/users/${userId}/roles`, { roleId });
+  const response = await api.post(`/user-roles/users/${userId}/roles`, {
+    roleId,
+  });
   return response.data;
 };
 
@@ -191,8 +202,13 @@ export const assignRoleToUserById = async (userId: string, roleId: string) => {
  * @param roleId Role ID
  * @returns Promise with success message
  */
-export const removeRoleFromUserById = async (userId: string, roleId: string) => {
-  const response = await api.delete(`/user-roles/users/${userId}/roles/${roleId}`);
+export const removeRoleFromUserById = async (
+  userId: string,
+  roleId: string
+) => {
+  const response = await api.delete(
+    `/user-roles/users/${userId}/roles/${roleId}`
+  );
   return response.data;
 };
 
@@ -213,7 +229,13 @@ export const getUserPermissions = async (userId: string) => {
  * @param action Action name
  * @returns Promise with permission check result
  */
-export const checkUserPermission = async (userId: string, resource: string, action: string) => {
-  const response = await api.get(`/user-roles/users/${userId}/permissions/check?resource=${resource}&action=${action}`);
+export const checkUserPermission = async (
+  userId: string,
+  resource: string,
+  action: string
+) => {
+  const response = await api.get(
+    `/user-roles/users/${userId}/permissions/check?resource=${resource}&action=${action}`
+  );
   return response.data;
 };

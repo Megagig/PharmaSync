@@ -23,7 +23,7 @@ import {
   approvePurchaseOrderSchema,
   cancelPurchaseOrderSchema,
 } from '../validators/purchaseOrder.validator';
-import { UserRole } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 
 const router = Router();
 
@@ -39,7 +39,7 @@ router.get('/:id', getPurchaseOrderById);
 // Create new purchase order
 router.post(
   '/',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(createPurchaseOrderSchema),
   createPurchaseOrder
 );
@@ -47,7 +47,7 @@ router.post(
 // Update purchase order
 router.patch(
   '/:id',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(updatePurchaseOrderSchema),
   updatePurchaseOrder
 );
@@ -55,7 +55,7 @@ router.patch(
 // Add purchase order item
 router.post(
   '/:id/items',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(addPurchaseOrderItemSchema),
   addPurchaseOrderItem
 );
@@ -63,7 +63,7 @@ router.post(
 // Update purchase order item
 router.patch(
   '/:id/items/:itemId',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(updatePurchaseOrderItemSchema),
   updatePurchaseOrderItem
 );
@@ -71,14 +71,14 @@ router.patch(
 // Remove purchase order item
 router.delete(
   '/:id/items/:itemId',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   removePurchaseOrderItem
 );
 
 // Approve purchase order
 router.patch(
   '/:id/approve',
-  restrictTo(UserRole.ADMIN),
+  restrictTo([RoleType.ADMIN]),
   validate(approvePurchaseOrderSchema),
   approvePurchaseOrder
 );
@@ -86,7 +86,7 @@ router.patch(
 // Mark purchase order as ordered
 router.patch(
   '/:id/order',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(approvePurchaseOrderSchema), // Reuse the same schema
   markAsOrdered
 );
@@ -94,7 +94,11 @@ router.patch(
 // Receive purchase order
 router.post(
   '/:id/receive',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.TECHNICIAN),
+  restrictTo([
+    RoleType.ADMIN,
+    RoleType.PHARMACIST,
+    RoleType.PHARMACY_TECHNICIAN,
+  ]),
   validate(receivePurchaseOrderSchema),
   receivePurchaseOrder
 );
@@ -102,7 +106,7 @@ router.post(
 // Cancel purchase order
 router.patch(
   '/:id/cancel',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(cancelPurchaseOrderSchema),
   cancelPurchaseOrder
 );

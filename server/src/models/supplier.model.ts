@@ -79,13 +79,15 @@ const supplierSchema = new Schema<ISupplier>(
     },
     supplierCode: {
       type: String,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
-    categories: [{
-      type: String,
-      trim: true,
-    }],
+    categories: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
   },
   {
     timestamps: true,

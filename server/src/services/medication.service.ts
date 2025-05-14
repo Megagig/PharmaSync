@@ -30,7 +30,11 @@ export const getAllMedications = async (
   search?: string,
   category?: string,
   requiresPrescription?: boolean
-): Promise<{ medications: IMedicationResponse[]; total: number; pages: number }> => {
+): Promise<{
+  medications: IMedicationResponse[];
+  total: number;
+  pages: number;
+}> => {
   const query: any = {};
 
   // Add search functionality
@@ -68,7 +72,9 @@ export const getAllMedications = async (
   };
 };
 
-export const getMedicationById = async (id: string): Promise<IMedicationResponse> => {
+export const getMedicationById = async (
+  id: string
+): Promise<IMedicationResponse> => {
   const medication = await Medication.findById(id);
 
   if (!medication) {
@@ -140,7 +146,7 @@ export const updateInventoryItem = async (
   }
 
   const itemIndex = medication.inventory.findIndex(
-    (item) => item._id.toString() === itemId
+    (item) => item._id && item._id.toString() === itemId
   );
 
   if (itemIndex === -1) {
@@ -166,7 +172,7 @@ export const removeInventoryItem = async (
   }
 
   medication.inventory = medication.inventory.filter(
-    (item) => item._id.toString() !== itemId
+    (item) => !item._id || item._id.toString() !== itemId
   );
 
   await medication.save();
@@ -201,7 +207,7 @@ export const removeSideEffect = async (
   }
 
   medication.sideEffects = medication.sideEffects.filter(
-    (effect) => effect._id.toString() !== sideEffectId
+    (effect) => !effect._id || effect._id.toString() !== sideEffectId
   );
 
   await medication.save();
@@ -236,7 +242,8 @@ export const removeInteraction = async (
   }
 
   medication.interactions = medication.interactions.filter(
-    (interaction) => interaction._id.toString() !== interactionId
+    (interaction) =>
+      !interaction._id || interaction._id.toString() !== interactionId
   );
 
   await medication.save();
@@ -279,14 +286,13 @@ export const removeContraindication = async (
   return formatMedicationResponse(medication);
 };
 
-export const getLowStockMedications = async (): Promise<IMedicationResponse[]> => {
+export const getLowStockMedications = async (): Promise<
+  IMedicationResponse[]
+> => {
   const medications = await Medication.find({
     $expr: {
-      $lt: [
-        { $sum: '$inventory.quantity' },
-        '$minimumStockLevel'
-      ]
-    }
+      $lt: [{ $sum: '$inventory.quantity' }, '$minimumStockLevel'],
+    },
   });
 
   return medications.map(formatMedicationResponse);
@@ -299,18 +305,23 @@ export const getExpiringMedications = async (
   thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
 
   const medications = await Medication.find({
-    'inventory.expiryDate': { $lte: thresholdDate, $gte: new Date() }
+    'inventory.expiryDate': { $lte: thresholdDate, $gte: new Date() },
   });
 
   return medications.map(formatMedicationResponse);
 };
 
 // Helper function to format medication response
-const formatMedicationResponse = (medication: IMedication): IMedicationResponse => {
-  const totalStock = medication.inventory.reduce((total, item) => total + item.quantity, 0);
+const formatMedicationResponse = (
+  medication: IMedication
+): IMedicationResponse => {
+  const totalStock = medication.inventory.reduce(
+    (total, item) => total + item.quantity,
+    0
+  );
 
   return {
-    id: medication._id,
+    id: medication._id.toString(),
     name: medication.name,
     genericName: medication.genericName,
     brandName: medication.brandName,

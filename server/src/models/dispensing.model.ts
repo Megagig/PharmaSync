@@ -1,5 +1,8 @@
 import mongoose, { Schema } from 'mongoose';
-import { IDispensing, DispensingStatus } from '../interfaces/dispensing.interface';
+import {
+  IDispensing,
+  DispensingStatus,
+} from '../interfaces/dispensing.interface';
 import { generateRandomString } from '../utils/helpers';
 
 const dispensingItemSchema = new Schema(
@@ -58,7 +61,7 @@ const dispensingSchema = new Schema<IDispensing>(
     dispensingNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
     },
     dispensingDate: {
       type: Date,
@@ -120,14 +123,16 @@ dispensingSchema.pre('save', function (next) {
     // Format: DISP-YYYYMMDD-XXXXX (where XXXXX is a random alphanumeric string)
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    this.dispensingNumber = `DISP-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+    this.dispensingNumber = `DISP-${dateStr}-${generateRandomString(
+      5
+    ).toUpperCase()}`;
   }
 
   // Calculate totals
   if (this.isModified('items') || this.isNew) {
     // Calculate subtotal
     this.subtotal = this.items.reduce((sum, item) => sum + item.subtotal, 0);
-    
+
     // Calculate total
     this.total = this.subtotal - this.discount + this.tax;
   }

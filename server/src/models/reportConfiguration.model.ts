@@ -1,8 +1,8 @@
 import mongoose, { Schema } from 'mongoose';
-import { 
-  IReportConfiguration, 
-  ReportType, 
-  ChartType 
+import {
+  IReportConfiguration,
+  ReportType,
+  ChartType,
 } from '../interfaces/report.interface';
 
 const reportFilterSchema = new Schema(
@@ -13,7 +13,15 @@ const reportFilterSchema = new Schema(
     },
     operator: {
       type: String,
-      enum: ['equals', 'notEquals', 'contains', 'greaterThan', 'lessThan', 'between', 'in'],
+      enum: [
+        'equals',
+        'notEquals',
+        'contains',
+        'greaterThan',
+        'lessThan',
+        'between',
+        'in',
+      ],
       required: true,
     },
     value: {
@@ -34,6 +42,7 @@ const reportChartSchema = new Schema(
       type: String,
       enum: Object.values(ChartType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     dataField: {
       type: String,
@@ -72,9 +81,10 @@ const reportConfigurationSchema = new Schema<IReportConfiguration>(
       type: String,
       enum: Object.values(ReportType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     createdBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },

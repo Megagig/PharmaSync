@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 import { IDosage } from './medication.interface';
 
 export enum PrescriptionStatus {
@@ -8,8 +8,8 @@ export enum PrescriptionStatus {
   CANCELLED = 'cancelled',
 }
 
-export interface IPrescriptionItem {
-  medication: string; // Reference to medication ID
+export interface IPrescriptionItem extends Document {
+  medication: Types.ObjectId; // Reference to medication ID
   dosage: IDosage;
   quantity: number;
   refills: number;
@@ -17,28 +17,31 @@ export interface IPrescriptionItem {
   startDate: Date;
   endDate?: Date;
   notes?: string;
+  _id: Types.ObjectId;
 }
 
-export interface IDispensing {
+export interface IDispensing extends Document {
   date: Date;
   quantity: number;
   batchNumber: string;
-  dispensedBy: string; // Reference to user ID
+  dispensedBy: Types.ObjectId; // Reference to user ID
   notes?: string;
+  _id: Types.ObjectId;
 }
 
 export interface IPrescription extends Document {
-  patient: string; // Reference to patient ID
-  prescriber: string; // Reference to user ID (pharmacist)
+  patient: Types.ObjectId; // Reference to patient ID
+  prescriber: Types.ObjectId; // Reference to user ID (pharmacist)
   prescriptionNumber: string;
   prescriptionDate: Date;
   expiryDate: Date;
   status: PrescriptionStatus;
-  items: IPrescriptionItem[];
-  dispensingHistory: IDispensing[];
+  items: Types.DocumentArray<IPrescriptionItem>;
+  dispensingHistory: Types.DocumentArray<IDispensing>;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  _id: Types.ObjectId;
 }
 
 export interface IPrescriptionCreate {

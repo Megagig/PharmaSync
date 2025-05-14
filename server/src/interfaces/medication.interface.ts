@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export enum MedicationType {
   TABLET = 'tablet',
@@ -43,12 +43,14 @@ export interface ISideEffect {
   effect: string;
   severity: 'mild' | 'moderate' | 'severe';
   frequency: 'rare' | 'uncommon' | 'common' | 'very_common';
+  _id?: Types.ObjectId;
 }
 
 export interface IInteraction {
   interactsWith: string; // Medication name or category
   effect: string;
   severity: 'minor' | 'moderate' | 'major' | 'contraindicated';
+  _id?: Types.ObjectId;
 }
 
 export interface IInventoryItem {
@@ -58,6 +60,7 @@ export interface IInventoryItem {
   unitPrice: number;
   supplier?: string;
   purchaseDate: Date;
+  _id?: Types.ObjectId;
 }
 
 export interface IMedication extends Document {
@@ -79,9 +82,12 @@ export interface IMedication extends Document {
   storageConditions?: string;
   inventory: IInventoryItem[];
   minimumStockLevel: number;
-  createdBy: string; // Reference to user ID
+  notes?: string;
+  totalStock?: number;
+  createdBy: Types.ObjectId; // Reference to user ID
   createdAt: Date;
   updatedAt: Date;
+  _id: Types.ObjectId;
 }
 
 export interface IMedicationCreate {

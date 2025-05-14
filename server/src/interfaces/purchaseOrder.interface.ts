@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export enum PurchaseOrderStatus {
   DRAFT = 'draft',
@@ -10,8 +10,8 @@ export enum PurchaseOrderStatus {
   CANCELLED = 'cancelled',
 }
 
-export interface IPurchaseOrderItem {
-  medication: string; // Reference to medication ID
+export interface IPurchaseOrderItem extends Document {
+  medication: Types.ObjectId; // Reference to medication ID
   quantity: number;
   unitPrice: number;
   subtotal: number;
@@ -19,16 +19,17 @@ export interface IPurchaseOrderItem {
   batchNumber?: string;
   expiryDate?: Date;
   notes?: string;
+  _id: Types.ObjectId;
 }
 
 export interface IPurchaseOrder extends Document {
-  supplier: string; // Reference to supplier ID
+  supplier: Types.ObjectId; // Reference to supplier ID
   orderNumber: string;
   orderDate: Date;
   expectedDeliveryDate?: Date;
   deliveryDate?: Date;
   status: PurchaseOrderStatus;
-  items: IPurchaseOrderItem[];
+  items: Types.DocumentArray<IPurchaseOrderItem>;
   subtotal: number;
   discount: number;
   tax: number;
@@ -37,11 +38,12 @@ export interface IPurchaseOrder extends Document {
   paymentTerms: 'prepaid' | 'net15' | 'net30' | 'net60' | 'cod';
   paymentStatus: 'unpaid' | 'partial' | 'paid';
   notes?: string;
-  createdBy: string; // Reference to user ID
-  approvedBy?: string; // Reference to user ID
-  receivedBy?: string; // Reference to user ID
+  createdBy: Types.ObjectId; // Reference to user ID
+  approvedBy?: Types.ObjectId; // Reference to user ID
+  receivedBy?: Types.ObjectId; // Reference to user ID
   createdAt: Date;
   updatedAt: Date;
+  _id: Types.ObjectId;
 }
 
 export interface IPurchaseOrderCreate {

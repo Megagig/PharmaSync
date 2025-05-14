@@ -86,12 +86,12 @@ export const protect = async (
     });
 
     next();
-  } catch (error) {
-    if (error.name === 'JsonWebTokenError') {
+  } catch (error: any) {
+    if (error && error.name === 'JsonWebTokenError') {
       return next(new UnauthorizedError('Invalid token'));
     }
 
-    if (error.name === 'TokenExpiredError') {
+    if (error && error.name === 'TokenExpiredError') {
       return next(new UnauthorizedError('Token expired'));
     }
 

@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect, restrictTo } from '../middleware/auth.middleware';
+import { RoleType } from '../interfaces/role.interface';
 import {
   getRoles,
   getRoleById,
@@ -18,7 +19,7 @@ const router = express.Router();
 router.use(protect);
 
 // Restrict all routes to admin
-router.use(restrictTo(['admin']));
+router.use(restrictTo([RoleType.ADMIN]));
 
 // Role routes
 router.get('/', getRoles);

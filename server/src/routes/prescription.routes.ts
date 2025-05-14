@@ -19,7 +19,7 @@ import {
   updatePrescriptionItemSchema,
   dispenseMedicationSchema,
 } from '../validators/prescription.validator';
-import { UserRole } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 
 const router = Router();
 
@@ -35,7 +35,7 @@ router.get('/:id', getPrescriptionById);
 // Create new prescription
 router.post(
   '/',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(createPrescriptionSchema),
   createPrescription
 );
@@ -43,7 +43,7 @@ router.post(
 // Update prescription
 router.patch(
   '/:id',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(updatePrescriptionSchema),
   updatePrescription
 );
@@ -51,14 +51,14 @@ router.patch(
 // Cancel prescription
 router.patch(
   '/:id/cancel',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   cancelPrescription
 );
 
 // Add prescription item
 router.post(
   '/:id/items',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(addPrescriptionItemSchema),
   addPrescriptionItem
 );
@@ -66,7 +66,7 @@ router.post(
 // Update prescription item
 router.patch(
   '/:id/items/:itemId',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(updatePrescriptionItemSchema),
   updatePrescriptionItem
 );
@@ -74,14 +74,18 @@ router.patch(
 // Remove prescription item
 router.delete(
   '/:id/items/:itemId',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   removePrescriptionItem
 );
 
 // Dispense medication
 router.post(
   '/:id/dispense',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.TECHNICIAN),
+  restrictTo([
+    RoleType.ADMIN,
+    RoleType.PHARMACIST,
+    RoleType.PHARMACY_TECHNICIAN,
+  ]),
   validate(dispenseMedicationSchema),
   dispenseMedication
 );

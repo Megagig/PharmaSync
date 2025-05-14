@@ -5,12 +5,12 @@ import Conversation from './conversation.model';
 const messageSchema = new Schema<IMessage>(
   {
     conversation: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'Conversation',
       required: true,
     },
     sender: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },
@@ -46,7 +46,7 @@ const messageSchema = new Schema<IMessage>(
     },
     readBy: [
       {
-        type: Schema.Types.ObjectId,
+        type: String,
         ref: 'User',
       },
     ],
@@ -63,7 +63,8 @@ messageSchema.index({ createdAt: -1 });
 
 // Update the conversation's lastMessage when a new message is created
 messageSchema.post('save', async function (doc) {
-  await Conversation.findByIdAndUpdate(doc.conversation, {
+  const message = doc as any;
+  await Conversation.findByIdAndUpdate(message.conversation, {
     lastMessage: doc._id,
     updatedAt: new Date(),
   });

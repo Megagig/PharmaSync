@@ -1,7 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
 import {
   IUser,
-  UserRole,
+  UserRole as UserRoleEnum,
   Permission,
   DEFAULT_ROLE_PERMISSIONS,
   IUserSettings,
@@ -9,7 +9,7 @@ import {
 import { RoleType, IPermission } from '../interfaces/role.interface';
 import { hashPassword } from '../config/auth.config';
 import Role from './role.model';
-import UserRole from './userRole.model';
+import UserRoleModel from './userRole.model';
 
 const userSettingsSchema = new Schema<IUserSettings>(
   {
@@ -54,7 +54,7 @@ const userSchema = new Schema<IUser>(
     email: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
       lowercase: true,
     },
@@ -75,8 +75,8 @@ const userSchema = new Schema<IUser>(
     // Legacy role field (will be deprecated)
     role: {
       type: String,
-      enum: Object.values(UserRole),
-      default: UserRole.STAFF,
+      enum: Object.values(UserRoleEnum),
+      default: UserRoleEnum.STAFF,
     },
     // Legacy permissions field (will be deprecated)
     permissions: {
@@ -379,8 +379,13 @@ userSchema.pre('save', async function (next) {
     this.isModified('role') ||
     (this.permissions && this.permissions.length === 0)
   ) {
-    const role = this.role as UserRole;
-    this.permissions = DEFAULT_ROLE_PERMISSIONS[role] || [];
+    const role = this.role as UserRoleEnum;
+    // Handle the case for PATIENT role which might not be in DEFAULT_ROLE_PERMISSIONS
+    if (role === UserRoleEnum.PATIENT) {
+      this.permissions = [];
+    } else {
+      this.permissions = DEFAULT_ROLE_PERMISSIONS[role] || [];
+    }
   }
 
   // If this is a new user and no roles are assigned, assign a default role based on the legacy role
@@ -389,19 +394,19 @@ userSchema.pre('save', async function (next) {
       // Find the corresponding new role type
       let roleType: RoleType;
       switch (this.role) {
-        case UserRole.ADMIN:
+        case UserRoleEnum.ADMIN:
           roleType = RoleType.ADMIN;
           break;
-        case UserRole.PHARMACIST:
+        case UserRoleEnum.PHARMACIST:
           roleType = RoleType.PHARMACIST;
           break;
-        case UserRole.TECHNICIAN:
+        case UserRoleEnum.TECHNICIAN:
           roleType = RoleType.PHARMACY_TECHNICIAN;
           break;
-        case UserRole.STAFF:
+        case UserRoleEnum.STAFF:
           roleType = RoleType.STAFF;
           break;
-        case UserRole.PATIENT:
+        case UserRoleEnum.PATIENT:
           roleType = RoleType.PATIENT;
           break;
         default:
@@ -410,8 +415,9 @@ userSchema.pre('save', async function (next) {
 
       // Find the role by type
       const role = await Role.findOne({ type: roleType });
-      if (role) {
-        this.roles = [role._id];
+      if (role && role._id) {
+        // Use type assertion to handle the unknown type
+        this.roles = [(role._id as any).toString()];
       }
     } catch (error) {
       console.error('Error assigning default role:', error);

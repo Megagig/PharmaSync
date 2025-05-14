@@ -1,10 +1,10 @@
-import api from './api';
-import { 
-  Notification, 
-  NotificationFilters, 
+import api from '@/services/api';
+import {
+  Notification,
+  NotificationFilters,
   NotificationPreference,
   NotificationPreferenceUpdateData,
-  NotificationType
+  NotificationType,
 } from '@/types/notification.types';
 
 const BASE_URL = '/notifications';
@@ -16,21 +16,21 @@ const BASE_URL = '/notifications';
  */
 export const getNotifications = async (filters: NotificationFilters = {}) => {
   const { page = 1, limit = 20, isRead, isArchived, type } = filters;
-  
+
   let url = `${BASE_URL}?page=${page}&limit=${limit}`;
-  
+
   if (isRead !== undefined) {
     url += `&isRead=${isRead}`;
   }
-  
+
   if (isArchived !== undefined) {
     url += `&isArchived=${isArchived}`;
   }
-  
+
   if (type) {
     url += `&type=${type}`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };
@@ -107,7 +107,9 @@ export const getNotificationPreferences = async () => {
  * @param data Notification preference update data
  * @returns Promise with updated notification preferences
  */
-export const updateNotificationPreferences = async (data: NotificationPreferenceUpdateData) => {
+export const updateNotificationPreferences = async (
+  data: NotificationPreferenceUpdateData
+) => {
   const response = await api.patch(`${BASE_URL}/preferences`, data);
   return response.data;
 };

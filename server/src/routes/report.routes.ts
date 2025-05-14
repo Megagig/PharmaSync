@@ -1,5 +1,6 @@
 import express from 'express';
 import { protect, restrictTo } from '../middleware/auth.middleware';
+import { RoleType } from '../interfaces/role.interface';
 import {
   getReportConfigurations,
   getReportConfigurationById,
@@ -23,14 +24,30 @@ router.use(protect);
 
 // Report configurations
 router.get('/configurations', getReportConfigurations);
-router.post('/configurations', restrictTo(['admin', 'pharmacist']), createReportConfiguration);
+router.post(
+  '/configurations',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  createReportConfiguration
+);
 router.get('/configurations/:id', getReportConfigurationById);
-router.patch('/configurations/:id', restrictTo(['admin', 'pharmacist']), updateReportConfiguration);
-router.delete('/configurations/:id', restrictTo(['admin', 'pharmacist']), deleteReportConfiguration);
+router.patch(
+  '/configurations/:id',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  updateReportConfiguration
+);
+router.delete(
+  '/configurations/:id',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  deleteReportConfiguration
+);
 router.post('/configurations/:id/generate', generateReportFromConfiguration);
 
 // Report generation
-router.post('/generate', restrictTo(['admin', 'pharmacist']), generateReport);
+router.post(
+  '/generate',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  generateReport
+);
 
 // Report executions
 router.get('/executions', getReportExecutions);
@@ -38,8 +55,20 @@ router.get('/download/:id', downloadReport);
 
 // Report schedules
 router.get('/schedules', getReportSchedules);
-router.post('/schedules', restrictTo(['admin', 'pharmacist']), createReportSchedule);
-router.patch('/schedules/:id', restrictTo(['admin', 'pharmacist']), updateReportSchedule);
-router.delete('/schedules/:id', restrictTo(['admin', 'pharmacist']), deleteReportSchedule);
+router.post(
+  '/schedules',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  createReportSchedule
+);
+router.patch(
+  '/schedules/:id',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  updateReportSchedule
+);
+router.delete(
+  '/schedules/:id',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  deleteReportSchedule
+);
 
 export default router;

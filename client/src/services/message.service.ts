@@ -1,12 +1,12 @@
-import api from './api';
-import { 
-  Conversation, 
-  ConversationCreateData, 
-  ConversationFilters, 
-  ConversationUpdateData, 
-  Message, 
-  MessageCreateData, 
-  MessageFilters 
+import api from '@/services/api';
+import {
+  Conversation,
+  ConversationCreateData,
+  ConversationFilters,
+  ConversationUpdateData,
+  Message,
+  MessageCreateData,
+  MessageFilters,
 } from '@/types/message.types';
 
 const BASE_URL = '/messages';
@@ -18,8 +18,10 @@ const BASE_URL = '/messages';
  */
 export const getConversations = async (filters: ConversationFilters = {}) => {
   const { page = 1, limit = 20 } = filters;
-  
-  const response = await api.get(`${BASE_URL}/conversations?page=${page}&limit=${limit}`);
+
+  const response = await api.get(
+    `${BASE_URL}/conversations?page=${page}&limit=${limit}`
+  );
   return response.data;
 };
 
@@ -49,7 +51,10 @@ export const getConversationById = async (id: string) => {
  * @param data Conversation update data
  * @returns Promise with updated conversation data
  */
-export const updateConversation = async (id: string, data: ConversationUpdateData) => {
+export const updateConversation = async (
+  id: string,
+  data: ConversationUpdateData
+) => {
   const response = await api.patch(`${BASE_URL}/conversations/${id}`, data);
   return response.data;
 };
@@ -60,10 +65,15 @@ export const updateConversation = async (id: string, data: ConversationUpdateDat
  * @param filters Message filters
  * @returns Promise with messages data
  */
-export const getConversationMessages = async (conversationId: string, filters: MessageFilters = {}) => {
+export const getConversationMessages = async (
+  conversationId: string,
+  filters: MessageFilters = {}
+) => {
   const { page = 1, limit = 20 } = filters;
-  
-  const response = await api.get(`${BASE_URL}/conversations/${conversationId}/messages?page=${page}&limit=${limit}`);
+
+  const response = await api.get(
+    `${BASE_URL}/conversations/${conversationId}/messages?page=${page}&limit=${limit}`
+  );
   return response.data;
 };
 
@@ -73,8 +83,14 @@ export const getConversationMessages = async (conversationId: string, filters: M
  * @param data Message create data
  * @returns Promise with created message data
  */
-export const sendMessage = async (conversationId: string, data: MessageCreateData) => {
-  const response = await api.post(`${BASE_URL}/conversations/${conversationId}/messages`, data);
+export const sendMessage = async (
+  conversationId: string,
+  data: MessageCreateData
+) => {
+  const response = await api.post(
+    `${BASE_URL}/conversations/${conversationId}/messages`,
+    data
+  );
   return response.data;
 };
 

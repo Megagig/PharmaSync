@@ -1,15 +1,18 @@
 import mongoose, { Schema } from 'mongoose';
-import { IMessageRecipientStatus, MessageStatus } from '../interfaces/message.interface';
+import {
+  IMessageRecipientStatus,
+  MessageStatus,
+} from '../interfaces/message.interface';
 
 const messageRecipientStatusSchema = new Schema<IMessageRecipientStatus>(
   {
     message: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'Message',
       required: true,
     },
     recipient: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },
@@ -31,7 +34,10 @@ const messageRecipientStatusSchema = new Schema<IMessageRecipientStatus>(
 );
 
 // Create indexes for faster queries
-messageRecipientStatusSchema.index({ message: 1, recipient: 1 }, { unique: true });
+messageRecipientStatusSchema.index(
+  { message: 1, recipient: 1 },
+  { unique: true }
+);
 messageRecipientStatusSchema.index({ recipient: 1 });
 messageRecipientStatusSchema.index({ status: 1 });
 

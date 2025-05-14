@@ -1,18 +1,15 @@
 import mongoose, { Schema } from 'mongoose';
-import { 
-  IReportExecution, 
-  ReportFormat 
-} from '../interfaces/report.interface';
+import { IReportExecution, ReportFormat } from '../interfaces/report.interface';
 
 const reportExecutionSchema = new Schema<IReportExecution>(
   {
     report: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'ReportConfiguration',
       required: true,
     },
     schedule: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'ReportSchedule',
     },
     format: {
@@ -21,7 +18,7 @@ const reportExecutionSchema = new Schema<IReportExecution>(
       required: true,
     },
     executedBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },

@@ -3,11 +3,13 @@ import { IConversation } from '../interfaces/message.interface';
 
 const conversationSchema = new Schema<IConversation>(
   {
-    participants: [{
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    }],
+    participants: [
+      {
+        type: String,
+        ref: 'User',
+        required: true,
+      },
+    ],
     title: {
       type: String,
       trim: true,
@@ -17,11 +19,11 @@ const conversationSchema = new Schema<IConversation>(
       default: false,
     },
     lastMessage: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'Message',
     },
     createdBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },
@@ -39,6 +41,9 @@ conversationSchema.index({ updatedAt: -1 });
 // Create a compound index for finding conversations between two users
 conversationSchema.index({ participants: 1, isGroup: 1 });
 
-const Conversation = mongoose.model<IConversation>('Conversation', conversationSchema);
+const Conversation = mongoose.model<IConversation>(
+  'Conversation',
+  conversationSchema
+);
 
 export default Conversation;

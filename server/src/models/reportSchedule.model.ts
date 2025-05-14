@@ -1,14 +1,14 @@
 import mongoose, { Schema } from 'mongoose';
-import { 
-  IReportSchedule, 
-  ReportFrequency, 
-  ReportFormat 
+import {
+  IReportSchedule,
+  ReportFrequency,
+  ReportFormat,
 } from '../interfaces/report.interface';
 
 const reportScheduleSchema = new Schema<IReportSchedule>(
   {
     report: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'ReportConfiguration',
       required: true,
     },
@@ -26,13 +26,13 @@ const reportScheduleSchema = new Schema<IReportSchedule>(
       type: [String],
       required: true,
       validate: {
-        validator: function(v: string[]) {
+        validator: function (v: string[]) {
           // Simple email validation regex
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          return v.every(email => emailRegex.test(email));
+          return v.every((email) => emailRegex.test(email));
         },
-        message: props => `${props.value} contains invalid email addresses!`
-      }
+        message: (props) => `${props.value} contains invalid email addresses!`,
+      },
     },
     nextRunDate: {
       type: Date,
@@ -46,7 +46,7 @@ const reportScheduleSchema = new Schema<IReportSchedule>(
       default: true,
     },
     createdBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },

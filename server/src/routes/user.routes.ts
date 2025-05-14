@@ -15,6 +15,7 @@ import {
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 import { UserRole, Permission } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 import { z } from 'zod';
 
 const router = Router();
@@ -90,7 +91,9 @@ router.patch(
     z.object({
       body: z.object({
         currentPassword: z.string().min(1, 'Current password is required'),
-        newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+        newPassword: z
+          .string()
+          .min(6, 'New password must be at least 6 characters'),
       }),
     })
   ),
@@ -98,15 +101,11 @@ router.patch(
 );
 
 // Admin routes
-router.get(
-  '/',
-  restrictTo(UserRole.ADMIN),
-  getAllUsers
-);
+router.get('/', restrictTo([RoleType.ADMIN]), getAllUsers);
 
 router.get(
   '/:id',
-  restrictTo(UserRole.ADMIN),
+  restrictTo([RoleType.ADMIN]),
   validate(
     z.object({
       params: z.object({
@@ -119,7 +118,7 @@ router.get(
 
 router.post(
   '/',
-  restrictTo(UserRole.ADMIN),
+  restrictTo([RoleType.ADMIN]),
   validate(
     z.object({
       body: z.object({
@@ -128,7 +127,9 @@ router.post(
         firstName: z.string().min(1, 'First name is required'),
         lastName: z.string().min(1, 'Last name is required'),
         role: z.enum(Object.values(UserRole) as [string, ...string[]]),
-        permissions: z.array(z.enum(Object.values(Permission) as [string, ...string[]])).optional(),
+        permissions: z
+          .array(z.enum(Object.values(Permission) as [string, ...string[]]))
+          .optional(),
         phoneNumber: z.string().optional(),
         licenseNumber: z.string().optional(),
         address: z
@@ -160,14 +161,18 @@ router.post(
 
 router.patch(
   '/:id',
-  restrictTo(UserRole.ADMIN),
+  restrictTo([RoleType.ADMIN]),
   validate(
     z.object({
       body: z.object({
         firstName: z.string().min(1, 'First name is required').optional(),
         lastName: z.string().min(1, 'Last name is required').optional(),
-        role: z.enum(Object.values(UserRole) as [string, ...string[]]).optional(),
-        permissions: z.array(z.enum(Object.values(Permission) as [string, ...string[]])).optional(),
+        role: z
+          .enum(Object.values(UserRole) as [string, ...string[]])
+          .optional(),
+        permissions: z
+          .array(z.enum(Object.values(Permission) as [string, ...string[]]))
+          .optional(),
         phoneNumber: z.string().optional(),
         licenseNumber: z.string().optional(),
         address: z
@@ -203,7 +208,7 @@ router.patch(
 
 router.delete(
   '/:id',
-  restrictTo(UserRole.ADMIN),
+  restrictTo([RoleType.ADMIN]),
   validate(
     z.object({
       params: z.object({
@@ -216,7 +221,7 @@ router.delete(
 
 router.patch(
   '/:id/change-password',
-  restrictTo(UserRole.ADMIN),
+  restrictTo([RoleType.ADMIN]),
   validate(
     z.object({
       body: z.object({

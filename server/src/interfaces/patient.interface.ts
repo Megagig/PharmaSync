@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export enum Gender {
   MALE = 'male',
@@ -22,6 +22,7 @@ export interface IAllergy {
   reaction: string;
   severity: 'mild' | 'moderate' | 'severe';
   dateIdentified: Date;
+  _id?: Types.ObjectId;
 }
 
 export interface IMedicalCondition {
@@ -29,6 +30,7 @@ export interface IMedicalCondition {
   diagnosisDate: Date;
   status: 'active' | 'resolved' | 'in_remission';
   notes?: string;
+  _id?: Types.ObjectId;
 }
 
 export interface IPatient extends Document {
@@ -44,11 +46,12 @@ export interface IPatient extends Document {
   bloodGroup?: BloodGroup;
   allergies: IAllergy[];
   medicalConditions: IMedicalCondition[];
-  medications: string[]; // References to medication IDs
+  medications: Types.ObjectId[]; // References to medication IDs
   notes?: string;
-  createdBy: string; // Reference to user ID
+  createdBy: Types.ObjectId; // Reference to user ID
   createdAt: Date;
   updatedAt: Date;
+  _id: Types.ObjectId;
 }
 
 export interface IPatientCreate {

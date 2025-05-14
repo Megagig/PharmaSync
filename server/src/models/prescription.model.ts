@@ -1,5 +1,8 @@
 import mongoose, { Schema } from 'mongoose';
-import { IPrescription, PrescriptionStatus } from '../interfaces/prescription.interface';
+import {
+  IPrescription,
+  PrescriptionStatus,
+} from '../interfaces/prescription.interface';
 import { generateRandomString } from '../utils/helpers';
 
 const prescriptionItemSchema = new Schema(
@@ -104,7 +107,7 @@ const prescriptionSchema = new Schema<IPrescription>(
     prescriptionNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
     },
     prescriptionDate: {
       type: Date,
@@ -143,7 +146,9 @@ prescriptionSchema.pre('save', function (next) {
     // Format: RX-YYYYMMDD-XXXXX (where XXXXX is a random alphanumeric string)
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    this.prescriptionNumber = `RX-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+    this.prescriptionNumber = `RX-${dateStr}-${generateRandomString(
+      5
+    ).toUpperCase()}`;
   }
 
   // Set refillsRemaining to refills for new items
@@ -156,6 +161,9 @@ prescriptionSchema.pre('save', function (next) {
   next();
 });
 
-const Prescription = mongoose.model<IPrescription>('Prescription', prescriptionSchema);
+const Prescription = mongoose.model<IPrescription>(
+  'Prescription',
+  prescriptionSchema
+);
 
 export default Prescription;

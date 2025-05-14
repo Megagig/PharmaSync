@@ -8,7 +8,7 @@ import {
 } from '../interfaces/patient.interface';
 import Patient from '../models/patient.model';
 import { NotFoundError, BadRequestError } from '../utils/error';
-import mongoose from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 
 export const createPatient = async (
   patientData: IPatientCreate,
@@ -123,17 +123,20 @@ export const updateAllergy = async (
   }
 
   const allergyIndex = patient.allergies.findIndex(
-    (allergy) => allergy._id.toString() === allergyId
+    (allergy) => allergy._id && allergy._id.toString() === allergyId
   );
 
   if (allergyIndex === -1) {
     throw new NotFoundError('Allergy not found');
   }
 
-  patient.allergies[allergyIndex] = {
-    ...patient.allergies[allergyIndex].toObject(),
+  const currentAllergy = patient.allergies[allergyIndex];
+  const updatedAllergy: IAllergy = {
     ...allergyData,
+    _id: currentAllergy._id,
   };
+
+  patient.allergies[allergyIndex] = updatedAllergy;
 
   await patient.save();
 
@@ -151,7 +154,7 @@ export const removeAllergy = async (
   }
 
   patient.allergies = patient.allergies.filter(
-    (allergy) => allergy._id.toString() !== allergyId
+    (allergy) => !allergy._id || allergy._id.toString() !== allergyId
   );
 
   await patient.save();
@@ -187,17 +190,20 @@ export const updateMedicalCondition = async (
   }
 
   const conditionIndex = patient.medicalConditions.findIndex(
-    (condition) => condition._id.toString() === conditionId
+    (condition) => condition._id && condition._id.toString() === conditionId
   );
 
   if (conditionIndex === -1) {
     throw new NotFoundError('Medical condition not found');
   }
 
-  patient.medicalConditions[conditionIndex] = {
-    ...patient.medicalConditions[conditionIndex].toObject(),
+  const currentCondition = patient.medicalConditions[conditionIndex];
+  const updatedCondition: IMedicalCondition = {
     ...conditionData,
+    _id: currentCondition._id,
   };
+
+  patient.medicalConditions[conditionIndex] = updatedCondition;
 
   await patient.save();
 
@@ -215,7 +221,7 @@ export const removeMedicalCondition = async (
   }
 
   patient.medicalConditions = patient.medicalConditions.filter(
-    (condition) => condition._id.toString() !== conditionId
+    (condition) => !condition._id || condition._id.toString() !== conditionId
   );
 
   await patient.save();
@@ -233,8 +239,9 @@ export const addMedication = async (
     throw new NotFoundError('Patient not found');
   }
 
-  if (!patient.medications.includes(new mongoose.Types.ObjectId(medicationId))) {
-    patient.medications.push(new mongoose.Types.ObjectId(medicationId));
+  const medId = new mongoose.Types.ObjectId(medicationId);
+  if (!patient.medications.some((id) => id.equals(medId))) {
+    patient.medications.push(medId);
     await patient.save();
   }
 
@@ -263,7 +270,7 @@ export const removeMedication = async (
 // Helper function to format patient response
 const formatPatientResponse = (patient: IPatient): IPatientResponse => {
   return {
-    id: patient._id,
+    id: patient._id.toString(),
     firstName: patient.firstName,
     lastName: patient.lastName,
     dateOfBirth: patient.dateOfBirth,
@@ -276,7 +283,7 @@ const formatPatientResponse = (patient: IPatient): IPatientResponse => {
     bloodGroup: patient.bloodGroup,
     allergies: patient.allergies,
     medicalConditions: patient.medicalConditions,
-    medications: patient.medications.map(med => med.toString()),
+    medications: patient.medications.map((med) => med.toString()),
     notes: patient.notes,
     createdAt: patient.createdAt,
     updatedAt: patient.updatedAt,

@@ -9,7 +9,8 @@ import {
 } from '../controllers/activityLog.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
-import { UserRole, Permission } from '../interfaces/user.interface';
+// import { UserRole, Permission } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 import { z } from 'zod';
 
 const router = Router();
@@ -24,21 +25,13 @@ router.get('/types', getActivityTypes);
 router.get('/me', getMyActivityLogs);
 
 // Admin routes
-router.get(
-  '/',
-  restrictTo(UserRole.ADMIN),
-  getAllActivityLogs
-);
+router.get('/', restrictTo([RoleType.ADMIN]), getAllActivityLogs);
 
-router.get(
-  '/stats',
-  restrictTo(UserRole.ADMIN),
-  getActivityStats
-);
+router.get('/stats', restrictTo([RoleType.ADMIN]), getActivityStats);
 
 router.get(
   '/:id',
-  restrictTo(UserRole.ADMIN),
+  restrictTo([RoleType.ADMIN]),
   validate(
     z.object({
       params: z.object({
@@ -51,7 +44,7 @@ router.get(
 
 router.get(
   '/user/:userId',
-  restrictTo(UserRole.ADMIN),
+  restrictTo([RoleType.ADMIN]),
   validate(
     z.object({
       params: z.object({

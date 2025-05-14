@@ -1,13 +1,13 @@
 import mongoose, { Schema } from 'mongoose';
-import { 
-  INotificationPreference, 
-  NotificationType 
+import {
+  INotificationPreference,
+  NotificationType,
 } from '../interfaces/notification.interface';
 
 const notificationPreferenceSchema = new Schema<INotificationPreference>(
   {
     user: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
       unique: true,

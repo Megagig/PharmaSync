@@ -15,7 +15,7 @@ import {
   generateReceiptSchema,
   returnDispensingSchema,
 } from '../validators/dispensing.validator';
-import { UserRole } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 
 const router = Router();
 
@@ -31,7 +31,11 @@ router.get('/:id', getDispensingById);
 // Create new dispensing record
 router.post(
   '/',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.TECHNICIAN),
+  restrictTo([
+    RoleType.ADMIN,
+    RoleType.PHARMACIST,
+    RoleType.PHARMACY_TECHNICIAN,
+  ]),
   validate(createDispensingSchema),
   createDispensing
 );
@@ -39,7 +43,7 @@ router.post(
 // Update dispensing record
 router.patch(
   '/:id',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(updateDispensingSchema),
   updateDispensing
 );
@@ -47,7 +51,11 @@ router.patch(
 // Generate receipt
 router.post(
   '/:id/receipt',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.TECHNICIAN),
+  restrictTo([
+    RoleType.ADMIN,
+    RoleType.PHARMACIST,
+    RoleType.PHARMACY_TECHNICIAN,
+  ]),
   validate(generateReceiptSchema),
   generateReceipt
 );
@@ -55,7 +63,7 @@ router.post(
 // Process return
 router.post(
   '/:id/return',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(returnDispensingSchema),
   returnDispensing
 );

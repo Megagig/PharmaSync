@@ -1,21 +1,23 @@
 import mongoose, { Schema } from 'mongoose';
-import { 
-  INotification, 
-  NotificationType, 
-  NotificationPriority 
+import {
+  INotification,
+  NotificationType,
+  NotificationPriority,
 } from '../interfaces/notification.interface';
 
 const notificationSchema = new Schema<INotification>(
   {
     user: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     type: {
       type: String,
       enum: Object.values(NotificationType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     title: {
       type: String,
@@ -63,6 +65,9 @@ notificationSchema.index({ isRead: 1 });
 notificationSchema.index({ isArchived: 1 });
 notificationSchema.index({ createdAt: -1 });
 
-const Notification = mongoose.model<INotification>('Notification', notificationSchema);
+const Notification = mongoose.model<INotification>(
+  'Notification',
+  notificationSchema
+);
 
 export default Notification;

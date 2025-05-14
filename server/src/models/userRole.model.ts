@@ -4,17 +4,18 @@ import { IUserRoleDocument } from '../interfaces/role.interface';
 const userRoleSchema = new Schema<IUserRoleDocument>(
   {
     user: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     role: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'Role',
       required: true,
     },
     assignedBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },

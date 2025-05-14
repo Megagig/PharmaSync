@@ -6,7 +6,7 @@ import {
   getPatientReport,
 } from '../controllers/reports.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
-import { UserRole } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 
 const router = Router();
 
@@ -16,28 +16,28 @@ router.use(protect);
 // Get sales report
 router.get(
   '/sales',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   getSalesReport
 );
 
 // Get inventory report
 router.get(
   '/inventory',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   getInventoryReport
 );
 
 // Get prescription report
 router.get(
   '/prescriptions',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   getPrescriptionReport
 );
 
 // Get patient report
 router.get(
   '/patients',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   getPatientReport
 );
 

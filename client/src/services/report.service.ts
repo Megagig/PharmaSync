@@ -1,13 +1,13 @@
-import api from './api';
-import { 
-  ReportConfiguration, 
-  ReportConfigurationCreate, 
+import api from '@/services/api';
+import {
+  ReportConfiguration,
+  ReportConfigurationCreate,
   ReportConfigurationUpdate,
   ReportSchedule,
   ReportScheduleCreate,
   ReportScheduleUpdate,
   ReportRequest,
-  ReportFormat
+  ReportFormat,
 } from '@/types/report.types';
 
 const BASE_URL = '/report';
@@ -17,15 +17,17 @@ const BASE_URL = '/report';
  * @param params Query parameters
  * @returns Promise with report configurations data
  */
-export const getReportConfigurations = async (params: { page?: number; limit?: number; type?: string } = {}) => {
+export const getReportConfigurations = async (
+  params: { page?: number; limit?: number; type?: string } = {}
+) => {
   const { page = 1, limit = 10, type } = params;
-  
+
   let url = `${BASE_URL}/configurations?page=${page}&limit=${limit}`;
-  
+
   if (type) {
     url += `&type=${type}`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };
@@ -45,7 +47,9 @@ export const getReportConfigurationById = async (id: string) => {
  * @param data Report configuration data
  * @returns Promise with created report configuration
  */
-export const createReportConfiguration = async (data: ReportConfigurationCreate) => {
+export const createReportConfiguration = async (
+  data: ReportConfigurationCreate
+) => {
   const response = await api.post(`${BASE_URL}/configurations`, data);
   return response.data;
 };
@@ -56,7 +60,10 @@ export const createReportConfiguration = async (data: ReportConfigurationCreate)
  * @param data Report configuration update data
  * @returns Promise with updated report configuration
  */
-export const updateReportConfiguration = async (id: string, data: ReportConfigurationUpdate) => {
+export const updateReportConfiguration = async (
+  id: string,
+  data: ReportConfigurationUpdate
+) => {
   const response = await api.patch(`${BASE_URL}/configurations/${id}`, data);
   return response.data;
 };
@@ -77,8 +84,13 @@ export const deleteReportConfiguration = async (id: string) => {
  * @param format Report format
  * @returns Promise with report data
  */
-export const generateReportFromConfiguration = async (id: string, format: ReportFormat = ReportFormat.JSON) => {
-  const response = await api.post(`${BASE_URL}/configurations/${id}/generate`, { format });
+export const generateReportFromConfiguration = async (
+  id: string,
+  format: ReportFormat = ReportFormat.JSON
+) => {
+  const response = await api.post(`${BASE_URL}/configurations/${id}/generate`, {
+    format,
+  });
   return response.data;
 };
 
@@ -97,19 +109,26 @@ export const generateReport = async (data: ReportRequest) => {
  * @param params Query parameters
  * @returns Promise with report executions data
  */
-export const getReportExecutions = async (params: { page?: number; limit?: number; report?: string; status?: string } = {}) => {
+export const getReportExecutions = async (
+  params: {
+    page?: number;
+    limit?: number;
+    report?: string;
+    status?: string;
+  } = {}
+) => {
   const { page = 1, limit = 10, report, status } = params;
-  
+
   let url = `${BASE_URL}/executions?page=${page}&limit=${limit}`;
-  
+
   if (report) {
     url += `&report=${report}`;
   }
-  
+
   if (status) {
     url += `&status=${status}`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };
@@ -130,19 +149,26 @@ export const downloadReport = async (id: string) => {
  * @param params Query parameters
  * @returns Promise with report schedules data
  */
-export const getReportSchedules = async (params: { page?: number; limit?: number; report?: string; isActive?: boolean } = {}) => {
+export const getReportSchedules = async (
+  params: {
+    page?: number;
+    limit?: number;
+    report?: string;
+    isActive?: boolean;
+  } = {}
+) => {
   const { page = 1, limit = 10, report, isActive } = params;
-  
+
   let url = `${BASE_URL}/schedules?page=${page}&limit=${limit}`;
-  
+
   if (report) {
     url += `&report=${report}`;
   }
-  
+
   if (isActive !== undefined) {
     url += `&isActive=${isActive}`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };
@@ -163,7 +189,10 @@ export const createReportSchedule = async (data: ReportScheduleCreate) => {
  * @param data Report schedule update data
  * @returns Promise with updated report schedule
  */
-export const updateReportSchedule = async (id: string, data: ReportScheduleUpdate) => {
+export const updateReportSchedule = async (
+  id: string,
+  data: ReportScheduleUpdate
+) => {
   const response = await api.patch(`${BASE_URL}/schedules/${id}`, data);
   return response.data;
 };

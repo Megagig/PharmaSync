@@ -13,7 +13,8 @@ import {
 } from '../controllers/schedule.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
-import { UserRole, Permission } from '../interfaces/user.interface';
+// import { UserRole, Permission } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 import { ShiftType, RecurrenceType } from '../interfaces/schedule.interface';
 import { z } from 'zod';
 
@@ -39,7 +40,7 @@ router.get(
 
 router.post(
   '/shifts',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(
     z.object({
       body: z.object({
@@ -49,7 +50,9 @@ router.post(
         endTime: z.string().min(1, 'End time is required'),
         notes: z.string().optional(),
         isRecurring: z.boolean().optional(),
-        recurrenceType: z.enum(Object.values(RecurrenceType) as [string, ...string[]]).optional(),
+        recurrenceType: z
+          .enum(Object.values(RecurrenceType) as [string, ...string[]])
+          .optional(),
         recurrenceEndDate: z.string().optional(),
       }),
     })
@@ -59,16 +62,20 @@ router.post(
 
 router.patch(
   '/shifts/:id',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(
     z.object({
       body: z.object({
-        shiftType: z.enum(Object.values(ShiftType) as [string, ...string[]]).optional(),
+        shiftType: z
+          .enum(Object.values(ShiftType) as [string, ...string[]])
+          .optional(),
         startTime: z.string().optional(),
         endTime: z.string().optional(),
         notes: z.string().optional(),
         isRecurring: z.boolean().optional(),
-        recurrenceType: z.enum(Object.values(RecurrenceType) as [string, ...string[]]).optional(),
+        recurrenceType: z
+          .enum(Object.values(RecurrenceType) as [string, ...string[]])
+          .optional(),
         recurrenceEndDate: z.string().optional(),
       }),
       params: z.object({
@@ -81,7 +88,7 @@ router.patch(
 
 router.delete(
   '/shifts/:id',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(
     z.object({
       params: z.object({
@@ -124,7 +131,7 @@ router.post(
 
 router.patch(
   '/time-off/:id',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(
     z.object({
       body: z.object({

@@ -1,5 +1,8 @@
 import mongoose, { Schema } from 'mongoose';
-import { IPurchaseOrder, PurchaseOrderStatus } from '../interfaces/purchaseOrder.interface';
+import {
+  IPurchaseOrder,
+  PurchaseOrderStatus,
+} from '../interfaces/purchaseOrder.interface';
 import { generateRandomString } from '../utils/helpers';
 
 const purchaseOrderItemSchema = new Schema(
@@ -54,7 +57,7 @@ const purchaseOrderSchema = new Schema<IPurchaseOrder>(
     orderNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
     orderDate: {
@@ -154,7 +157,7 @@ purchaseOrderSchema.pre('save', function (next) {
   if (this.isModified('items') || this.isNew) {
     // Calculate subtotal
     this.subtotal = this.items.reduce((sum, item) => sum + item.subtotal, 0);
-    
+
     // Calculate total
     this.total = this.subtotal - this.discount + this.tax + this.shippingCost;
   }
@@ -162,6 +165,9 @@ purchaseOrderSchema.pre('save', function (next) {
   next();
 });
 
-const PurchaseOrder = mongoose.model<IPurchaseOrder>('PurchaseOrder', purchaseOrderSchema);
+const PurchaseOrder = mongoose.model<IPurchaseOrder>(
+  'PurchaseOrder',
+  purchaseOrderSchema
+);
 
 export default PurchaseOrder;

@@ -1,12 +1,17 @@
 import mongoose, { Schema } from 'mongoose';
-import { IScheduleShift, ShiftType, RecurrenceType } from '../interfaces/schedule.interface';
+import {
+  IScheduleShift,
+  ShiftType,
+  RecurrenceType,
+} from '../interfaces/schedule.interface';
 
 const scheduleShiftSchema = new Schema<IScheduleShift>(
   {
     user: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     shiftType: {
       type: String,
@@ -38,12 +43,12 @@ const scheduleShiftSchema = new Schema<IScheduleShift>(
       type: Date,
     },
     createdBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
     },
     updatedBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
     },
   },
@@ -59,12 +64,16 @@ scheduleShiftSchema.index({ shiftType: 1 });
 
 // Validate that end time is after start time
 scheduleShiftSchema.pre('validate', function (next) {
-  if (this.startTime >= this.endTime) {
+  const shift = this as any;
+  if (shift.startTime >= shift.endTime) {
     this.invalidate('endTime', 'End time must be after start time');
   }
   next();
 });
 
-const ScheduleShift = mongoose.model<IScheduleShift>('ScheduleShift', scheduleShiftSchema);
+const ScheduleShift = mongoose.model<IScheduleShift>(
+  'ScheduleShift',
+  scheduleShiftSchema
+);
 
 export default ScheduleShift;

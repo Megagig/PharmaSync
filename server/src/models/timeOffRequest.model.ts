@@ -4,9 +4,10 @@ import { ITimeOffRequest } from '../interfaces/schedule.interface';
 const timeOffRequestSchema = new Schema<ITimeOffRequest>(
   {
     user: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     startDate: {
       type: Date,
@@ -31,7 +32,7 @@ const timeOffRequestSchema = new Schema<ITimeOffRequest>(
       trim: true,
     },
     approvedBy: {
-      type: Schema.Types.ObjectId,
+      type: String,
       ref: 'User',
     },
   },
@@ -47,12 +48,16 @@ timeOffRequestSchema.index({ status: 1 });
 
 // Validate that end date is after start date
 timeOffRequestSchema.pre('validate', function (next) {
-  if (this.startDate >= this.endDate) {
+  const request = this as any;
+  if (request.startDate >= request.endDate) {
     this.invalidate('endDate', 'End date must be after start date');
   }
   next();
 });
 
-const TimeOffRequest = mongoose.model<ITimeOffRequest>('TimeOffRequest', timeOffRequestSchema);
+const TimeOffRequest = mongoose.model<ITimeOffRequest>(
+  'TimeOffRequest',
+  timeOffRequestSchema
+);
 
 export default TimeOffRequest;

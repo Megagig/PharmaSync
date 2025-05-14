@@ -1,13 +1,13 @@
-import api from './api';
-import { 
-  User, 
-  UserFormData, 
-  UserProfileUpdateData, 
+import api from '@/services/api';
+import {
+  User,
+  UserFormData,
+  UserProfileUpdateData,
   PasswordChangeData,
   PasswordResetData,
   TwoFactorSetupData,
   TwoFactorVerifyData,
-  EmailVerificationData
+  EmailVerificationData,
 } from '@/types/user.types';
 
 const BASE_URL = '/users';
@@ -17,39 +17,49 @@ const BASE_URL = '/users';
  * @param params Query parameters
  * @returns Promise with users data
  */
-export const getUsers = async (params: { 
-  page?: number; 
-  limit?: number; 
-  isActive?: boolean;
-  isEmailVerified?: boolean;
-  role?: string;
-  roleType?: string;
-  search?: string;
-} = {}) => {
-  const { page = 1, limit = 10, isActive, isEmailVerified, role, roleType, search } = params;
-  
+export const getUsers = async (
+  params: {
+    page?: number;
+    limit?: number;
+    isActive?: boolean;
+    isEmailVerified?: boolean;
+    role?: string;
+    roleType?: string;
+    search?: string;
+  } = {}
+) => {
+  const {
+    page = 1,
+    limit = 10,
+    isActive,
+    isEmailVerified,
+    role,
+    roleType,
+    search,
+  } = params;
+
   let url = `${BASE_URL}?page=${page}&limit=${limit}`;
-  
+
   if (isActive !== undefined) {
     url += `&isActive=${isActive}`;
   }
-  
+
   if (isEmailVerified !== undefined) {
     url += `&isEmailVerified=${isEmailVerified}`;
   }
-  
+
   if (role) {
     url += `&role=${role}`;
   }
-  
+
   if (roleType) {
     url += `&roleType=${roleType}`;
   }
-  
+
   if (search) {
     url += `&search=${search}`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };
@@ -216,29 +226,31 @@ export const disableTwoFactor = async () => {
  * @param params Query parameters
  * @returns Promise with activity logs data
  */
-export const getUserActivityLogs = async (params: {
-  page?: number;
-  limit?: number;
-  type?: string;
-  startDate?: string;
-  endDate?: string;
-} = {}) => {
+export const getUserActivityLogs = async (
+  params: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    startDate?: string;
+    endDate?: string;
+  } = {}
+) => {
   const { page = 1, limit = 20, type, startDate, endDate } = params;
-  
+
   let url = `${BASE_URL}/me/activity-logs?page=${page}&limit=${limit}`;
-  
+
   if (type) {
     url += `&type=${type}`;
   }
-  
+
   if (startDate) {
     url += `&startDate=${startDate}`;
   }
-  
+
   if (endDate) {
     url += `&endDate=${endDate}`;
   }
-  
+
   const response = await api.get(url);
   return response.data;
 };

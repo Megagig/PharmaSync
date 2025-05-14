@@ -12,7 +12,7 @@ import {
   createSupplierSchema,
   updateSupplierSchema,
 } from '../validators/supplier.validator';
-import { UserRole } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 
 const router = Router();
 
@@ -28,7 +28,7 @@ router.get('/:id', getSupplierById);
 // Create new supplier
 router.post(
   '/',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(createSupplierSchema),
   createSupplier
 );
@@ -36,16 +36,12 @@ router.post(
 // Update supplier
 router.patch(
   '/:id',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(updateSupplierSchema),
   updateSupplier
 );
 
 // Delete supplier (soft delete)
-router.delete(
-  '/:id',
-  restrictTo(UserRole.ADMIN),
-  deleteSupplier
-);
+router.delete('/:id', restrictTo([RoleType.ADMIN]), deleteSupplier);
 
 export default router;

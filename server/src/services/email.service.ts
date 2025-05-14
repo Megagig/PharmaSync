@@ -1,3 +1,4 @@
+// @ts-ignore
 import nodemailer from 'nodemailer';
 import config from '../config';
 
@@ -43,7 +44,7 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
 
     // Send email
     await transporter.sendMail(mailOptions);
-    
+
     return true;
   } catch (error) {
     console.error('Email sending error:', error);
@@ -123,11 +124,7 @@ export const generateNotificationEmail = (
         </div>
         <div class="content">
           <p>${message}</p>
-          ${
-            link
-              ? `<a href="${link}" class="button">${buttonText}</a>`
-              : ''
-          }
+          ${link ? `<a href="${link}" class="button">${buttonText}</a>` : ''}
         </div>
         <div class="footer">
           <p>This is an automated message from PharmaSync. Please do not reply to this email.</p>
@@ -152,17 +149,17 @@ export const sendPasswordResetEmail = async (
   userName: string
 ): Promise<boolean> => {
   const resetUrl = `${config.clientUrl}/reset-password/${resetToken}`;
-  
+
   const subject = 'Password Reset Request';
   const text = `Hello ${userName},\n\nYou are receiving this email because you (or someone else) has requested the reset of a password.\n\nPlease click on the following link, or paste this into your browser to complete the process:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.\n`;
-  
+
   const html = generateNotificationEmail(
     'Password Reset Request',
     `Hello ${userName},<br><br>You are receiving this email because you (or someone else) has requested the reset of a password.<br><br>Please click the button below to complete the process:`,
     resetUrl,
     'Reset Password'
   );
-  
+
   return sendEmail({
     to,
     subject,
@@ -182,17 +179,17 @@ export const sendWelcomeEmail = async (
   userName: string
 ): Promise<boolean> => {
   const loginUrl = `${config.clientUrl}/login`;
-  
+
   const subject = 'Welcome to PharmaSync';
   const text = `Hello ${userName},\n\nWelcome to PharmaSync! We're excited to have you on board.\n\nYou can log in to your account using the following link:\n\n${loginUrl}\n\nIf you have any questions, please don't hesitate to contact us.\n`;
-  
+
   const html = generateNotificationEmail(
     'Welcome to PharmaSync',
     `Hello ${userName},<br><br>Welcome to PharmaSync! We're excited to have you on board.<br><br>You can log in to your account by clicking the button below:`,
     loginUrl,
     'Log In'
   );
-  
+
   return sendEmail({
     to,
     subject,

@@ -7,7 +7,7 @@ import {
   adjustInventory,
 } from '../controllers/inventory.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
-import { UserRole } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 import { validate } from '../middleware/validation.middleware';
 import { z } from 'zod';
 
@@ -40,7 +40,7 @@ const adjustInventorySchema = z.object({
 
 router.post(
   '/adjust',
-  restrictTo(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(adjustInventorySchema),
   adjustInventory
 );

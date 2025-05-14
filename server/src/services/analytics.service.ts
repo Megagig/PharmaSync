@@ -4,9 +4,22 @@ import Medication from '../models/medication.model';
 import Patient from '../models/patient.model';
 import Prescription from '../models/prescription.model';
 import Dispensing from '../models/dispensing.model';
-import Inventory from '../models/inventory.model';
+// Inventory is part of Medication model
+// import Inventory from '../models/inventory.model';
 import User from '../models/user.model';
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, subDays, subMonths, format } from 'date-fns';
+import {
+  startOfDay,
+  endOfDay,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  startOfYear,
+  endOfYear,
+  subDays,
+  subMonths,
+  format,
+} from 'date-fns';
 
 /**
  * Build a MongoDB query from report filters
@@ -63,7 +76,10 @@ export const buildQueryFromFilters = (filters: IReportFilter[] = []): any => {
  * @param date Reference date
  * @returns Object with start and end dates
  */
-export const getDateRangeForPeriod = (period: 'day' | 'week' | 'month' | 'year', date: Date = new Date()): { start: Date; end: Date } => {
+export const getDateRangeForPeriod = (
+  period: 'day' | 'week' | 'month' | 'year',
+  date: Date = new Date()
+): { start: Date; end: Date } => {
   switch (period) {
     case 'day':
       return {
@@ -177,7 +193,14 @@ export const generateTimeSeries = async (
         value: aggregationOperator,
       },
     },
-    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.week': 1 } },
+    {
+      $sort: {
+        '_id.year': 1,
+        '_id.month': 1,
+        '_id.day': 1,
+        '_id.week': 1,
+      } as any,
+    },
     {
       $project: {
         _id: 0,
@@ -193,11 +216,18 @@ export const generateTimeSeries = async (
     },
   ];
 
-  const results = await model.aggregate(pipeline);
+  const results = await model.aggregate(pipeline as any);
 
   // Format dates based on interval
   return results.map((item: any) => ({
-    date: format(item.date, interval === 'day' ? 'yyyy-MM-dd' : interval === 'week' ? 'yyyy-[W]ww' : 'yyyy-MM'),
+    date: format(
+      item.date,
+      interval === 'day'
+        ? 'yyyy-MM-dd'
+        : interval === 'week'
+        ? 'yyyy-[W]ww'
+        : 'yyyy-MM'
+    ),
     value: item.value,
   }));
 };
@@ -217,7 +247,7 @@ export const generateChartData = async (
   additionalQuery: any = {}
 ): Promise<any> => {
   const { type, dataField, labelField, groupBy, aggregation = 'count' } = chart;
-  
+
   let model;
   switch (dataField.split('.')[0]) {
     case 'medications':
@@ -233,7 +263,8 @@ export const generateChartData = async (
       model = Dispensing;
       break;
     case 'inventory':
-      model = Inventory;
+      // Use Medication model for inventory data
+      model = Medication;
       break;
     case 'users':
       model = User;
@@ -265,16 +296,24 @@ export const generateChartData = async (
   let aggregationOperator: any;
   switch (aggregation) {
     case 'sum':
-      aggregationOperator = { $sum: `$${dataField.split('.').slice(1).join('.')}` };
+      aggregationOperator = {
+        $sum: `$${dataField.split('.').slice(1).join('.')}`,
+      };
       break;
     case 'avg':
-      aggregationOperator = { $avg: `$${dataField.split('.').slice(1).join('.')}` };
+      aggregationOperator = {
+        $avg: `$${dataField.split('.').slice(1).join('.')}`,
+      };
       break;
     case 'min':
-      aggregationOperator = { $min: `$${dataField.split('.').slice(1).join('.')}` };
+      aggregationOperator = {
+        $min: `$${dataField.split('.').slice(1).join('.')}`,
+      };
       break;
     case 'max':
-      aggregationOperator = { $max: `$${dataField.split('.').slice(1).join('.')}` };
+      aggregationOperator = {
+        $max: `$${dataField.split('.').slice(1).join('.')}`,
+      };
       break;
     case 'count':
     default:
@@ -300,7 +339,7 @@ export const generateChartData = async (
     },
   ];
 
-  return model.aggregate(pipeline);
+  return model.aggregate(pipeline as any);
 };
 
 /**
@@ -383,11 +422,13 @@ export const generateSalesReport = async (
  * @param filters Additional filters
  * @returns Inventory report data
  */
-export const generateInventoryReport = async (filters: IReportFilter[] = []): Promise<any> => {
+export const generateInventoryReport = async (
+  filters: IReportFilter[] = []
+): Promise<any> => {
   const query = buildQueryFromFilters(filters);
 
-  // Current inventory status
-  const inventoryStatus = await Inventory.aggregate([
+  // Current inventory status - using Medication model
+  const inventoryStatus = await Medication.aggregate([
     { $match: query },
     {
       $lookup: {
@@ -426,14 +467,16 @@ export const generateInventoryReport = async (filters: IReportFilter[] = []): Pr
   ]);
 
   // Low stock items
-  const lowStockItems = inventoryStatus.filter((item: any) => item.status === 'Low Stock');
+  const lowStockItems = inventoryStatus.filter(
+    (item: any) => item.status === 'Low Stock'
+  );
 
   // Expiring soon (within 90 days)
   const today = new Date();
   const ninetyDaysFromNow = new Date(today);
   ninetyDaysFromNow.setDate(today.getDate() + 90);
 
-  const expiringSoon = await Inventory.aggregate([
+  const expiringSoon = await Medication.aggregate([
     {
       $match: {
         ...query,
@@ -470,7 +513,10 @@ export const generateInventoryReport = async (filters: IReportFilter[] = []): Pr
   ]);
 
   // Total inventory value
-  const totalValue = inventoryStatus.reduce((sum: number, item: any) => sum + item.totalValue, 0);
+  const totalValue = inventoryStatus.reduce(
+    (sum: number, item: any) => sum + item.totalValue,
+    0
+  );
 
   return {
     inventoryStatus,
@@ -579,7 +625,9 @@ export const generatePrescriptionReport = async (
  * @param filters Additional filters
  * @returns Patient report data
  */
-export const generatePatientReport = async (filters: IReportFilter[] = []): Promise<any> => {
+export const generatePatientReport = async (
+  filters: IReportFilter[] = []
+): Promise<any> => {
   const query = buildQueryFromFilters(filters);
 
   // Total patients
@@ -594,9 +642,18 @@ export const generatePatientReport = async (filters: IReportFilter[] = []): Prom
           $switch: {
             branches: [
               { case: { $lt: ['$age', 18] }, then: 'Under 18' },
-              { case: { $and: [{ $gte: ['$age', 18] }, { $lt: ['$age', 30] }] }, then: '18-29' },
-              { case: { $and: [{ $gte: ['$age', 30] }, { $lt: ['$age', 45] }] }, then: '30-44' },
-              { case: { $and: [{ $gte: ['$age', 45] }, { $lt: ['$age', 60] }] }, then: '45-59' },
+              {
+                case: { $and: [{ $gte: ['$age', 18] }, { $lt: ['$age', 30] }] },
+                then: '18-29',
+              },
+              {
+                case: { $and: [{ $gte: ['$age', 30] }, { $lt: ['$age', 45] }] },
+                then: '30-44',
+              },
+              {
+                case: { $and: [{ $gte: ['$age', 45] }, { $lt: ['$age', 60] }] },
+                then: '45-59',
+              },
               { case: { $gte: ['$age', 60] }, then: '60+' },
             ],
             default: 'Unknown',
@@ -666,7 +723,9 @@ export const generatePatientReport = async (filters: IReportFilter[] = []): Prom
  * @param filters Additional filters
  * @returns Staff report data
  */
-export const generateStaffReport = async (filters: IReportFilter[] = []): Promise<any> => {
+export const generateStaffReport = async (
+  filters: IReportFilter[] = []
+): Promise<any> => {
   const query = {
     ...buildQueryFromFilters(filters),
     role: { $ne: 'patient' },
@@ -717,7 +776,11 @@ export const generateStaffReport = async (filters: IReportFilter[] = []): Promis
     {
       $group: {
         _id: '$user',
-        name: { $first: { $concat: ['$userInfo.firstName', ' ', '$userInfo.lastName'] } },
+        name: {
+          $first: {
+            $concat: ['$userInfo.firstName', ' ', '$userInfo.lastName'],
+          },
+        },
         role: { $first: '$userInfo.role' },
         count: { $sum: 1 },
       },

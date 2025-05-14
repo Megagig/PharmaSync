@@ -1,5 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
-import { IMedication, MedicationType, MedicationCategory } from '../interfaces/medication.interface';
+import {
+  IMedication,
+  MedicationType,
+  MedicationCategory,
+} from '../interfaces/medication.interface';
 
 const dosageSchema = new Schema(
   {
@@ -103,6 +107,7 @@ const medicationSchema = new Schema<IMedication>(
       type: String,
       required: true,
       trim: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     genericName: {
       type: String,
@@ -120,6 +125,7 @@ const medicationSchema = new Schema<IMedication>(
       type: String,
       enum: Object.values(MedicationType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     category: {
       type: String,

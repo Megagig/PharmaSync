@@ -20,7 +20,7 @@ const roleSchema = new Schema<IRole>(
     name: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
     type: {
@@ -28,6 +28,7 @@ const roleSchema = new Schema<IRole>(
       enum: Object.values(RoleType),
       required: true,
       unique: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     description: {
       type: String,

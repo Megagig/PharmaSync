@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as medicationController from '../controllers/medication.controller';
-import { authenticate, authorize } from '../middleware/auth.middleware';
+import { authenticate, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 import {
   createMedicationSchema,
@@ -11,7 +11,7 @@ import {
   addInteractionSchema,
   addContraindicationSchema,
 } from '../validators/medication.validator';
-import { UserRole } from '../interfaces/user.interface';
+import { RoleType } from '../interfaces/role.interface';
 
 const router = Router();
 
@@ -30,7 +30,7 @@ router.get('/expiring', medicationController.getExpiringMedications);
 // Create medication (only admin and pharmacist)
 router.post(
   '/',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(createMedicationSchema),
   medicationController.createMedication
 );
@@ -40,19 +40,20 @@ router
   .route('/:id')
   .get(medicationController.getMedicationById)
   .patch(
-    authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
     validate(updateMedicationSchema),
     medicationController.updateMedication
   )
-  .delete(
-    authorize(UserRole.ADMIN),
-    medicationController.deleteMedication
-  );
+  .delete(restrictTo([RoleType.ADMIN]), medicationController.deleteMedication);
 
 // Inventory management
 router.post(
   '/:id/inventory',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.TECHNICIAN),
+  restrictTo([
+    RoleType.ADMIN,
+    RoleType.PHARMACIST,
+    RoleType.PHARMACY_TECHNICIAN,
+  ]),
   validate(addInventoryItemSchema),
   medicationController.addInventoryItem
 );
@@ -60,54 +61,58 @@ router.post(
 router
   .route('/:id/inventory/:itemId')
   .patch(
-    authorize(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.TECHNICIAN),
+    restrictTo([
+      RoleType.ADMIN,
+      RoleType.PHARMACIST,
+      RoleType.PHARMACY_TECHNICIAN,
+    ]),
     validate(updateInventoryItemSchema),
     medicationController.updateInventoryItem
   )
   .delete(
-    authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
     medicationController.removeInventoryItem
   );
 
 // Side effects management
 router.post(
   '/:id/side-effects',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(addSideEffectSchema),
   medicationController.addSideEffect
 );
 
 router.delete(
   '/:id/side-effects/:sideEffectId',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   medicationController.removeSideEffect
 );
 
 // Interactions management
 router.post(
   '/:id/interactions',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(addInteractionSchema),
   medicationController.addInteraction
 );
 
 router.delete(
   '/:id/interactions/:interactionId',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   medicationController.removeInteraction
 );
 
 // Contraindications management
 router.post(
   '/:id/contraindications',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(addContraindicationSchema),
   medicationController.addContraindication
 );
 
 router.delete(
   '/:id/contraindications',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   medicationController.removeContraindication
 );
 
