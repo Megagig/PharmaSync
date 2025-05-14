@@ -5,9 +5,13 @@ import PublicRoute from './PublicRoute';
 // Layout
 import Layout from '@/components/layout/Layout';
 
+// Landing Page
+import LandingPage from '@/pages/Landing/LandingPage';
+
 // Auth pages
 import Login from '@/features/auth/pages/Login';
 import Register from '@/features/auth/pages/Register';
+import Logout from '@/features/auth/pages/Logout';
 
 // Main pages
 import Dashboard from '@/pages/Dashboard';
@@ -85,16 +89,21 @@ const NotFound = () => <div>404 - Page Not Found</div>;
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Landing Page */}
+      <Route path="/" element={<LandingPage />} />
+
       {/* Public routes */}
       <Route element={<PublicRoute />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>
 
+      {/* Logout route */}
+      <Route path="/logout" element={<Logout />} />
+
       {/* Protected routes */}
       <Route element={<PrivateRoute />}>
         <Route element={<Layout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
 
           {/* Patients */}
