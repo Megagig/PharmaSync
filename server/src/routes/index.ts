@@ -7,6 +7,7 @@ import dispensingRoutes from './dispensing.routes';
 import supplierRoutes from './supplier.routes';
 import purchaseOrderRoutes from './purchaseOrder.routes';
 import inventoryRoutes from './inventory.routes';
+import reportsRoutes from './reports.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -28,5 +29,6 @@ router.use('/dispensing', dispensingRoutes);
 router.use('/suppliers', supplierRoutes);
 router.use('/purchase-orders', purchaseOrderRoutes);
 router.use('/inventory', inventoryRoutes);
+router.use('/reports', reportsRoutes);
 
 export default router;

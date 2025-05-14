@@ -43,7 +43,13 @@ import Receipt from '@/pages/Dispensing/Receipt';
 import InventoryDashboard from '@/pages/Inventory/InventoryDashboard';
 import InventoryAdjustment from '@/pages/Inventory/InventoryAdjustment';
 import InventoryMovement from '@/pages/Inventory/InventoryMovement';
-const Reports = () => <div>Reports Page</div>;
+
+// Reports pages
+import ReportsDashboard from '@/pages/Reports/ReportsDashboard';
+import SalesReport from '@/pages/Reports/SalesReport';
+import InventoryReport from '@/pages/Reports/InventoryReport';
+import PrescriptionReport from '@/pages/Reports/PrescriptionReport';
+import PatientReport from '@/pages/Reports/PatientReport';
 const Settings = () => <div>Settings Page</div>;
 const NotFound = () => <div>404 - Page Not Found</div>;
 
@@ -104,7 +110,14 @@ const AppRoutes = () => {
           <Route path="/inventory/movement" element={<InventoryMovement />} />
 
           {/* Reports */}
-          <Route path="/reports" element={<Reports />} />
+          <Route path="/reports" element={<ReportsDashboard />} />
+          <Route path="/reports/sales" element={<SalesReport />} />
+          <Route path="/reports/inventory" element={<InventoryReport />} />
+          <Route
+            path="/reports/prescriptions"
+            element={<PrescriptionReport />}
+          />
+          <Route path="/reports/patients" element={<PatientReport />} />
 
           {/* Settings */}
           <Route path="/settings" element={<Settings />} />

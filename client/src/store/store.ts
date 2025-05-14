@@ -7,6 +7,7 @@ import dispensingReducer from './slices/dispensingSlice';
 import supplierReducer from './slices/supplierSlice';
 import purchaseOrderReducer from './slices/purchaseOrderSlice';
 import inventoryReducer from './slices/inventorySlice';
+import reportsReducer from './slices/reportsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     suppliers: supplierReducer,
     purchaseOrders: purchaseOrderReducer,
     inventory: inventoryReducer,
+    reports: reportsReducer,
     // Add other reducers here as they are created
   },
   devTools: process.env.NODE_ENV !== 'production',
