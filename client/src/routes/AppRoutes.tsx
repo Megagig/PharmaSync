@@ -33,8 +33,11 @@ import PrescriptionDetail from '@/pages/Prescriptions/PrescriptionDetail';
 import CreatePrescription from '@/pages/Prescriptions/CreatePrescription';
 import DispenseMedication from '@/pages/Prescriptions/DispenseMedication';
 
-const DispensingList = () => <div>Dispensing List Page</div>;
-const DispensingDetail = () => <div>Dispensing Detail Page</div>;
+// Dispensing pages
+import DispensingList from '@/pages/Dispensing/DispensingList';
+import DispensingDetail from '@/pages/Dispensing/DispensingDetail';
+import CreateDispensing from '@/pages/Dispensing/CreateDispensing';
+import Receipt from '@/pages/Dispensing/Receipt';
 const Inventory = () => <div>Inventory Page</div>;
 const Reports = () => <div>Reports Page</div>;
 const Settings = () => <div>Settings Page</div>;
@@ -87,7 +90,9 @@ const AppRoutes = () => {
 
           {/* Dispensing */}
           <Route path="/dispensing" element={<DispensingList />} />
+          <Route path="/dispensing/new" element={<CreateDispensing />} />
           <Route path="/dispensing/:id" element={<DispensingDetail />} />
+          <Route path="/dispensing/:id/receipt" element={<Receipt />} />
 
           {/* Inventory */}
           <Route path="/inventory" element={<Inventory />} />

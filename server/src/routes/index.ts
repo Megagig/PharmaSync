@@ -3,6 +3,7 @@ import authRoutes from './auth.routes';
 import patientRoutes from './patient.routes';
 import medicationRoutes from './medication.routes';
 import prescriptionRoutes from './prescription.routes';
+import dispensingRoutes from './dispensing.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -20,5 +21,6 @@ router.use('/auth', authRoutes);
 router.use('/patients', patientRoutes);
 router.use('/medications', medicationRoutes);
 router.use('/prescriptions', prescriptionRoutes);
+router.use('/dispensing', dispensingRoutes);
 
 export default router;

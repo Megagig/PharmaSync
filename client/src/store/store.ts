@@ -3,6 +3,7 @@ import authReducer from './slices/authSlice';
 import patientReducer from './slices/patientSlice';
 import medicationReducer from './slices/medicationSlice';
 import prescriptionReducer from './slices/prescriptionSlice';
+import dispensingReducer from './slices/dispensingSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     patients: patientReducer,
     medications: medicationReducer,
     prescriptions: prescriptionReducer,
+    dispensings: dispensingReducer,
     // Add other reducers here as they are created
   },
   devTools: process.env.NODE_ENV !== 'production',
