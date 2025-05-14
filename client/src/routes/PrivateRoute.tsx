@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
@@ -9,25 +9,38 @@ import LoadingScreen from '@/components/common/LoadingScreen/LoadingScreen';
 const PrivateRoute: React.FC = () => {
   const location = useLocation();
   const dispatch = useDispatch();
-  const { currentUser, isLoading } = useSelector(
+
+  // Use refs to track if we've already dispatched the actions
+  const profileFetchedRef = useRef(false);
+  const permissionsFetchedRef = useRef(false);
+
+  const { user: currentUser, isLoading: authLoading } = useSelector(
     (state: RootState) => state.auth
   );
-  const { currentUser: userProfile } = useSelector(
+  const { currentUser: userProfile, isLoading: userLoading } = useSelector(
     (state: RootState) => state.users
   );
 
+  // Fetch user profile only once
   useEffect(() => {
-    if (currentUser && !isLoading && !userProfile) {
+    // Only fetch if we have a user but haven't fetched profile yet
+    if (currentUser && !profileFetchedRef.current && !userProfile) {
+      profileFetchedRef.current = true;
       dispatch(fetchUserProfile());
     }
+  }, [dispatch, currentUser, userProfile]);
 
-    if (userProfile?.id) {
+  // Fetch permissions only once
+  useEffect(() => {
+    // Only fetch if we have a user profile with ID and haven't fetched permissions yet
+    if (userProfile?.id && !permissionsFetchedRef.current) {
+      permissionsFetchedRef.current = true;
       dispatch(fetchUserPermissions(userProfile.id));
     }
-  }, [dispatch, currentUser, isLoading, userProfile]);
+  }, [dispatch, userProfile]);
 
   // Show loading screen while checking authentication
-  if (isLoading) {
+  if (authLoading) {
     return <LoadingScreen />;
   }
 

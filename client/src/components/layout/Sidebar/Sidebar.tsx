@@ -166,7 +166,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
           {/* User info */}
           <div className="p-4 border-t border-gray-200">
             <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white">
+              <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-medium">
                 {user?.firstName?.charAt(0)}
                 {user?.lastName?.charAt(0)}
               </div>
@@ -174,7 +174,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                 <p className="text-sm font-medium text-gray-700">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                <p className="text-xs text-gray-500 capitalize">Pharmacist</p>
               </div>
             </div>
           </div>

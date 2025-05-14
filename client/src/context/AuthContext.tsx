@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, ReactNode } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { User } from '@/types/auth.types';
@@ -16,15 +16,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const dispatch = useDispatch();
-  const { user, isAuthenticated, isLoading, error } = useSelector((state: RootState) => state.auth);
-  const [initialized, setInitialized] = useState(false);
+  const { user, isAuthenticated, isLoading, error } = useSelector(
+    (state: RootState) => state.auth
+  );
+
+  // Use a ref to track initialization state to avoid re-renders
+  const initializedRef = useRef(false);
+  const authAttemptedRef = useRef(false);
 
   useEffect(() => {
+    // Only run this once
+    if (initializedRef.current) return;
+
     const initializeAuth = async () => {
       const token = localStorage.getItem('token');
-      
-      if (token && !user) {
+
+      if (token && !user && !authAttemptedRef.current) {
         try {
+          authAttemptedRef.current = true;
           const userData = await authService.getCurrentUser();
           dispatch(setCredentials({ user: userData, token }));
         } catch (error) {
@@ -32,17 +41,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           dispatch(clearCredentials());
         }
       }
-      
-      setInitialized(true);
+
+      initializedRef.current = true;
     };
 
     initializeAuth();
   }, [dispatch, user]);
-
-  if (!initialized && isLoading) {
-    // You could return a loading spinner here
-    return <div>Loading...</div>;
-  }
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated, isLoading, error }}>

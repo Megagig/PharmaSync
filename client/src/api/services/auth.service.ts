@@ -1,15 +1,19 @@
 import axiosInstance from '../axios.config';
-import { AuthResponse, LoginCredentials, RegisterData } from '@/types/auth.types';
+import {
+  AuthResponse,
+  LoginCredentials,
+  RegisterData,
+} from '@/types/auth.types';
 
 const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await axiosInstance.post<AuthResponse>('/auth/login', credentials);
-    return response.data;
+    const response = await axiosInstance.post('/auth/login', credentials);
+    return response.data.data;
   },
 
   register: async (userData: RegisterData): Promise<AuthResponse> => {
-    const response = await axiosInstance.post<AuthResponse>('/auth/register', userData);
-    return response.data;
+    const response = await axiosInstance.post('/auth/register', userData);
+    return response.data.data;
   },
 
   logout: async (): Promise<void> => {
@@ -19,22 +23,27 @@ const authService = {
 
   getCurrentUser: async () => {
     const response = await axiosInstance.get('/auth/me');
-    return response.data;
+    return response.data.data;
   },
 
   verifyToken: async (token: string) => {
     const response = await axiosInstance.post('/auth/verify-token', { token });
-    return response.data;
+    return response.data.data;
   },
 
   forgotPassword: async (email: string) => {
-    const response = await axiosInstance.post('/auth/forgot-password', { email });
-    return response.data;
+    const response = await axiosInstance.post('/auth/forgot-password', {
+      email,
+    });
+    return response.data.data;
   },
 
   resetPassword: async (token: string, password: string) => {
-    const response = await axiosInstance.post('/auth/reset-password', { token, password });
-    return response.data;
+    const response = await axiosInstance.post('/auth/reset-password', {
+      token,
+      password,
+    });
+    return response.data.data;
   },
 };
 

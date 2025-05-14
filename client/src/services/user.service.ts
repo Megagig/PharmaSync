@@ -111,7 +111,7 @@ export const deleteUser = async (id: string) => {
  */
 export const getCurrentUser = async () => {
   const response = await api.get(`${BASE_URL}/me`);
-  return response.data;
+  return response.data.data;
 };
 
 /**
@@ -121,7 +121,7 @@ export const getCurrentUser = async () => {
  */
 export const updateCurrentUser = async (data: UserProfileUpdateData) => {
   const response = await api.patch(`${BASE_URL}/me`, data);
-  return response.data;
+  return response.data.data;
 };
 
 /**
@@ -131,7 +131,7 @@ export const updateCurrentUser = async (data: UserProfileUpdateData) => {
  */
 export const changePassword = async (data: PasswordChangeData) => {
   const response = await api.post(`${BASE_URL}/me/password`, data);
-  return response.data;
+  return response.data.data;
 };
 
 /**

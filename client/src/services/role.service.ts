@@ -219,7 +219,7 @@ export const removeRoleFromUserById = async (
  */
 export const getUserPermissions = async (userId: string) => {
   const response = await api.get(`/user-roles/users/${userId}/permissions`);
-  return response.data;
+  return response.data.data;
 };
 
 /**
@@ -237,5 +237,5 @@ export const checkUserPermission = async (
   const response = await api.get(
     `/user-roles/users/${userId}/permissions/check?resource=${resource}&action=${action}`
   );
-  return response.data;
+  return response.data.data;
 };

@@ -6,22 +6,68 @@ const Dashboard = () => {
 
   // Mock data for dashboard
   const stats = [
-    { name: 'Total Patients', value: '1,234', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-    { name: 'Active Prescriptions', value: '567', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-    { name: 'Medications', value: '892', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
-    { name: 'Dispensed Today', value: '45', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+    {
+      name: 'Total Patients',
+      value: '1,234',
+      icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
+    },
+    {
+      name: 'Active Prescriptions',
+      value: '567',
+      icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+    },
+    {
+      name: 'Medications',
+      value: '892',
+      icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+    },
+    {
+      name: 'Dispensed Today',
+      value: '45',
+      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+    },
   ];
 
   // Mock data for recent activities
   const recentActivities = [
-    { id: 1, type: 'patient', name: 'John Doe', action: 'New patient registered', time: '10 minutes ago' },
-    { id: 2, type: 'prescription', name: 'Sarah Johnson', action: 'Prescription filled', time: '30 minutes ago' },
-    { id: 3, type: 'medication', name: 'Paracetamol', action: 'Stock updated', time: '1 hour ago' },
-    { id: 4, type: 'patient', name: 'Michael Smith', action: 'Patient counseled', time: '2 hours ago' },
-    { id: 5, type: 'prescription', name: 'Emma Wilson', action: 'New prescription added', time: '3 hours ago' },
+    {
+      id: 1,
+      type: 'patient',
+      name: 'John Doe',
+      action: 'New patient registered',
+      time: '10 minutes ago',
+    },
+    {
+      id: 2,
+      type: 'prescription',
+      name: 'Sarah Johnson',
+      action: 'Prescription filled',
+      time: '30 minutes ago',
+    },
+    {
+      id: 3,
+      type: 'medication',
+      name: 'Paracetamol',
+      action: 'Stock updated',
+      time: '1 hour ago',
+    },
+    {
+      id: 4,
+      type: 'patient',
+      name: 'Michael Smith',
+      action: 'Patient counseled',
+      time: '2 hours ago',
+    },
+    {
+      id: 5,
+      type: 'prescription',
+      name: 'Emma Wilson',
+      action: 'New prescription added',
+      time: '3 hours ago',
+    },
   ];
 
-  // Mock data for expiring medications
+  // Mock data for expiring medications matching the screenshot
   const expiringMedications = [
     { id: 1, name: 'Amoxicillin 500mg', stock: 120, expiry: '2023-12-30' },
     { id: 2, name: 'Lisinopril 10mg', stock: 85, expiry: '2023-12-15' },
@@ -34,7 +80,7 @@ const Dashboard = () => {
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Welcome back, {user?.firstName} {user?.lastName}!
+          Welcome back, {user?.firstName} {user?.lastName}
         </p>
       </div>
 
@@ -60,8 +106,12 @@ const Dashboard = () => {
                 </svg>
               </div>
               <div className="ml-5">
-                <p className="text-sm font-medium text-gray-500 truncate">{stat.name}</p>
-                <p className="mt-1 text-3xl font-semibold text-gray-900">{stat.value}</p>
+                <p className="text-sm font-medium text-gray-500 truncate">
+                  {stat.name}
+                </p>
+                <p className="mt-1 text-3xl font-semibold text-gray-900">
+                  {stat.value}
+                </p>
               </div>
             </div>
           </Card>
@@ -88,7 +138,9 @@ const Dashboard = () => {
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {activity.name}
                       </p>
-                      <p className="text-sm text-gray-500 truncate">{activity.action}</p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {activity.action}
+                      </p>
                     </div>
                     <div className="flex-shrink-0">
                       <p className="text-sm text-gray-500">{activity.time}</p>
@@ -101,7 +153,7 @@ const Dashboard = () => {
           <div className="mt-6">
             <a
               href="#view-all"
-              className="w-full flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              className="w-full flex justify-center items-center px-4 py-2 border border-gray-200 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
               View all
             </a>
@@ -118,19 +170,19 @@ const Dashboard = () => {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Medication
+                    MEDICATION
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Stock
+                    STOCK
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Expiry Date
+                    EXPIRY DATE
                   </th>
                 </tr>
               </thead>
@@ -153,8 +205,8 @@ const Dashboard = () => {
           </div>
           <div className="mt-6">
             <a
-              href="#view-all"
-              className="w-full flex justify-center items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              href="#view-inventory"
+              className="w-full flex justify-center items-center px-4 py-2 border border-gray-200 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
             >
               View inventory
             </a>

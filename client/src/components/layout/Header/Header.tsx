@@ -138,7 +138,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
                 className="flex items-center space-x-2 focus:outline-none"
                 onClick={() => setDropdownOpen(!dropdownOpen)}
               >
-                <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white">
+                <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-medium">
                   {user?.firstName?.charAt(0)}
                   {user?.lastName?.charAt(0)}
                 </div>
