@@ -8,6 +8,7 @@ import supplierRoutes from './supplier.routes';
 import purchaseOrderRoutes from './purchaseOrder.routes';
 import inventoryRoutes from './inventory.routes';
 import reportsRoutes from './reports.routes';
+import reportRoutes from './report.routes';
 import userRoutes from './user.routes';
 import activityLogRoutes from './activityLog.routes';
 import scheduleRoutes from './schedule.routes';
@@ -40,5 +41,6 @@ router.use('/activity-logs', activityLogRoutes);
 router.use('/schedule', scheduleRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/messages', messageRoutes);
+router.use('/report', reportRoutes);
 
 export default router;

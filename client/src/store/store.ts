@@ -8,6 +8,7 @@ import supplierReducer from './slices/supplierSlice';
 import purchaseOrderReducer from './slices/purchaseOrderSlice';
 import inventoryReducer from './slices/inventorySlice';
 import reportsReducer from './slices/reportsSlice';
+import reportReducer from './slices/reportSlice';
 import userReducer from './slices/userSlice';
 import activityLogReducer from './slices/activityLogSlice';
 import scheduleReducer from './slices/scheduleSlice';
@@ -25,6 +26,7 @@ export const store = configureStore({
     purchaseOrders: purchaseOrderReducer,
     inventory: inventoryReducer,
     reports: reportsReducer,
+    report: reportReducer,
     users: userReducer,
     activityLogs: activityLogReducer,
     schedule: scheduleReducer,

@@ -74,6 +74,11 @@ import NotificationPreferences from '@/pages/Notifications/NotificationPreferenc
 // Message pages
 import ConversationList from '@/pages/Messages/ConversationList';
 import ConversationDetail from '@/pages/Messages/ConversationDetail';
+
+// Report pages
+import ReportDashboard from '@/pages/Reports/ReportDashboard';
+import ReportGenerator from '@/pages/Reports/ReportGenerator';
+import ReportConfigurations from '@/pages/Reports/ReportConfigurations';
 const Settings = () => <div>Settings Page</div>;
 const NotFound = () => <div>404 - Page Not Found</div>;
 
@@ -176,6 +181,16 @@ const AppRoutes = () => {
           {/* Messages */}
           <Route path="/messages" element={<ConversationList />} />
           <Route path="/messages/:id" element={<ConversationDetail />} />
+
+          {/* Reports */}
+          <Route path="/reports" element={<ReportDashboard />} />
+          <Route path="/reports/new" element={<ReportGenerator />} />
+          <Route
+            path="/reports/configurations"
+            element={<ReportConfigurations />}
+          />
+          <Route path="/reports/edit/:id" element={<ReportGenerator />} />
+          <Route path="/reports/view" element={<ReportGenerator />} />
 
           {/* Settings */}
           <Route path="/settings" element={<Settings />} />
