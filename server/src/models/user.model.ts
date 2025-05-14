@@ -49,6 +49,29 @@ const userSettingsSchema = new Schema<IUserSettings>(
   { _id: false }
 );
 
+const securityEventSchema = new Schema(
+  {
+    type: {
+      type: String,
+      required: true,
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now,
+    },
+    ipAddress: {
+      type: String,
+    },
+    userAgent: {
+      type: String,
+    },
+    details: {
+      type: String,
+    },
+  },
+  { _id: false }
+);
+
 const userSchema = new Schema<IUser>(
   {
     email: {
@@ -198,6 +221,28 @@ const userSchema = new Schema<IUser>(
     twoFactorBackupCodes: {
       type: [String],
     },
+    // Token management
+    tokenVersion: {
+      type: Number,
+      default: 0,
+    },
+    refreshToken: {
+      type: String,
+    },
+    refreshTokenExpires: {
+      type: Date,
+    },
+    // Security and audit
+    lastPasswordChange: {
+      type: Date,
+    },
+    lastIpAddress: {
+      type: String,
+    },
+    lastUserAgent: {
+      type: String,
+    },
+    securityEvents: [securityEventSchema],
   },
   {
     timestamps: true,
@@ -214,6 +259,8 @@ userSchema.index({ 'address.state': 1 });
 userSchema.index({ 'address.country': 1 });
 userSchema.index({ department: 1 });
 userSchema.index({ position: 1 });
+userSchema.index({ tokenVersion: 1 });
+userSchema.index({ refreshTokenExpires: 1 });
 
 // Method to check if user has a specific permission
 userSchema.methods.hasPermission = async function (
@@ -255,7 +302,10 @@ userSchema.methods.hasPermission = async function (
   }
 
   // Get all roles for this user
-  const userRoles = await Role.find({ _id: { $in: this.roles } });
+  const userRoles = await Role.find({
+    _id: { $in: this.roles },
+    isActive: true,
+  });
 
   // Check if any role has the required permission
   for (const role of userRoles) {
@@ -276,6 +326,33 @@ userSchema.methods.hasPermission = async function (
     if (hasSpecificPermission) {
       return true;
     }
+
+    // Check inherited permissions from parent roles
+    try {
+      const allPermissions = await role.getAllPermissions();
+
+      // Check for the 'manage' action in inherited permissions
+      const hasInheritedManagePermission = allPermissions.some(
+        (p: IPermission) =>
+          p.resource === resource && p.actions.includes('manage')
+      );
+
+      if (hasInheritedManagePermission) {
+        return true;
+      }
+
+      // Check for the specific action in inherited permissions
+      const hasInheritedSpecificPermission = allPermissions.some(
+        (p: IPermission) =>
+          p.resource === resource && p.actions.includes(action)
+      );
+
+      if (hasInheritedSpecificPermission) {
+        return true;
+      }
+    } catch (error) {
+      console.error('Error checking inherited permissions:', error);
+    }
   }
 
   return false;
@@ -290,10 +367,62 @@ userSchema.methods.hasRole = async function (
   }
 
   // Get all roles for this user
-  const userRoles = await Role.find({ _id: { $in: this.roles } });
+  const userRoles = await Role.find({
+    _id: { $in: this.roles },
+    isActive: true,
+  });
 
   // Check if any role matches the requested type
-  return userRoles.some((role) => role.type === roleType);
+  const directMatch = userRoles.some((role) => role.type === roleType);
+
+  if (directMatch) {
+    return true;
+  }
+
+  // Check for role hierarchy - if the user has a higher-level role that includes this role
+  // Get the requested role to check its level
+  const requestedRole = await Role.findOne({ type: roleType });
+
+  if (!requestedRole) {
+    return false;
+  }
+
+  // Check if any of the user's roles has a lower level number (higher privilege)
+  // than the requested role and is in the same hierarchy branch
+  for (const role of userRoles) {
+    // Lower level number means higher privilege in the hierarchy
+    if (role.level < requestedRole.level) {
+      // Check if this higher role is in the same branch by traversing the hierarchy
+      let currentRole = requestedRole;
+      let isInSameBranch = false;
+
+      // Traverse up the hierarchy until we find a match or reach the top
+      while (currentRole.parentRole) {
+        const parentRole = await Role.findById(currentRole.parentRole);
+
+        if (!parentRole) {
+          break;
+        }
+
+        if (
+          parentRole._id &&
+          role._id &&
+          parentRole._id.toString() === role._id.toString()
+        ) {
+          isInSameBranch = true;
+          break;
+        }
+
+        currentRole = parentRole;
+      }
+
+      if (isInSameBranch) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 };
 
 // Method to get all effective permissions for this user
@@ -309,6 +438,30 @@ userSchema.methods.getEffectivePermissions = async function (): Promise<
       view_patients: { resource: 'patients', actions: ['read'] },
       create_patients: { resource: 'patients', actions: ['create'] },
       edit_patients: { resource: 'patients', actions: ['update'] },
+      view_medications: { resource: 'medications', actions: ['read'] },
+      create_medications: { resource: 'medications', actions: ['create'] },
+      edit_medications: { resource: 'medications', actions: ['update'] },
+      view_prescriptions: { resource: 'prescriptions', actions: ['read'] },
+      create_prescriptions: { resource: 'prescriptions', actions: ['create'] },
+      edit_prescriptions: { resource: 'prescriptions', actions: ['update'] },
+      view_dispensing: { resource: 'dispensings', actions: ['read'] },
+      create_dispensing: { resource: 'dispensings', actions: ['create'] },
+      edit_dispensing: { resource: 'dispensings', actions: ['update'] },
+      view_inventory: { resource: 'inventory', actions: ['read'] },
+      manage_inventory: { resource: 'inventory', actions: ['manage'] },
+      view_suppliers: { resource: 'suppliers', actions: ['read'] },
+      manage_suppliers: { resource: 'suppliers', actions: ['manage'] },
+      view_purchase_orders: { resource: 'purchase_orders', actions: ['read'] },
+      create_purchase_orders: {
+        resource: 'purchase_orders',
+        actions: ['create'],
+      },
+      edit_purchase_orders: {
+        resource: 'purchase_orders',
+        actions: ['update'],
+      },
+      view_reports: { resource: 'reports', actions: ['read'] },
+      view_schedule: { resource: 'schedule', actions: ['read'] },
       // Add more mappings as needed
     };
 
@@ -340,11 +493,26 @@ userSchema.methods.getEffectivePermissions = async function (): Promise<
   // Then add role-based permissions
   if (this.roles && this.roles.length > 0) {
     // Get all roles for this user
-    const userRoles = await Role.find({ _id: { $in: this.roles } });
+    const userRoles = await Role.find({
+      _id: { $in: this.roles },
+      isActive: true,
+    });
 
     // Add permissions from each role
     for (const role of userRoles) {
-      for (const permission of role.permissions) {
+      // Get direct permissions
+      const directPermissions = role.permissions;
+
+      // Get inherited permissions
+      let allPermissions: IPermission[] = directPermissions;
+      try {
+        allPermissions = await role.getAllPermissions();
+      } catch (error) {
+        console.error('Error getting all permissions:', error);
+      }
+
+      // Add all permissions to effective permissions
+      for (const permission of allPermissions) {
         // Check if we already have this resource in our effective permissions
         const existingPermission = effectivePermissions.find(
           (p) => p.resource === permission.resource
@@ -368,6 +536,30 @@ userSchema.methods.getEffectivePermissions = async function (): Promise<
   }
 
   return effectivePermissions;
+};
+
+// Method to invalidate all tokens for this user
+userSchema.methods.invalidateTokens = async function (): Promise<void> {
+  // Increment token version to invalidate all existing tokens
+  this.tokenVersion = (this.tokenVersion || 0) + 1;
+
+  // Clear any stored refresh token
+  this.refreshToken = undefined;
+  this.refreshTokenExpires = undefined;
+
+  // Add security event
+  if (!this.securityEvents) {
+    this.securityEvents = [];
+  }
+
+  this.securityEvents.push({
+    type: 'token_invalidation',
+    timestamp: new Date(),
+    details: 'All tokens invalidated',
+  });
+
+  // Save the user
+  await this.save();
 };
 
 // Hash password before saving
@@ -431,6 +623,21 @@ userSchema.pre('save', async function (next) {
 
       // Update passwordChangedAt field
       this.passwordChangedAt = new Date();
+      this.lastPasswordChange = new Date();
+
+      // Increment token version to invalidate all existing tokens
+      this.tokenVersion = (this.tokenVersion || 0) + 1;
+
+      // Add security event
+      if (!this.securityEvents) {
+        this.securityEvents = [];
+      }
+
+      this.securityEvents.push({
+        type: 'password_change',
+        timestamp: new Date(),
+        details: 'Password changed',
+      });
     } catch (error: any) {
       return next(error);
     }

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UnauthorizedError, ForbiddenError } from '../utils/error';
-import { verifyToken } from '../config/auth.config';
+import { verifyAccessToken } from '../config/auth.config';
 import { UserRole } from '../interfaces/user.interface';
 import { RoleType } from '../interfaces/role.interface';
 import User from '../models/user.model';
@@ -37,12 +37,17 @@ export const protect = async (
     }
 
     // Verify token
-    const decoded = verifyToken(token);
+    const decoded = verifyAccessToken(token);
+
+    // Check if it's an access token
+    if (decoded.type !== 'access') {
+      throw new UnauthorizedError('Invalid token type');
+    }
 
     // Check if user exists
     const user = await User.findById(decoded.id)
       .select(
-        '-password -passwordResetToken -passwordResetExpires -twoFactorSecret -twoFactorBackupCodes'
+        '-password -passwordResetToken -passwordResetExpires -refreshToken -refreshTokenExpires -twoFactorSecret -twoFactorBackupCodes'
       )
       .populate({
         path: 'roles',
@@ -57,8 +62,15 @@ export const protect = async (
       throw new UnauthorizedError('User account is inactive');
     }
 
+    // Check token version
+    if (user.tokenVersion !== decoded.tokenVersion) {
+      throw new UnauthorizedError(
+        'Token has been revoked. Please log in again'
+      );
+    }
+
     // Check if password was changed after token was issued
-    if (user.passwordChangedAt) {
+    if (user.passwordChangedAt && decoded.iat) {
       const changedTimestamp = Math.floor(
         user.passwordChangedAt.getTime() / 1000
       );
@@ -80,9 +92,29 @@ export const protect = async (
     // Set user in request
     req.user = user;
 
-    // Update last login time (but don't wait for it to complete)
-    User.findByIdAndUpdate(user._id, { lastLogin: new Date() }).catch((err) => {
-      console.error('Error updating last login time:', err);
+    // Get IP address and user agent for security tracking
+    const ipAddress = req.ip || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+
+    // Update last access info (but don't wait for it to complete)
+    User.findByIdAndUpdate(
+      user._id,
+      {
+        lastIpAddress: ipAddress,
+        lastUserAgent: userAgent,
+        $push: {
+          securityEvents: {
+            type: 'api_access',
+            timestamp: new Date(),
+            ipAddress,
+            userAgent,
+            details: `API access: ${req.method} ${req.originalUrl}`,
+          },
+        },
+      },
+      { new: true }
+    ).catch((err) => {
+      console.error('Error updating access information:', err);
     });
 
     next();

@@ -17,8 +17,16 @@ const authService = {
   },
 
   logout: async (): Promise<void> => {
-    await axiosInstance.post('/auth/logout');
-    localStorage.removeItem('token');
+    try {
+      await axiosInstance.post('/auth/logout');
+    } finally {
+      localStorage.removeItem('token');
+    }
+  },
+
+  refreshToken: async (): Promise<{ accessToken: string }> => {
+    const response = await axiosInstance.post('/auth/refresh-token');
+    return response.data.data;
   },
 
   getCurrentUser: async () => {

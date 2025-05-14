@@ -161,6 +161,21 @@ export interface IUser extends Document {
   twoFactorEnabled?: boolean;
   twoFactorSecret?: string;
   twoFactorBackupCodes?: string[];
+  // Token management
+  tokenVersion?: number; // Incremented when refresh tokens need to be invalidated
+  refreshToken?: string; // Store the current refresh token hash
+  refreshTokenExpires?: Date; // When the refresh token expires
+  // Security and audit
+  lastPasswordChange?: Date; // When the password was last changed
+  lastIpAddress?: string; // Last IP address used to log in
+  lastUserAgent?: string; // Last user agent used to log in
+  securityEvents?: Array<{
+    type: string;
+    timestamp: Date;
+    ipAddress?: string;
+    userAgent?: string;
+    details?: string;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 
@@ -168,6 +183,7 @@ export interface IUser extends Document {
   hasPermission(resource: string, action: string): boolean;
   hasRole(roleType: RoleType): boolean;
   getEffectivePermissions(): Promise<IPermission[]>;
+  invalidateTokens(): Promise<void>; // Method to invalidate all tokens
 }
 
 export interface IUserCreate {

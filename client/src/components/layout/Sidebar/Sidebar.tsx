@@ -82,7 +82,9 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
 
   // Combine navigation items based on user role
   const allNavItems =
-    user?.role === UserRole.ADMIN ? [...navItems, ...adminNavItems] : navItems;
+    user?.role === UserRole.ADMIN || user?.role === UserRole.PHARMACIST
+      ? [...navItems, ...adminNavItems]
+      : navItems;
 
   return (
     <>
@@ -174,7 +176,9 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                 <p className="text-sm font-medium text-gray-700">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs text-gray-500 capitalize">Pharmacist</p>
+                <p className="text-xs text-gray-500 capitalize">
+                  {user?.role || 'User'}
+                </p>
               </div>
             </div>
           </div>

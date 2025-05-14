@@ -18,8 +18,16 @@ export class BadRequestError extends AppError {
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message: string = 'Unauthorized') {
+  requiresTwoFactor?: boolean;
+
+  constructor(
+    message: string = 'Unauthorized',
+    options?: { requiresTwoFactor?: boolean }
+  ) {
     super(message, 401);
+    if (options) {
+      this.requiresTwoFactor = options.requiresTwoFactor;
+    }
   }
 }
 

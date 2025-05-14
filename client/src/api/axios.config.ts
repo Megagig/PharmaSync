@@ -24,12 +24,38 @@ axiosInstance.interceptors.request.use(
 // Add a response interceptor to handle common errors
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Handle 401 Unauthorized errors (token expired, etc.)
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If the error is 401 (Unauthorized) and we haven't tried to refresh the token yet
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh the token
+        const response = await axiosInstance.post('/auth/refresh-token');
+        const { accessToken } = response.data.data;
+
+        // Update the token in localStorage
+        localStorage.setItem('token', accessToken);
+
+        // Update the Authorization header
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+        // Retry the original request
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
+        // If refresh token is invalid or expired, redirect to login
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
     }
+
     return Promise.reject(error);
   }
 );

@@ -23,8 +23,13 @@ export interface IRole extends Document {
   permissions: IPermission[];
   isActive: boolean;
   isDefault: boolean;
+  parentRole?: string; // Reference to parent role for inheritance
+  level: number; // Role hierarchy level (0 is highest)
   createdAt: Date;
   updatedAt: Date;
+
+  // Methods
+  getAllPermissions(): Promise<IPermission[]>;
 }
 
 export interface IRoleCreate {
@@ -34,6 +39,8 @@ export interface IRoleCreate {
   permissions: IPermission[];
   isActive?: boolean;
   isDefault?: boolean;
+  parentRole?: string; // Reference to parent role for inheritance
+  level?: number; // Role hierarchy level (0 is highest)
 }
 
 export interface IRoleUpdate {
@@ -42,6 +49,8 @@ export interface IRoleUpdate {
   permissions?: IPermission[];
   isActive?: boolean;
   isDefault?: boolean;
+  parentRole?: string; // Reference to parent role for inheritance
+  level?: number; // Role hierarchy level (0 is highest)
 }
 
 export interface IUserRole {
@@ -102,7 +111,7 @@ export const createPermission = (
 ): IPermission => {
   return {
     resource,
-    actions: actions.map(action => action.toString()),
+    actions: actions.map((action) => action.toString()),
   };
 };
 
@@ -114,19 +123,27 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     createPermission(PermissionResource.ROLES, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.PATIENTS, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.MEDICATIONS, [PermissionAction.MANAGE]),
-    createPermission(PermissionResource.PRESCRIPTIONS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.PRESCRIPTIONS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.DISPENSINGS, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.INVENTORY, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SUPPLIERS, [PermissionAction.MANAGE]),
-    createPermission(PermissionResource.PURCHASE_ORDERS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.PURCHASE_ORDERS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.REPORTS, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SETTINGS, [PermissionAction.MANAGE]),
-    createPermission(PermissionResource.NOTIFICATIONS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.NOTIFICATIONS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.MESSAGES, [PermissionAction.MANAGE]),
-    createPermission(PermissionResource.ACTIVITY_LOGS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.ACTIVITY_LOGS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.SCHEDULE, [PermissionAction.MANAGE]),
   ],
-  
+
   [RoleType.ADMIN]: [
     // Admin has most access but limited on some sensitive areas
     createPermission(PermissionResource.USERS, [
@@ -138,28 +155,36 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     createPermission(PermissionResource.ROLES, [PermissionAction.READ]),
     createPermission(PermissionResource.PATIENTS, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.MEDICATIONS, [PermissionAction.MANAGE]),
-    createPermission(PermissionResource.PRESCRIPTIONS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.PRESCRIPTIONS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.DISPENSINGS, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.INVENTORY, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SUPPLIERS, [PermissionAction.MANAGE]),
-    createPermission(PermissionResource.PURCHASE_ORDERS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.PURCHASE_ORDERS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.REPORTS, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SETTINGS, [
       PermissionAction.READ,
       PermissionAction.UPDATE,
     ]),
-    createPermission(PermissionResource.NOTIFICATIONS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.NOTIFICATIONS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.MESSAGES, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.ACTIVITY_LOGS, [PermissionAction.READ]),
     createPermission(PermissionResource.SCHEDULE, [PermissionAction.MANAGE]),
   ],
-  
+
   [RoleType.PHARMACIST]: [
     // Pharmacist has clinical access
     createPermission(PermissionResource.USERS, [PermissionAction.READ]),
     createPermission(PermissionResource.PATIENTS, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.MEDICATIONS, [PermissionAction.MANAGE]),
-    createPermission(PermissionResource.PRESCRIPTIONS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.PRESCRIPTIONS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.DISPENSINGS, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.INVENTORY, [
       PermissionAction.READ,
@@ -176,14 +201,16 @@ export const DEFAULT_ROLE_PERMISSIONS = {
       PermissionAction.CREATE,
       PermissionAction.EXPORT,
     ]),
-    createPermission(PermissionResource.NOTIFICATIONS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.NOTIFICATIONS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.MESSAGES, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SCHEDULE, [
       PermissionAction.READ,
       PermissionAction.UPDATE,
     ]),
   ],
-  
+
   [RoleType.PHARMACY_TECHNICIAN]: [
     // Pharmacy technician has limited clinical access
     createPermission(PermissionResource.PATIENTS, [
@@ -207,7 +234,9 @@ export const DEFAULT_ROLE_PERMISSIONS = {
       PermissionAction.UPDATE,
     ]),
     createPermission(PermissionResource.SUPPLIERS, [PermissionAction.READ]),
-    createPermission(PermissionResource.PURCHASE_ORDERS, [PermissionAction.READ]),
+    createPermission(PermissionResource.PURCHASE_ORDERS, [
+      PermissionAction.READ,
+    ]),
     createPermission(PermissionResource.REPORTS, [PermissionAction.READ]),
     createPermission(PermissionResource.NOTIFICATIONS, [
       PermissionAction.READ,
@@ -216,7 +245,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     createPermission(PermissionResource.MESSAGES, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SCHEDULE, [PermissionAction.READ]),
   ],
-  
+
   [RoleType.CASHIER]: [
     // Cashier has access to sales and basic patient info
     createPermission(PermissionResource.PATIENTS, [PermissionAction.READ]),
@@ -235,13 +264,15 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     createPermission(PermissionResource.MESSAGES, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SCHEDULE, [PermissionAction.READ]),
   ],
-  
+
   [RoleType.INVENTORY_MANAGER]: [
     // Inventory manager has full inventory access
     createPermission(PermissionResource.MEDICATIONS, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.INVENTORY, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SUPPLIERS, [PermissionAction.MANAGE]),
-    createPermission(PermissionResource.PURCHASE_ORDERS, [PermissionAction.MANAGE]),
+    createPermission(PermissionResource.PURCHASE_ORDERS, [
+      PermissionAction.MANAGE,
+    ]),
     createPermission(PermissionResource.REPORTS, [
       PermissionAction.READ,
       PermissionAction.CREATE,
@@ -254,7 +285,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     createPermission(PermissionResource.MESSAGES, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SCHEDULE, [PermissionAction.READ]),
   ],
-  
+
   [RoleType.STAFF]: [
     // General staff has basic access
     createPermission(PermissionResource.PATIENTS, [PermissionAction.READ]),
@@ -270,7 +301,7 @@ export const DEFAULT_ROLE_PERMISSIONS = {
     createPermission(PermissionResource.MESSAGES, [PermissionAction.MANAGE]),
     createPermission(PermissionResource.SCHEDULE, [PermissionAction.READ]),
   ],
-  
+
   [RoleType.PATIENT]: [
     // Patient can only access their own data
     createPermission(PermissionResource.PATIENTS, [PermissionAction.READ]),
