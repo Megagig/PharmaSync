@@ -2,7 +2,10 @@ import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { RootState } from '@/store/store';
-import { fetchActivityLogById, clearCurrentActivityLog } from '@/store/slices/activityLogSlice';
+import {
+  fetchActivityLogById,
+  clearCurrentActivityLog,
+} from '@/store/slices/activityLogSlice';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 
@@ -10,7 +13,7 @@ const ActivityLogDetail = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+
   const { currentActivityLog, isLoading, error } = useSelector(
     (state: RootState) => state.activityLogs
   );
@@ -29,11 +32,13 @@ const ActivityLogDetail = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  const getActivityTypeColor = (type: string) => {
+  const getActivityTypeColor = (type: string | undefined) => {
+    if (!type) return 'text-gray-600';
     if (type.includes('create')) return 'text-green-600';
     if (type.includes('update')) return 'text-blue-600';
     if (type.includes('delete')) return 'text-red-600';
-    if (type.includes('login') || type.includes('logout')) return 'text-purple-600';
+    if (type.includes('login') || type.includes('logout'))
+      return 'text-purple-600';
     return 'text-gray-600';
   };
 
@@ -64,7 +69,9 @@ const ActivityLogDetail = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Activity Log Details</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Activity Log Details
+        </h1>
         <Button variant="outline" onClick={() => navigate('/activity-logs')}>
           Back to Activity Logs
         </Button>
@@ -74,8 +81,15 @@ const ActivityLogDetail = () => {
         <div className="p-6">
           <div className="mb-6">
             <h2 className="text-lg font-medium text-gray-900 mb-2">
-              <span className={`${getActivityTypeColor(currentActivityLog.activityType)}`}>
-                {currentActivityLog.activityType.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+              <span
+                className={`${getActivityTypeColor(
+                  currentActivityLog.activityType
+                )}`}
+              >
+                {currentActivityLog.activityType
+                  .split('_')
+                  .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+                  .join(' ')}
               </span>
             </h2>
             <p className="text-sm text-gray-500">
@@ -88,27 +102,31 @@ const ActivityLogDetail = () => {
               <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                 <dt className="text-sm font-medium text-gray-500">User</dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                  {typeof currentActivityLog.user === 'string' ? (
-                    currentActivityLog.user
-                  ) : (
-                    `${currentActivityLog.user.firstName} ${currentActivityLog.user.lastName} (${currentActivityLog.user.email})`
-                  )}
+                  {typeof currentActivityLog.user === 'string'
+                    ? currentActivityLog.user
+                    : `${currentActivityLog.user.firstName} ${currentActivityLog.user.lastName} (${currentActivityLog.user.email})`}
                 </dd>
               </div>
               <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">Description</dt>
+                <dt className="text-sm font-medium text-gray-500">
+                  Description
+                </dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                   {currentActivityLog.description}
                 </dd>
               </div>
               <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">IP Address</dt>
+                <dt className="text-sm font-medium text-gray-500">
+                  IP Address
+                </dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                   {currentActivityLog.ipAddress || 'Not recorded'}
                 </dd>
               </div>
               <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                <dt className="text-sm font-medium text-gray-500">User Agent</dt>
+                <dt className="text-sm font-medium text-gray-500">
+                  User Agent
+                </dt>
                 <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                   {currentActivityLog.userAgent || 'Not recorded'}
                 </dd>

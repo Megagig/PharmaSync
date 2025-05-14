@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store/store';
-import { fetchActivityLogs, fetchActivityTypes } from '@/store/slices/activityLogSlice';
+import {
+  fetchActivityLogs,
+  fetchActivityTypes,
+} from '@/store/slices/activityLogSlice';
 import { fetchUsers } from '@/store/slices/userSlice';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
@@ -12,11 +15,17 @@ import { formatDateToISO } from '@/utils/date.utils';
 const ActivityLogList = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
-  const { activityLogs, activityTypes, isLoading, error, totalActivityLogs, totalPages, currentPage } = useSelector(
-    (state: RootState) => state.activityLogs
-  );
-  
+
+  const {
+    activityLogs,
+    activityTypes,
+    isLoading,
+    error,
+    totalActivityLogs,
+    totalPages,
+    currentPage,
+  } = useSelector((state: RootState) => state.activityLogs);
+
   const { users } = useSelector((state: RootState) => state.users);
 
   const [userFilter, setUserFilter] = useState('');
@@ -59,11 +68,13 @@ const ActivityLogList = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  const getActivityTypeColor = (type: string) => {
+  const getActivityTypeColor = (type: string | undefined) => {
+    if (!type) return 'text-gray-600';
     if (type.includes('create')) return 'text-green-600';
     if (type.includes('update')) return 'text-blue-600';
     if (type.includes('delete')) return 'text-red-600';
-    if (type.includes('login') || type.includes('logout')) return 'text-purple-600';
+    if (type.includes('login') || type.includes('logout'))
+      return 'text-purple-600';
     return 'text-gray-600';
   };
 
@@ -76,17 +87,25 @@ const ActivityLogList = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">Activity Logs</h1>
-        <Button variant="outline" onClick={() => navigate('/activity-logs/stats')}>
+        <Button
+          variant="outline"
+          onClick={() => navigate('/activity-logs/stats')}
+        >
           View Statistics
         </Button>
       </div>
 
       <Card>
         <div className="p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Filter Activity Logs</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-4">
+            Filter Activity Logs
+          </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
             <div>
-              <label htmlFor="userFilter" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="userFilter"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 User
               </label>
               <select
@@ -105,7 +124,10 @@ const ActivityLogList = () => {
             </div>
 
             <div>
-              <label htmlFor="activityTypeFilter" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="activityTypeFilter"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Activity Type
               </label>
               <select
@@ -117,14 +139,22 @@ const ActivityLogList = () => {
                 <option value="">All Activities</option>
                 {activityTypes.map((type) => (
                   <option key={type} value={type}>
-                    {type.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                    {type
+                      .split('_')
+                      .map(
+                        (word) => word.charAt(0) + word.slice(1).toLowerCase()
+                      )
+                      .join(' ')}
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="startDate"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Start Date
               </label>
               <input
@@ -137,7 +167,10 @@ const ActivityLogList = () => {
             </div>
 
             <div>
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="endDate"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 End Date
               </label>
               <input
@@ -152,7 +185,10 @@ const ActivityLogList = () => {
 
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="search"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Search Description
               </label>
               <div className="flex">
@@ -182,7 +218,11 @@ const ActivityLogList = () => {
                 onClick={() => {
                   setUserFilter('');
                   setActivityTypeFilter('');
-                  setStartDate(formatDateToISO(new Date(new Date().setDate(new Date().getDate() - 7))));
+                  setStartDate(
+                    formatDateToISO(
+                      new Date(new Date().setDate(new Date().getDate() - 7))
+                    )
+                  );
                   setEndDate(formatDateToISO(new Date()));
                   setSearchTerm('');
                   dispatch(
@@ -234,11 +274,25 @@ const ActivityLogList = () => {
                   {activityLogs.map((log) => (
                     <tr key={log.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {typeof log.user === 'string' ? getUserName(log.user) : `${log.user.firstName} ${log.user.lastName}`}
+                        {typeof log.user === 'string'
+                          ? getUserName(log.user)
+                          : `${log.user.firstName} ${log.user.lastName}`}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm font-medium ${getActivityTypeColor(log.activityType)}`}>
-                          {log.activityType.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                        <span
+                          className={`text-sm font-medium ${getActivityTypeColor(
+                            log.activityType
+                          )}`}
+                        >
+                          {log.activityType
+                            ? log.activityType
+                                .split('_')
+                                .map(
+                                  (word) =>
+                                    word.charAt(0) + word.slice(1).toLowerCase()
+                                )
+                                .join(' ')
+                            : 'Unknown Activity'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

@@ -79,7 +79,7 @@ import ConversationDetail from '@/pages/Messages/ConversationDetail';
 import ReportDashboard from '@/pages/Reports/ReportDashboard';
 import ReportGenerator from '@/pages/Reports/ReportGenerator';
 import ReportConfigurations from '@/pages/Reports/ReportConfigurations';
-const Settings = () => <div>Settings Page</div>;
+import Settings from '@/pages/Settings/Settings';
 const NotFound = () => <div>404 - Page Not Found</div>;
 
 const AppRoutes = () => {

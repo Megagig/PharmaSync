@@ -10,7 +10,7 @@ import { formatDateToISO } from '@/utils/date.utils';
 const ActivityLogStats = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+
   const { activityStats, isLoading, error } = useSelector(
     (state: RootState) => state.activityLogs
   );
@@ -36,18 +36,22 @@ const ActivityLogStats = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const getActivityTypeColor = (type: string) => {
+  const getActivityTypeColor = (type: string | undefined) => {
+    if (!type) return 'bg-gray-100 text-gray-800';
     if (type.includes('create')) return 'bg-green-100 text-green-800';
     if (type.includes('update')) return 'bg-blue-100 text-blue-800';
     if (type.includes('delete')) return 'bg-red-100 text-red-800';
-    if (type.includes('login') || type.includes('logout')) return 'bg-purple-100 text-purple-800';
+    if (type.includes('login') || type.includes('logout'))
+      return 'bg-purple-100 text-purple-800';
     return 'bg-gray-100 text-gray-800';
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Activity Statistics</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Activity Statistics
+        </h1>
         <Button variant="outline" onClick={() => navigate('/activity-logs')}>
           Back to Activity Logs
         </Button>
@@ -58,7 +62,10 @@ const ActivityLogStats = () => {
           <h2 className="text-lg font-medium text-gray-900 mb-4">Date Range</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="startDate"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Start Date
               </label>
               <input
@@ -71,7 +78,10 @@ const ActivityLogStats = () => {
             </div>
 
             <div>
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="endDate"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 End Date
               </label>
               <input
@@ -123,7 +133,13 @@ const ActivityLogStats = () => {
                               item._id
                             )}`}
                           >
-                            {item._id.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                            {item._id
+                              .split('_')
+                              .map(
+                                (word) =>
+                                  word.charAt(0) + word.slice(1).toLowerCase()
+                              )
+                              .join(' ')}
                           </span>
                           <span className="text-lg font-semibold text-gray-900">
                             {item.count}
@@ -207,7 +223,9 @@ const ActivityLogStats = () => {
             </div>
           ) : (
             <div className="text-center py-4">
-              <p className="text-gray-500">No activity statistics available. Please generate statistics.</p>
+              <p className="text-gray-500">
+                No activity statistics available. Please generate statistics.
+              </p>
             </div>
           )}
         </div>
