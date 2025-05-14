@@ -10,7 +10,9 @@ import { formatDateToISO } from '@/utils/date.utils';
 const SalesReport = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { salesReport, isLoading, error } = useSelector((state: RootState) => state.reports);
+  const { salesReport, isLoading, error } = useSelector(
+    (state: RootState) => state.reports
+  );
 
   const [startDate, setStartDate] = useState(
     formatDateToISO(new Date(new Date().setMonth(new Date().getMonth() - 1)))
@@ -39,7 +41,10 @@ const SalesReport = () => {
           <h2 className="text-lg font-medium text-gray-900 mb-4">Date Range</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="startDate"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Start Date
               </label>
               <input
@@ -51,7 +56,10 @@ const SalesReport = () => {
               />
             </div>
             <div>
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="endDate"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 End Date
               </label>
               <input
@@ -63,7 +71,11 @@ const SalesReport = () => {
               />
             </div>
             <div className="flex items-end">
-              <Button variant="primary" onClick={handleGenerateReport} isLoading={isLoading}>
+              <Button
+                variant="primary"
+                onClick={handleGenerateReport}
+                isLoading={isLoading}
+              >
                 Generate Report
               </Button>
             </div>
@@ -91,7 +103,7 @@ const SalesReport = () => {
                   Total Sales
                 </h3>
                 <p className="mt-2 text-3xl font-bold text-indigo-600">
-                  ${salesReport.summary.totalSales.toFixed(2)}
+                  ₦{salesReport.summary.totalSales.toFixed(2)}
                 </p>
               </div>
             </Card>
@@ -111,7 +123,7 @@ const SalesReport = () => {
                   Average Sale
                 </h3>
                 <p className="mt-2 text-3xl font-bold text-indigo-600">
-                  ${salesReport.summary.averageSale.toFixed(2)}
+                  ₦{salesReport.summary.averageSale.toFixed(2)}
                 </p>
               </div>
             </Card>
@@ -121,7 +133,10 @@ const SalesReport = () => {
                   Date Range
                 </h3>
                 <p className="mt-2 text-sm text-gray-900">
-                  {new Date(salesReport.dateRange.startDate).toLocaleDateString()} to{' '}
+                  {new Date(
+                    salesReport.dateRange.startDate
+                  ).toLocaleDateString()}{' '}
+                  to{' '}
                   {new Date(salesReport.dateRange.endDate).toLocaleDateString()}
                 </p>
               </div>
@@ -131,7 +146,9 @@ const SalesReport = () => {
           {/* Sales by Date */}
           <Card>
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Sales by Date</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Sales by Date
+              </h2>
               {salesReport.salesByDate.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -161,10 +178,10 @@ const SalesReport = () => {
                             {item.count}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${item.totalSales.toFixed(2)}
+                            ₦{item.totalSales.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${(item.totalSales / item.count).toFixed(2)}
+                            ₦{(item.totalSales / item.count).toFixed(2)}
                           </td>
                         </tr>
                       ))}
@@ -172,7 +189,9 @@ const SalesReport = () => {
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-500">No sales data available for the selected period.</p>
+                <p className="text-gray-500">
+                  No sales data available for the selected period.
+                </p>
               )}
             </div>
           </Card>
@@ -180,7 +199,9 @@ const SalesReport = () => {
           {/* Payment Method Breakdown */}
           <Card>
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Payment Method Breakdown</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Payment Method Breakdown
+              </h2>
               {salesReport.paymentMethodBreakdown.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -204,16 +225,22 @@ const SalesReport = () => {
                       {salesReport.paymentMethodBreakdown.map((item, index) => (
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {item.paymentMethod.charAt(0).toUpperCase() + item.paymentMethod.slice(1)}
+                            {item.paymentMethod.charAt(0).toUpperCase() +
+                              item.paymentMethod.slice(1)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {item.count}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${item.totalSales.toFixed(2)}
+                            ₦{item.totalSales.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {((item.totalSales / salesReport.summary.totalSales) * 100).toFixed(2)}%
+                            {(
+                              (item.totalSales /
+                                salesReport.summary.totalSales) *
+                              100
+                            ).toFixed(2)}
+                            %
                           </td>
                         </tr>
                       ))}
@@ -221,7 +248,9 @@ const SalesReport = () => {
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-500">No payment method data available.</p>
+                <p className="text-gray-500">
+                  No payment method data available.
+                </p>
               )}
             </div>
           </Card>
@@ -229,7 +258,9 @@ const SalesReport = () => {
           {/* Top Selling Medications */}
           <Card>
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Top Selling Medications</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Top Selling Medications
+              </h2>
               {salesReport.topSellingMedications.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -259,10 +290,15 @@ const SalesReport = () => {
                             {item.totalQuantity}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${item.totalSales.toFixed(2)}
+                            ₦{item.totalSales.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {((item.totalSales / salesReport.summary.totalSales) * 100).toFixed(2)}%
+                            {(
+                              (item.totalSales /
+                                salesReport.summary.totalSales) *
+                              100
+                            ).toFixed(2)}
+                            %
                           </td>
                         </tr>
                       ))}
@@ -270,7 +306,9 @@ const SalesReport = () => {
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-500">No medication sales data available.</p>
+                <p className="text-gray-500">
+                  No medication sales data available.
+                </p>
               )}
             </div>
           </Card>
@@ -278,7 +316,9 @@ const SalesReport = () => {
       ) : (
         <Card>
           <div className="p-6 text-center">
-            <p className="text-gray-500">No sales report data available. Please generate a report.</p>
+            <p className="text-gray-500">
+              No sales report data available. Please generate a report.
+            </p>
           </div>
         </Card>
       )}

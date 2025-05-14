@@ -9,7 +9,9 @@ import Button from '@/components/common/Button/Button';
 const InventoryReport = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { inventoryReport, isLoading, error } = useSelector((state: RootState) => state.reports);
+  const { inventoryReport, isLoading, error } = useSelector(
+    (state: RootState) => state.reports
+  );
 
   useEffect(() => {
     dispatch(fetchInventoryReport());
@@ -39,9 +41,15 @@ const InventoryReport = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Inventory Report</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Inventory Report
+        </h1>
         <div className="flex space-x-3">
-          <Button variant="primary" onClick={handleRefresh} isLoading={isLoading}>
+          <Button
+            variant="primary"
+            onClick={handleRefresh}
+            isLoading={isLoading}
+          >
             Refresh Data
           </Button>
           <Button variant="outline" onClick={() => navigate('/reports')}>
@@ -90,7 +98,7 @@ const InventoryReport = () => {
                   Total Value
                 </h3>
                 <p className="mt-2 text-3xl font-bold text-indigo-600">
-                  ${inventoryReport.summary.totalValue.toFixed(2)}
+                  ₦{inventoryReport.summary.totalValue.toFixed(2)}
                 </p>
               </div>
             </Card>
@@ -109,7 +117,9 @@ const InventoryReport = () => {
           {/* Stock by Category */}
           <Card>
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Stock by Category</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Stock by Category
+              </h2>
               {inventoryReport.stockByCategory.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -145,10 +155,15 @@ const InventoryReport = () => {
                             {item.totalStock}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${item.totalValue.toFixed(2)}
+                            ₦{item.totalValue.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {((item.totalValue / inventoryReport.summary.totalValue) * 100).toFixed(2)}%
+                            {(
+                              (item.totalValue /
+                                inventoryReport.summary.totalValue) *
+                              100
+                            ).toFixed(2)}
+                            %
                           </td>
                         </tr>
                       ))}
@@ -164,7 +179,9 @@ const InventoryReport = () => {
           {/* Expiry Breakdown */}
           <Card>
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Expiry Breakdown</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Expiry Breakdown
+              </h2>
               {inventoryReport.expiryBreakdown.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -200,10 +217,15 @@ const InventoryReport = () => {
                             {item.totalStock}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            ${item.totalValue.toFixed(2)}
+                            ₦{item.totalValue.toFixed(2)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {((item.totalValue / inventoryReport.summary.totalValue) * 100).toFixed(2)}%
+                            {(
+                              (item.totalValue /
+                                inventoryReport.summary.totalValue) *
+                              100
+                            ).toFixed(2)}
+                            %
                           </td>
                         </tr>
                       ))}
@@ -219,7 +241,9 @@ const InventoryReport = () => {
           {/* Inventory Turnover */}
           <Card>
             <div className="p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Inventory Turnover (Last 6 Months)</h2>
+              <h2 className="text-lg font-medium text-gray-900 mb-4">
+                Inventory Turnover (Last 6 Months)
+              </h2>
               {inventoryReport.inventoryTurnover.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -263,8 +287,9 @@ const InventoryReport = () => {
                 <p className="text-gray-500">No turnover data available.</p>
               )}
               <p className="mt-4 text-sm text-gray-500">
-                <strong>Note:</strong> Turnover ratio is calculated as (Total Dispensed / Current Stock).
-                Higher values indicate faster-moving inventory.
+                <strong>Note:</strong> Turnover ratio is calculated as (Total
+                Dispensed / Current Stock). Higher values indicate faster-moving
+                inventory.
               </p>
             </div>
           </Card>
@@ -272,7 +297,9 @@ const InventoryReport = () => {
       ) : (
         <Card>
           <div className="p-6 text-center">
-            <p className="text-gray-500">No inventory report data available. Please refresh the data.</p>
+            <p className="text-gray-500">
+              No inventory report data available. Please refresh the data.
+            </p>
           </div>
         </Card>
       )}

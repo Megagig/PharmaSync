@@ -2,7 +2,11 @@ import { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 import { RootState } from '@/store/store';
-import { generateReceipt, clearReceiptData, setError } from '@/store/slices/dispensingSlice';
+import {
+  generateReceipt,
+  clearReceiptData,
+  setError,
+} from '@/store/slices/dispensingSlice';
 import Button from '@/components/common/Button/Button';
 import Card from '@/components/common/Card/Card';
 
@@ -10,7 +14,9 @@ const Receipt = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { receiptData, isLoading, error } = useSelector((state: RootState) => state.dispensings);
+  const { receiptData, isLoading, error } = useSelector(
+    (state: RootState) => state.dispensings
+  );
   const receiptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -140,7 +146,10 @@ const Receipt = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">Receipt</h1>
         <div className="flex space-x-3">
-          <Button variant="outline" onClick={() => navigate(`/dispensing/${id}`)}>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/dispensing/${id}`)}
+          >
             Back to Dispensing
           </Button>
           <Button variant="primary" onClick={handlePrint}>
@@ -154,12 +163,16 @@ const Receipt = () => {
           <div ref={receiptRef} className="receipt">
             <div className="receipt-header">
               <h1 className="text-2xl font-bold">PharmaSync</h1>
-              <p className="text-gray-500">Your Trusted Pharmaceutical Care Partner</p>
+              <p className="text-gray-500">
+                Your Trusted Pharmaceutical Care Partner
+              </p>
               <p className="text-gray-500">123 Health Street, Lagos, Nigeria</p>
               <p className="text-gray-500">Tel: +234 123 456 7890</p>
               <hr className="my-4" />
               <h2 className="text-xl font-semibold">Receipt</h2>
-              <p className="text-gray-700">Receipt No: {receiptData.dispensingNumber}</p>
+              <p className="text-gray-700">
+                Receipt No: {receiptData.dispensingNumber}
+              </p>
               <p className="text-gray-700">
                 Date: {new Date(receiptData.date).toLocaleDateString()}
               </p>
@@ -168,7 +181,9 @@ const Receipt = () => {
             <div className="receipt-info mt-6 grid grid-cols-2 gap-4">
               <div className="receipt-info-section">
                 <h3 className="text-md font-semibold">Patient Information</h3>
-                <p className="text-gray-700">Name: {receiptData.patient.name}</p>
+                <p className="text-gray-700">
+                  Name: {receiptData.patient.name}
+                </p>
                 <p className="text-gray-700">ID: {receiptData.patient.id}</p>
               </div>
               <div className="receipt-info-section">
@@ -212,10 +227,10 @@ const Receipt = () => {
                           {item.quantity}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ${item.unitPrice.toFixed(2)}
+                          ₦{item.unitPrice.toFixed(2)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          ${item.subtotal.toFixed(2)}
+                          ₦{item.subtotal.toFixed(2)}
                         </td>
                       </tr>
                     ))}
@@ -225,21 +240,28 @@ const Receipt = () => {
 
               <div className="receipt-total mt-4 text-right">
                 <p className="text-gray-700">
-                  <span className="font-medium">Subtotal:</span> ${receiptData.subtotal.toFixed(2)}
+                  <span className="font-medium">Subtotal:</span> ₦
+                  {receiptData.subtotal.toFixed(2)}
                 </p>
                 <p className="text-gray-700">
-                  <span className="font-medium">Discount:</span> ${receiptData.discount.toFixed(2)}
+                  <span className="font-medium">Discount:</span> ₦
+                  {receiptData.discount.toFixed(2)}
                 </p>
                 <p className="text-gray-700">
-                  <span className="font-medium">Tax:</span> ${receiptData.tax.toFixed(2)}
+                  <span className="font-medium">Tax:</span> ₦
+                  {receiptData.tax.toFixed(2)}
                 </p>
                 <p className="text-lg font-bold">
-                  <span className="font-medium">Total:</span> ${receiptData.total.toFixed(2)}
+                  <span className="font-medium">Total:</span> ₦
+                  {receiptData.total.toFixed(2)}
                 </p>
               </div>
 
               <div className="receipt-footer mt-8 text-center text-gray-500">
-                <p>Thank you for choosing PharmaSync for your pharmaceutical needs.</p>
+                <p>
+                  Thank you for choosing PharmaSync for your pharmaceutical
+                  needs.
+                </p>
                 <p>We wish you good health!</p>
               </div>
             </div>
