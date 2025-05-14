@@ -1,10 +1,13 @@
 import { Document } from 'mongoose';
+import { RoleType, IPermission } from './role.interface';
 
+// We'll keep the old enum for backward compatibility during transition
 export enum UserRole {
   ADMIN = 'admin',
   PHARMACIST = 'pharmacist',
   TECHNICIAN = 'technician',
   STAFF = 'staff',
+  PATIENT = 'patient',
 }
 
 export enum Permission {
@@ -100,13 +103,31 @@ export const DEFAULT_ROLE_PERMISSIONS = {
   ],
 };
 
+export interface IUserSettings {
+  theme?: 'light' | 'dark' | 'system';
+  language?: string;
+  notifications?: {
+    email?: boolean;
+    inApp?: boolean;
+    sms?: boolean;
+  };
+  dashboard?: {
+    widgets?: string[];
+    layout?: any;
+  };
+}
+
 export interface IUser extends Document {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
-  permissions: Permission[];
+  // Legacy role field (will be deprecated)
+  role?: UserRole;
+  // Legacy permissions field (will be deprecated)
+  permissions?: Permission[];
+  // New roles field (array of role IDs)
+  roles?: string[];
   phoneNumber?: string;
   licenseNumber?: string;
   address?: {
@@ -126,12 +147,27 @@ export interface IUser extends Document {
   department?: string;
   hireDate?: Date;
   profileImage?: string;
+  settings?: IUserSettings;
   isActive: boolean;
+  isEmailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
   lastLogin?: Date;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
+  passwordChangedAt?: Date;
+  failedLoginAttempts?: number;
+  lockoutUntil?: Date;
+  twoFactorEnabled?: boolean;
+  twoFactorSecret?: string;
+  twoFactorBackupCodes?: string[];
   createdAt: Date;
   updatedAt: Date;
+
+  // Methods
+  hasPermission(resource: string, action: string): boolean;
+  hasRole(roleType: RoleType): boolean;
+  getEffectivePermissions(): Promise<IPermission[]>;
 }
 
 export interface IUserCreate {
@@ -139,8 +175,12 @@ export interface IUserCreate {
   password: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  // Legacy role field (will be deprecated)
+  role?: UserRole;
+  // Legacy permissions field (will be deprecated)
   permissions?: Permission[];
+  // New roles field (array of role IDs)
+  roles?: string[];
   phoneNumber?: string;
   licenseNumber?: string;
   address?: {
@@ -160,12 +200,17 @@ export interface IUserCreate {
   department?: string;
   hireDate?: Date;
   profileImage?: string;
+  settings?: IUserSettings;
+  isActive?: boolean;
+  isEmailVerified?: boolean;
 }
 
 export interface IUserUpdate {
   firstName?: string;
   lastName?: string;
+  // Legacy role field (will be deprecated)
   role?: UserRole;
+  // Legacy permissions field (will be deprecated)
   permissions?: Permission[];
   phoneNumber?: string;
   licenseNumber?: string;
@@ -186,12 +231,16 @@ export interface IUserUpdate {
   department?: string;
   hireDate?: Date;
   profileImage?: string;
+  settings?: IUserSettings;
   isActive?: boolean;
+  isEmailVerified?: boolean;
+  twoFactorEnabled?: boolean;
 }
 
 export interface IUserLogin {
   email: string;
   password: string;
+  twoFactorCode?: string;
 }
 
 export interface IUserResponse {
@@ -199,8 +248,16 @@ export interface IUserResponse {
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
-  permissions: Permission[];
+  // Legacy role field (will be deprecated)
+  role?: UserRole;
+  // Legacy permissions field (will be deprecated)
+  permissions?: Permission[];
+  // New roles field (array of role objects)
+  roles?: {
+    id: string;
+    name: string;
+    type: RoleType;
+  }[];
   phoneNumber?: string;
   licenseNumber?: string;
   address?: {
@@ -220,8 +277,57 @@ export interface IUserResponse {
   department?: string;
   hireDate?: Date;
   profileImage?: string;
+  settings?: IUserSettings;
   isActive: boolean;
+  isEmailVerified: boolean;
+  twoFactorEnabled?: boolean;
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface IPasswordChange {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface IPasswordReset {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface IEmailVerification {
+  token: string;
+}
+
+export interface ITwoFactorSetup {
+  enable: boolean;
+  code?: string;
+}
+
+export interface ITwoFactorVerify {
+  code: string;
+}
+
+export interface IUserProfile {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  dateOfBirth?: Date;
+  emergencyContact?: {
+    name?: string;
+    relationship?: string;
+    phoneNumber?: string;
+  };
+  profileImage?: string;
+  settings?: IUserSettings;
 }

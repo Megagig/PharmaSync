@@ -1,5 +1,8 @@
 import mongoose, { Schema } from 'mongoose';
-import { IActivityLog, ActivityType } from '../interfaces/activityLog.interface';
+import {
+  IActivityLog,
+  ActivityType,
+} from '../interfaces/activityLog.interface';
 
 const activityLogSchema = new Schema<IActivityLog>(
   {
@@ -8,7 +11,7 @@ const activityLogSchema = new Schema<IActivityLog>(
       ref: 'User',
       required: true,
     },
-    activityType: {
+    type: {
       type: String,
       enum: Object.values(ActivityType),
       required: true,
@@ -17,7 +20,7 @@ const activityLogSchema = new Schema<IActivityLog>(
       type: String,
       required: true,
     },
-    details: {
+    metadata: {
       type: Schema.Types.Mixed,
     },
     ipAddress: {
@@ -26,21 +29,33 @@ const activityLogSchema = new Schema<IActivityLog>(
     userAgent: {
       type: String,
     },
-    timestamp: {
-      type: Date,
-      default: Date.now,
-    },
   },
   {
-    timestamps: false, // We're using our own timestamp field
+    timestamps: true,
   }
 );
 
 // Create indexes for faster queries
 activityLogSchema.index({ user: 1 });
-activityLogSchema.index({ activityType: 1 });
-activityLogSchema.index({ timestamp: -1 });
+activityLogSchema.index({ type: 1 });
+activityLogSchema.index({ createdAt: -1 });
 
-const ActivityLog = mongoose.model<IActivityLog>('ActivityLog', activityLogSchema);
+// For backward compatibility, add virtual fields
+activityLogSchema.virtual('activityType').get(function () {
+  return this.type;
+});
+
+activityLogSchema.virtual('details').get(function () {
+  return this.metadata;
+});
+
+activityLogSchema.virtual('timestamp').get(function () {
+  return this.createdAt;
+});
+
+const ActivityLog = mongoose.model<IActivityLog>(
+  'ActivityLog',
+  activityLogSchema
+);
 
 export default ActivityLog;
