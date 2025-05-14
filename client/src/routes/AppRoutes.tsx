@@ -38,7 +38,11 @@ import DispensingList from '@/pages/Dispensing/DispensingList';
 import DispensingDetail from '@/pages/Dispensing/DispensingDetail';
 import CreateDispensing from '@/pages/Dispensing/CreateDispensing';
 import Receipt from '@/pages/Dispensing/Receipt';
-const Inventory = () => <div>Inventory Page</div>;
+
+// Inventory pages
+import InventoryDashboard from '@/pages/Inventory/InventoryDashboard';
+import InventoryAdjustment from '@/pages/Inventory/InventoryAdjustment';
+import InventoryMovement from '@/pages/Inventory/InventoryMovement';
 const Reports = () => <div>Reports Page</div>;
 const Settings = () => <div>Settings Page</div>;
 const NotFound = () => <div>404 - Page Not Found</div>;
@@ -95,7 +99,9 @@ const AppRoutes = () => {
           <Route path="/dispensing/:id/receipt" element={<Receipt />} />
 
           {/* Inventory */}
-          <Route path="/inventory" element={<Inventory />} />
+          <Route path="/inventory" element={<InventoryDashboard />} />
+          <Route path="/inventory/adjust" element={<InventoryAdjustment />} />
+          <Route path="/inventory/movement" element={<InventoryMovement />} />
 
           {/* Reports */}
           <Route path="/reports" element={<Reports />} />

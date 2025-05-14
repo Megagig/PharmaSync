@@ -4,6 +4,9 @@ import patientReducer from './slices/patientSlice';
 import medicationReducer from './slices/medicationSlice';
 import prescriptionReducer from './slices/prescriptionSlice';
 import dispensingReducer from './slices/dispensingSlice';
+import supplierReducer from './slices/supplierSlice';
+import purchaseOrderReducer from './slices/purchaseOrderSlice';
+import inventoryReducer from './slices/inventorySlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +15,9 @@ export const store = configureStore({
     medications: medicationReducer,
     prescriptions: prescriptionReducer,
     dispensings: dispensingReducer,
+    suppliers: supplierReducer,
+    purchaseOrders: purchaseOrderReducer,
+    inventory: inventoryReducer,
     // Add other reducers here as they are created
   },
   devTools: process.env.NODE_ENV !== 'production',
