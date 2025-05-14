@@ -110,8 +110,8 @@ export const deleteUser = async (id: string) => {
  * @returns Promise with user profile data
  */
 export const getCurrentUser = async () => {
-  const response = await api.get(`${BASE_URL}/me`);
-  return response.data.data;
+  const response = await api.get(`${BASE_URL}/profile`);
+  return response.data;
 };
 
 /**
@@ -120,8 +120,8 @@ export const getCurrentUser = async () => {
  * @returns Promise with updated user profile
  */
 export const updateCurrentUser = async (data: UserProfileUpdateData) => {
-  const response = await api.patch(`${BASE_URL}/me`, data);
-  return response.data.data;
+  const response = await api.patch(`${BASE_URL}/profile`, data);
+  return response.data;
 };
 
 /**

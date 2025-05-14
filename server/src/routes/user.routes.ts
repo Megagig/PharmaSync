@@ -53,6 +53,7 @@ router.use(protect);
 
 // User profile routes
 router.get('/profile', getUserProfile);
+router.get('/me', getUserProfile); // Add a /me route that maps to the same handler
 
 router.patch(
   '/profile',
@@ -103,6 +104,8 @@ router.patch(
 // Admin routes
 router.get('/', restrictTo([RoleType.ADMIN]), getAllUsers);
 
+// Important: Make sure the specific routes come before the parameterized routes
+// Otherwise, Express will treat 'me' as an ID parameter
 router.get(
   '/:id',
   restrictTo([RoleType.ADMIN]),
