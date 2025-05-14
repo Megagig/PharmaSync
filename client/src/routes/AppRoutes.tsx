@@ -66,6 +66,14 @@ import ActivityLogStats from '@/pages/ActivityLogs/ActivityLogStats';
 import ScheduleDashboard from '@/pages/Schedule/ScheduleDashboard';
 import ShiftForm from '@/pages/Schedule/ShiftForm';
 import TimeOffRequestList from '@/pages/Schedule/TimeOffRequestList';
+
+// Notification pages
+import NotificationList from '@/pages/Notifications/NotificationList';
+import NotificationPreferences from '@/pages/Notifications/NotificationPreferences';
+
+// Message pages
+import ConversationList from '@/pages/Messages/ConversationList';
+import ConversationDetail from '@/pages/Messages/ConversationDetail';
 const Settings = () => <div>Settings Page</div>;
 const NotFound = () => <div>404 - Page Not Found</div>;
 
@@ -157,6 +165,17 @@ const AppRoutes = () => {
           <Route path="/schedule/shifts/new" element={<ShiftForm />} />
           <Route path="/schedule/shifts/:id" element={<ShiftForm />} />
           <Route path="/schedule/time-off" element={<TimeOffRequestList />} />
+
+          {/* Notifications */}
+          <Route path="/notifications" element={<NotificationList />} />
+          <Route
+            path="/notifications/preferences"
+            element={<NotificationPreferences />}
+          />
+
+          {/* Messages */}
+          <Route path="/messages" element={<ConversationList />} />
+          <Route path="/messages/:id" element={<ConversationDetail />} />
 
           {/* Settings */}
           <Route path="/settings" element={<Settings />} />

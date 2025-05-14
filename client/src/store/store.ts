@@ -11,6 +11,8 @@ import reportsReducer from './slices/reportsSlice';
 import userReducer from './slices/userSlice';
 import activityLogReducer from './slices/activityLogSlice';
 import scheduleReducer from './slices/scheduleSlice';
+import notificationReducer from './slices/notificationSlice';
+import messageReducer from './slices/messageSlice';
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +28,8 @@ export const store = configureStore({
     users: userReducer,
     activityLogs: activityLogReducer,
     schedule: scheduleReducer,
+    notifications: notificationReducer,
+    messages: messageReducer,
     // Add other reducers here as they are created
   },
   devTools: true,

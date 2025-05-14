@@ -11,6 +11,8 @@ import reportsRoutes from './reports.routes';
 import userRoutes from './user.routes';
 import activityLogRoutes from './activityLog.routes';
 import scheduleRoutes from './schedule.routes';
+import notificationRoutes from './notification.routes';
+import messageRoutes from './message.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -36,5 +38,7 @@ router.use('/reports', reportsRoutes);
 router.use('/users', userRoutes);
 router.use('/activity-logs', activityLogRoutes);
 router.use('/schedule', scheduleRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/messages', messageRoutes);
 
 export default router;

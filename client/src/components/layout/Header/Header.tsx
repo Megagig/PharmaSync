@@ -1,9 +1,12 @@
-import { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '@/store/slices/authSlice';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { RootState } from '@/store/store';
+import { fetchNotifications } from '@/store/slices/notificationSlice';
+import NotificationBadge from '@/components/common/NotificationBadge/NotificationBadge';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -15,6 +18,11 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
   const { user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    // Fetch notifications on component mount
+    dispatch(fetchNotifications({ page: 1, limit: 5, isArchived: false }));
+  }, [dispatch]);
 
   const handleLogout = async () => {
     await dispatch(logout());
@@ -55,11 +63,40 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
+            {/* Messages */}
+            <button
+              onClick={() => navigate('/messages')}
+              className="p-1 rounded-full text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              aria-label="Messages"
+            >
+              <svg
+                className="h-6 w-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
+              </svg>
+            </button>
+
+            {/* Notifications */}
+            <NotificationBadge />
+
             {/* Theme toggle */}
             <button
               onClick={toggleTheme}
               className="p-1 rounded-full text-gray-500 hover:text-gray-600 focus:outline-none"
-              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              aria-label={
+                theme === 'dark'
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode'
+              }
             >
               {theme === 'dark' ? (
                 <svg
