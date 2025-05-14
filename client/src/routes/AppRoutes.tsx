@@ -50,6 +50,22 @@ import SalesReport from '@/pages/Reports/SalesReport';
 import InventoryReport from '@/pages/Reports/InventoryReport';
 import PrescriptionReport from '@/pages/Reports/PrescriptionReport';
 import PatientReport from '@/pages/Reports/PatientReport';
+
+// User Management pages
+import UserList from '@/pages/UserManagement/UserList';
+import UserForm from '@/pages/UserManagement/UserForm';
+import UserDetail from '@/pages/UserManagement/UserDetail';
+import UserProfile from '@/pages/UserManagement/UserProfile';
+
+// Activity Log pages
+import ActivityLogList from '@/pages/ActivityLogs/ActivityLogList';
+import ActivityLogDetail from '@/pages/ActivityLogs/ActivityLogDetail';
+import ActivityLogStats from '@/pages/ActivityLogs/ActivityLogStats';
+
+// Schedule pages
+import ScheduleDashboard from '@/pages/Schedule/ScheduleDashboard';
+import ShiftForm from '@/pages/Schedule/ShiftForm';
+import TimeOffRequestList from '@/pages/Schedule/TimeOffRequestList';
 const Settings = () => <div>Settings Page</div>;
 const NotFound = () => <div>404 - Page Not Found</div>;
 
@@ -118,6 +134,29 @@ const AppRoutes = () => {
             element={<PrescriptionReport />}
           />
           <Route path="/reports/patients" element={<PatientReport />} />
+
+          {/* User Management */}
+          <Route path="/users" element={<UserList />} />
+          <Route path="/users/new" element={<UserForm />} />
+          <Route path="/users/:id" element={<UserDetail />} />
+          <Route path="/users/:id/edit" element={<UserForm />} />
+          <Route path="/profile" element={<UserProfile />} />
+
+          {/* Activity Logs */}
+          <Route path="/activity-logs" element={<ActivityLogList />} />
+          <Route path="/activity-logs/:id" element={<ActivityLogDetail />} />
+          <Route path="/activity-logs/stats" element={<ActivityLogStats />} />
+          <Route
+            path="/activity-logs/user/:userId"
+            element={<ActivityLogList />}
+          />
+          <Route path="/activity-logs/me" element={<ActivityLogList />} />
+
+          {/* Schedule */}
+          <Route path="/schedule" element={<ScheduleDashboard />} />
+          <Route path="/schedule/shifts/new" element={<ShiftForm />} />
+          <Route path="/schedule/shifts/:id" element={<ShiftForm />} />
+          <Route path="/schedule/time-off" element={<TimeOffRequestList />} />
 
           {/* Settings */}
           <Route path="/settings" element={<Settings />} />

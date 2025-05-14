@@ -8,6 +8,9 @@ import supplierReducer from './slices/supplierSlice';
 import purchaseOrderReducer from './slices/purchaseOrderSlice';
 import inventoryReducer from './slices/inventorySlice';
 import reportsReducer from './slices/reportsSlice';
+import userReducer from './slices/userSlice';
+import activityLogReducer from './slices/activityLogSlice';
+import scheduleReducer from './slices/scheduleSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,9 +23,12 @@ export const store = configureStore({
     purchaseOrders: purchaseOrderReducer,
     inventory: inventoryReducer,
     reports: reportsReducer,
+    users: userReducer,
+    activityLogs: activityLogReducer,
+    schedule: scheduleReducer,
     // Add other reducers here as they are created
   },
-  devTools: process.env.NODE_ENV !== 'production',
+  devTools: true,
 });
 
 export type RootState = ReturnType<typeof store.getState>;
