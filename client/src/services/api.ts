@@ -25,6 +25,56 @@ api.interceptors.request.use(
   }
 );
 
+// Add a response interceptor to handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If the error is 401 (Unauthorized) and we haven't tried to refresh the token yet
+    if (
+      error.response &&
+      error.response.status === 401 &&
+      !originalRequest._retry &&
+      originalRequest.url !== '/auth/refresh-token' // Prevent infinite loop
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        // Try to refresh the token
+        const response = await axios.post(
+          `${API_URL}/auth/refresh-token`,
+          {},
+          {
+            withCredentials: true,
+          }
+        );
+
+        const { accessToken } = response.data.data;
+
+        // Update the token in localStorage
+        if (accessToken) {
+          localStorage.setItem('token', accessToken);
+
+          // Update the Authorization header
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+          // Retry the original request
+          return api(originalRequest);
+        } else {
+          console.error('No access token received from refresh token request');
+          return Promise.reject(error);
+        }
+      } catch (refreshError) {
+        console.error('Error refreshing token:', refreshError);
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 // Add a response interceptor
 api.interceptors.response.use(
   (response) => {

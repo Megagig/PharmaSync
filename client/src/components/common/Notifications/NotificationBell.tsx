@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import {
   fetchNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
+  markAsRead as markNotificationAsRead,
+  markAllAsRead,
 } from '@/store/slices/notificationSlice';
 import { formatDistanceToNow } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -35,7 +35,10 @@ const NotificationBell: React.FC = () => {
   useEffect(() => {
     // Handle clicks outside the dropdown to close it
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -59,7 +62,7 @@ const NotificationBell: React.FC = () => {
   };
 
   const handleMarkAllAsRead = () => {
-    dispatch(markAllNotificationsAsRead());
+    dispatch(markAllAsRead());
   };
 
   const getNotificationIcon = (type: string) => {
@@ -141,27 +144,35 @@ const NotificationBell: React.FC = () => {
 
   const getNotificationLink = (notification: any) => {
     const { type, data } = notification;
-    
+
     if (type === 'follow_up_reminder' && data?.patientId && data?.carePlanId) {
       return `/patients/${data.patientId}/care-plans/${data.carePlanId}`;
     }
-    
-    if (type === 'soap_note_follow_up_reminder' && data?.patientId && data?.soapNoteId) {
+
+    if (
+      type === 'soap_note_follow_up_reminder' &&
+      data?.patientId &&
+      data?.soapNoteId
+    ) {
       return `/patients/${data.patientId}/soap-notes/${data.soapNoteId}`;
     }
-    
-    if (type.includes('drug_therapy_problem') && data?.patientId && data?.drugTherapyProblemId) {
+
+    if (
+      type.includes('drug_therapy_problem') &&
+      data?.patientId &&
+      data?.drugTherapyProblemId
+    ) {
       return `/patients/${data.patientId}/drug-therapy-problems/${data.drugTherapyProblemId}`;
     }
-    
+
     if (type.includes('care_plan') && data?.patientId && data?.carePlanId) {
       return `/patients/${data.patientId}/care-plans/${data.carePlanId}`;
     }
-    
+
     if (data?.patientId) {
       return `/patients/${data.patientId}`;
     }
-    
+
     return '#';
   };
 
@@ -196,9 +207,16 @@ const NotificationBell: React.FC = () => {
 
       {isOpen && (
         <div className="origin-top-right absolute right-0 mt-2 w-80 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-          <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+          <div
+            className="py-1"
+            role="menu"
+            aria-orientation="vertical"
+            aria-labelledby="options-menu"
+          >
             <div className="px-4 py-2 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-sm font-medium text-gray-900">Notifications</h3>
+              <h3 className="text-sm font-medium text-gray-900">
+                Notifications
+              </h3>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
@@ -208,7 +226,7 @@ const NotificationBell: React.FC = () => {
                 </button>
               )}
             </div>
-            
+
             {isLoading ? (
               <div className="px-4 py-2 text-center">
                 <svg
@@ -233,17 +251,19 @@ const NotificationBell: React.FC = () => {
                 </svg>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="px-4 py-2 text-center text-sm text-gray-500">No notifications</div>
+              <div className="px-4 py-2 text-center text-sm text-gray-500">
+                No notifications
+              </div>
             ) : (
               <div className="max-h-96 overflow-y-auto">
                 {notifications.map((notification) => (
                   <Link
-                    key={notification.id}
+                    key={notification._id}
                     to={getNotificationLink(notification)}
                     className={`block px-4 py-2 hover:bg-gray-100 ${
                       !notification.isRead ? 'bg-blue-50' : ''
                     }`}
-                    onClick={() => handleMarkAsRead(notification.id)}
+                    onClick={() => handleMarkAsRead(notification._id)}
                   >
                     <div className="flex items-start">
                       <div className="flex-shrink-0 mr-3">
@@ -253,11 +273,16 @@ const NotificationBell: React.FC = () => {
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {notification.title}
                         </p>
-                        <p className="text-sm text-gray-500 truncate">{notification.message}</p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {notification.message}
+                        </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          {formatDistanceToNow(new Date(notification.createdAt), {
-                            addSuffix: true,
-                          })}
+                          {formatDistanceToNow(
+                            new Date(notification.createdAt),
+                            {
+                              addSuffix: true,
+                            }
+                          )}
                         </p>
                       </div>
                     </div>
@@ -265,7 +290,7 @@ const NotificationBell: React.FC = () => {
                 ))}
               </div>
             )}
-            
+
             <div className="px-4 py-2 border-t border-gray-200">
               <Link
                 to="/notifications"

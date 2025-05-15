@@ -31,27 +31,40 @@ axiosInstance.interceptors.response.use(
     if (
       error.response &&
       error.response.status === 401 &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      originalRequest.url !== '/auth/refresh-token' // Prevent infinite loop
     ) {
       originalRequest._retry = true;
 
       try {
         // Try to refresh the token
-        const response = await axiosInstance.post('/auth/refresh-token');
+        const response = await axios.post(
+          `${API_URL}/auth/refresh-token`,
+          {},
+          {
+            withCredentials: true,
+          }
+        );
+
         const { accessToken } = response.data.data;
 
         // Update the token in localStorage
-        localStorage.setItem('token', accessToken);
+        if (accessToken) {
+          localStorage.setItem('token', accessToken);
 
-        // Update the Authorization header
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          // Update the Authorization header
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
-        // Retry the original request
-        return axiosInstance(originalRequest);
+          // Retry the original request
+          return axiosInstance(originalRequest);
+        } else {
+          console.error('No access token received from refresh token request');
+          // Don't redirect automatically, let the error propagate
+          return Promise.reject(error);
+        }
       } catch (refreshError) {
-        // If refresh token is invalid or expired, redirect to login
-        localStorage.removeItem('token');
-        window.location.href = '/login';
+        console.error('Error refreshing token:', refreshError);
+        // Don't redirect automatically, just return the error
         return Promise.reject(refreshError);
       }
     }

@@ -31,8 +31,13 @@ export const getNotifications = async (filters: NotificationFilters = {}) => {
     url += `&type=${type}`;
   }
 
-  const response = await api.get(url);
-  return response.data;
+  try {
+    const response = await api.get(url);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    return { data: [], meta: { total: 0, pages: 0, page: 1, unreadCount: 0 } };
+  }
 };
 
 /**
@@ -41,8 +46,13 @@ export const getNotifications = async (filters: NotificationFilters = {}) => {
  * @returns Promise with notification data
  */
 export const getNotificationById = async (id: string) => {
-  const response = await api.get(`${BASE_URL}/${id}`);
-  return response.data;
+  try {
+    const response = await api.get(`${BASE_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error fetching notification ${id}:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -51,8 +61,13 @@ export const getNotificationById = async (id: string) => {
  * @returns Promise with updated notification data
  */
 export const markNotificationAsRead = async (id: string) => {
-  const response = await api.patch(`${BASE_URL}/${id}/read`);
-  return response.data;
+  try {
+    const response = await api.patch(`${BASE_URL}/${id}/read`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error marking notification ${id} as read:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -60,8 +75,13 @@ export const markNotificationAsRead = async (id: string) => {
  * @returns Promise with success message
  */
 export const markAllNotificationsAsRead = async () => {
-  const response = await api.patch(`${BASE_URL}/read-all`);
-  return response.data;
+  try {
+    const response = await api.patch(`${BASE_URL}/read-all`);
+    return response.data;
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    throw error;
+  }
 };
 
 /**
@@ -70,8 +90,13 @@ export const markAllNotificationsAsRead = async () => {
  * @returns Promise with updated notification data
  */
 export const archiveNotification = async (id: string) => {
-  const response = await api.patch(`${BASE_URL}/${id}/archive`);
-  return response.data;
+  try {
+    const response = await api.patch(`${BASE_URL}/${id}/archive`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error archiving notification ${id}:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -80,8 +105,13 @@ export const archiveNotification = async (id: string) => {
  * @returns Promise with success message
  */
 export const deleteNotification = async (id: string) => {
-  const response = await api.delete(`${BASE_URL}/${id}`);
-  return response.data;
+  try {
+    const response = await api.delete(`${BASE_URL}/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error deleting notification ${id}:`, error);
+    throw error;
+  }
 };
 
 /**
@@ -89,8 +119,13 @@ export const deleteNotification = async (id: string) => {
  * @returns Promise with notification types
  */
 export const getNotificationTypes = async () => {
-  const response = await api.get(`${BASE_URL}/types`);
-  return response.data;
+  try {
+    const response = await api.get(`${BASE_URL}/types`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching notification types:', error);
+    return { data: [] };
+  }
 };
 
 /**
@@ -98,8 +133,13 @@ export const getNotificationTypes = async () => {
  * @returns Promise with notification preferences
  */
 export const getNotificationPreferences = async () => {
-  const response = await api.get(`${BASE_URL}/preferences`);
-  return response.data;
+  try {
+    const response = await api.get(`${BASE_URL}/preferences`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching notification preferences:', error);
+    return { data: null };
+  }
 };
 
 /**
@@ -110,6 +150,11 @@ export const getNotificationPreferences = async () => {
 export const updateNotificationPreferences = async (
   data: NotificationPreferenceUpdateData
 ) => {
-  const response = await api.patch(`${BASE_URL}/preferences`, data);
-  return response.data;
+  try {
+    const response = await api.patch(`${BASE_URL}/preferences`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating notification preferences:', error);
+    throw error;
+  }
 };

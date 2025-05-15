@@ -2,34 +2,34 @@ export enum NotificationType {
   // System notifications
   SYSTEM = 'system',
   MAINTENANCE = 'maintenance',
-  
+
   // User notifications
   USER_MENTION = 'user_mention',
   PASSWORD_RESET = 'password_reset',
   ACCOUNT_UPDATE = 'account_update',
-  
+
   // Inventory notifications
   LOW_STOCK = 'low_stock',
   STOCK_EXPIRING = 'stock_expiring',
   REORDER_POINT = 'reorder_point',
-  
+
   // Order notifications
   ORDER_CREATED = 'order_created',
   ORDER_UPDATED = 'order_updated',
   ORDER_APPROVED = 'order_approved',
   ORDER_REJECTED = 'order_rejected',
   ORDER_RECEIVED = 'order_received',
-  
+
   // Prescription notifications
   PRESCRIPTION_CREATED = 'prescription_created',
   PRESCRIPTION_UPDATED = 'prescription_updated',
   PRESCRIPTION_FILLED = 'prescription_filled',
   PRESCRIPTION_REFILL_DUE = 'prescription_refill_due',
-  
+
   // Patient notifications
   PATIENT_APPOINTMENT = 'patient_appointment',
   PATIENT_BIRTHDAY = 'patient_birthday',
-  
+
   // Schedule notifications
   SHIFT_ASSIGNED = 'shift_assigned',
   SHIFT_UPDATED = 'shift_updated',
@@ -37,7 +37,7 @@ export enum NotificationType {
   TIME_OFF_REQUEST = 'time_off_request',
   TIME_OFF_APPROVED = 'time_off_approved',
   TIME_OFF_REJECTED = 'time_off_rejected',
-  
+
   // Message notifications
   NEW_MESSAGE = 'new_message',
 }
@@ -50,7 +50,7 @@ export enum NotificationPriority {
 }
 
 export interface Notification {
-  id: string;
+  _id: string;
   user: string;
   type: NotificationType;
   title: string;
@@ -65,7 +65,7 @@ export interface Notification {
 }
 
 export interface NotificationPreference {
-  id: string;
+  _id: string;
   user: string;
   email: {
     enabled: boolean;

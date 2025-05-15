@@ -127,6 +127,10 @@ const AppRoutes = () => {
             element={<AddMedicationHistory />}
           />
           <Route
+            path="/patients/:id/medication-history/:medicationId/edit"
+            element={<EditMedicationHistory />}
+          />
+          <Route
             path="/patients/:id/clinical-assessments/new"
             element={<AddClinicalAssessment />}
           />
@@ -152,6 +156,7 @@ const AppRoutes = () => {
           <Route path="/medications/new" element={<CreateMedication />} />
           <Route path="/medications/:id" element={<MedicationDetail />} />
           <Route path="/medications/:id/edit" element={<EditMedication />} />
+          <Route path="/medications/edit/:id" element={<EditMedication />} />
           <Route
             path="/medications/:id/inventory/add"
             element={<AddInventoryItem />}
@@ -186,6 +191,7 @@ const AppRoutes = () => {
             element={<PrescriptionReport />}
           />
           <Route path="/reports/patients" element={<PatientReport />} />
+          <Route path="/reporting" element={<ReportingDashboard />} />
 
           {/* User Management */}
           <Route path="/users" element={<UserList />} />
@@ -221,15 +227,18 @@ const AppRoutes = () => {
           <Route path="/messages" element={<ConversationList />} />
           <Route path="/messages/:id" element={<ConversationDetail />} />
 
-          {/* Reports */}
-          <Route path="/reports" element={<ReportDashboard />} />
-          <Route path="/reports/new" element={<ReportGenerator />} />
+          {/* Report Generator */}
+          <Route path="/report-generator" element={<ReportDashboard />} />
+          <Route path="/report-generator/new" element={<ReportGenerator />} />
           <Route
-            path="/reports/configurations"
+            path="/report-generator/configurations"
             element={<ReportConfigurations />}
           />
-          <Route path="/reports/edit/:id" element={<ReportGenerator />} />
-          <Route path="/reports/view" element={<ReportGenerator />} />
+          <Route
+            path="/report-generator/edit/:id"
+            element={<ReportGenerator />}
+          />
+          <Route path="/report-generator/view" element={<ReportGenerator />} />
 
           {/* Settings */}
           <Route path="/settings" element={<Settings />} />
