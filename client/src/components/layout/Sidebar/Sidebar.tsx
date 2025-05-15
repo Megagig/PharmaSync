@@ -1,8 +1,9 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types/auth.types';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
+import { useState, useEffect } from 'react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -12,6 +13,64 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
   const { user } = useAuth();
   const { currentUser } = useSelector((state: RootState) => state.auth);
+  const location = useLocation();
+
+  // State to track which menus are expanded
+  const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>(
+    {}
+  );
+
+  // Check if the current path is within a submenu to auto-expand it
+  useEffect(() => {
+    const newExpandedMenus = { ...expandedMenus };
+
+    // Check if current path is in any submenu
+    navItems.forEach((item) => {
+      if (item.children) {
+        const isInSubmenu = item.children.some(
+          (child) =>
+            location.pathname === child.path ||
+            location.pathname.startsWith(child.path + '/')
+        );
+
+        if (isInSubmenu) {
+          newExpandedMenus[item.name] = true;
+        }
+      }
+    });
+
+    setExpandedMenus(newExpandedMenus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // Toggle submenu expansion
+  const toggleMenu = (menuName: string) => {
+    setExpandedMenus((prev) => ({
+      ...prev,
+      [menuName]: !prev[menuName],
+    }));
+  };
+
+  // Check if a menu item or any of its children is active
+  const isMenuActive = (item: any): boolean => {
+    if (
+      item.path &&
+      (location.pathname === item.path ||
+        location.pathname.startsWith(item.path + '/'))
+    ) {
+      return true;
+    }
+
+    if (item.children) {
+      return item.children.some(
+        (child: any) =>
+          location.pathname === child.path ||
+          location.pathname.startsWith(child.path + '/')
+      );
+    }
+
+    return false;
+  };
 
   const navItems = [
     {
@@ -20,24 +79,40 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
       icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
     },
     {
-      name: 'Patients',
-      path: '/patients',
+      name: 'Patient Management',
       icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
-    },
-    {
-      name: 'Medications',
-      path: '/medications',
-      icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
-    },
-    {
-      name: 'Prescriptions',
-      path: '/prescriptions',
-      icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
-    },
-    {
-      name: 'Dispensing',
-      path: '/dispensing',
-      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+      children: [
+        {
+          name: 'Patients',
+          path: '/patients',
+          icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+        },
+        {
+          name: 'Medications',
+          path: '/medications',
+          icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+        },
+        {
+          name: 'Prescriptions',
+          path: '/prescriptions',
+          icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+        },
+        {
+          name: 'Dispensing',
+          path: '/dispensing',
+          icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01',
+        },
+        {
+          name: 'Calendar',
+          path: '/calendar',
+          icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+        },
+        {
+          name: 'Reporting Dashboard',
+          path: '/reporting',
+          icon: 'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
+        },
+      ],
     },
     {
       name: 'Inventory',
@@ -47,11 +122,6 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
     {
       name: 'Schedule',
       path: '/schedule',
-      icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
-    },
-    {
-      name: 'Calendar',
-      path: '/calendar',
       icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
     },
     {
@@ -67,11 +137,6 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
       name: 'Reports',
       path: '/reports',
       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-    },
-    {
-      name: 'Reporting Dashboard',
-      path: '/reporting',
-      icon: 'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z',
     },
     {
       name: 'Users',
@@ -90,10 +155,15 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
     },
   ];
 
+  // Filter out Reporting Dashboard from adminNavItems since it's now in the Patient Management submenu
+  const filteredAdminNavItems = adminNavItems.filter(
+    (item) => item.name !== 'Reporting Dashboard'
+  );
+
   // Combine navigation items based on user role
   const allNavItems =
     user?.role === UserRole.ADMIN || user?.role === UserRole.PHARMACIST
-      ? [...navItems, ...adminNavItems]
+      ? [...navItems, ...filteredAdminNavItems]
       : navItems;
 
   return (
@@ -143,33 +213,120 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
           <nav className="flex-1 overflow-y-auto py-4">
             <ul className="space-y-1 px-2">
               {allNavItems.map((item) => (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                        isActive
-                          ? 'bg-primary-50 text-primary-600'
-                          : 'text-gray-700 hover:bg-gray-50'
-                      }`
-                    }
-                  >
-                    <svg
-                      className="mr-3 h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                <li key={item.name} className="mb-1">
+                  {item.children ? (
+                    <div>
+                      <button
+                        onClick={() => toggleMenu(item.name)}
+                        className={`w-full flex items-center justify-between px-4 py-2 text-sm font-medium rounded-md ${
+                          isMenuActive(item)
+                            ? 'bg-primary-50 text-primary-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <svg
+                            className="mr-3 h-5 w-5"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d={item.icon}
+                            />
+                          </svg>
+                          {item.name}
+                        </div>
+                        <svg
+                          className={`h-5 w-5 transform transition-transform duration-200 ${
+                            expandedMenus[item.name] ? 'rotate-90' : ''
+                          }`}
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </button>
+
+                      {/* Submenu with smooth transition */}
+                      <div
+                        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                          expandedMenus[item.name] ? 'max-h-96' : 'max-h-0'
+                        }`}
+                      >
+                        <ul className="mt-1 pl-8 space-y-1 py-1">
+                          {item.children.map((child) => (
+                            <li key={child.path}>
+                              <NavLink
+                                to={child.path}
+                                className={({ isActive }) =>
+                                  `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                                    isActive
+                                      ? 'bg-primary-50 text-primary-600'
+                                      : 'text-gray-700 hover:bg-gray-50'
+                                  }`
+                                }
+                              >
+                                <svg
+                                  className="mr-3 h-4 w-4"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d={child.icon}
+                                  />
+                                </svg>
+                                {child.name}
+                              </NavLink>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  ) : (
+                    <NavLink
+                      to={item.path}
+                      className={({ isActive }) =>
+                        `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                          isActive
+                            ? 'bg-primary-50 text-primary-600'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`
+                      }
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d={item.icon}
-                      />
-                    </svg>
-                    {item.name}
-                  </NavLink>
+                      <svg
+                        className="mr-3 h-5 w-5"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d={item.icon}
+                        />
+                      </svg>
+                      {item.name}
+                    </NavLink>
+                  )}
                 </li>
               ))}
             </ul>

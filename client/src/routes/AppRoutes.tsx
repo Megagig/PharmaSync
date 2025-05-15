@@ -24,6 +24,7 @@ import EditPatient from '@/pages/Patients/EditPatient';
 import AddAllergy from '@/pages/Patients/AddAllergy';
 import AddMedicalCondition from '@/pages/Patients/AddMedicalCondition';
 import AddMedicationHistory from '@/pages/Patients/AddMedicationHistory';
+import EditMedicationHistory from '@/pages/Patients/EditMedicationHistory';
 import AddClinicalAssessment from '@/pages/Patients/AddClinicalAssessment';
 import AddLaboratoryFinding from '@/pages/Patients/AddLaboratoryFinding';
 import AddDrugTherapyProblem from '@/pages/Patients/AddDrugTherapyProblem';
@@ -60,6 +61,7 @@ import SalesReport from '@/pages/Reports/SalesReport';
 import InventoryReport from '@/pages/Reports/InventoryReport';
 import PrescriptionReport from '@/pages/Reports/PrescriptionReport';
 import PatientReport from '@/pages/Reports/PatientReport';
+import ReportingDashboard from '@/pages/Reports/ReportingDashboard';
 
 // User Management pages
 import UserList from '@/pages/UserManagement/UserList';
@@ -76,6 +78,9 @@ import ActivityLogStats from '@/pages/ActivityLogs/ActivityLogStats';
 import ScheduleDashboard from '@/pages/Schedule/ScheduleDashboard';
 import ShiftForm from '@/pages/Schedule/ShiftForm';
 import TimeOffRequestList from '@/pages/Schedule/TimeOffRequestList';
+
+// Calendar pages
+import CalendarPage from '@/pages/Calendar/CalendarPage';
 
 // Notification pages
 import NotificationList from '@/pages/Notifications/NotificationList';
@@ -215,6 +220,9 @@ const AppRoutes = () => {
           <Route path="/schedule/shifts/new" element={<ShiftForm />} />
           <Route path="/schedule/shifts/:id" element={<ShiftForm />} />
           <Route path="/schedule/time-off" element={<TimeOffRequestList />} />
+
+          {/* Calendar */}
+          <Route path="/calendar" element={<CalendarPage />} />
 
           {/* Notifications */}
           <Route path="/notifications" element={<NotificationList />} />
