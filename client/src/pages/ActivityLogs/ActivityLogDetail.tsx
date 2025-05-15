@@ -19,14 +19,18 @@ const ActivityLogDetail = () => {
   );
 
   useEffect(() => {
-    if (id) {
+    // Only fetch if id is defined and not 'undefined' string
+    if (id && id !== 'undefined') {
       dispatch(fetchActivityLogById(id));
+    } else {
+      // If id is undefined or 'undefined', navigate back to activity logs list
+      navigate('/activity-logs');
     }
 
     return () => {
       dispatch(clearCurrentActivityLog());
     };
-  }, [dispatch, id]);
+  }, [dispatch, id, navigate]);
 
   const formatDateTime = (dateString: string) => {
     return new Date(dateString).toLocaleString();

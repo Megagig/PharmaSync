@@ -26,6 +26,10 @@ import customerRoutes from './customer.routes';
 import locationRoutes from './location.routes';
 import inventoryMovementRoutes from './inventoryMovement.routes';
 import priceLevelRoutes from './priceLevel.routes';
+import transferRoutes from './transfer.routes';
+import saleRoutes from './sale.routes';
+import invoiceRoutes from './invoice.routes';
+import paymentRoutes from './payment.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -48,10 +52,14 @@ router.use('/suppliers', supplierRoutes);
 router.use('/purchase-orders', purchaseOrderRoutes);
 router.use('/inventory', inventoryRoutes);
 router.use('/inventory/movements', inventoryMovementRoutes);
+router.use('/inventory/transfers', transferRoutes);
 router.use('/products', productRoutes);
 router.use('/customers', customerRoutes);
 router.use('/locations', locationRoutes);
 router.use('/price-levels', priceLevelRoutes);
+router.use('/sales', saleRoutes);
+router.use('/invoices', invoiceRoutes);
+router.use('/payments', paymentRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/users', userRoutes);
 router.use('/roles', roleRoutes);

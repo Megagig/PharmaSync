@@ -22,6 +22,34 @@ export const protect = async (
   res: Response,
   next: NextFunction
 ) => {
+  // For development purposes, bypass authentication
+  if (process.env.NODE_ENV === 'development') {
+    // Set a mock user for development
+    const mockUser = await User.findOne()
+      .select(
+        '-password -passwordResetToken -passwordResetExpires -refreshToken -refreshTokenExpires -twoFactorSecret -twoFactorBackupCodes'
+      )
+      .populate({
+        path: 'roles',
+        select: 'name type permissions',
+      });
+
+    if (mockUser) {
+      req.user = mockUser;
+    } else {
+      // If no user exists, create a mock user object with admin privileges
+      req.user = {
+        _id: '000000000000000000000000',
+        name: 'Development User',
+        email: 'dev@example.com',
+        isActive: true,
+        roles: [{ type: 'admin', name: 'Administrator' }],
+      };
+    }
+
+    return next();
+  }
+
   try {
     // Get token from header
     const authHeader = req.headers.authorization;

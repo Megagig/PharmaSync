@@ -67,7 +67,9 @@ priceLevelSchema.pre('save', function (next) {
 // Ensure only one default price level
 priceLevelSchema.pre('save', async function (next) {
   if (this.isDefault && this.isModified('isDefault')) {
-    await this.constructor.updateMany(
+    // Cast this.constructor to any to avoid TypeScript error
+    const PriceLevelModel = this.constructor as any;
+    await PriceLevelModel.updateMany(
       { _id: { $ne: this._id } },
       { $set: { isDefault: false } }
     );

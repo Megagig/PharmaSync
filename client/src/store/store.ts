@@ -18,6 +18,9 @@ import notificationReducer from './slices/notificationSlice';
 import messageReducer from './slices/messageSlice';
 import dashboardReducer from './slices/dashboardSlice';
 import appointmentReducer from './slices/appointmentSlice';
+import salesReducer from './slices/salesSlice';
+import invoicesReducer from './slices/invoicesSlice';
+import paymentsReducer from './slices/paymentsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -40,6 +43,9 @@ export const store = configureStore({
     dashboard: dashboardReducer,
     appointments: appointmentReducer,
     reporting: reportingReducer,
+    sales: salesReducer,
+    invoices: invoicesReducer,
+    payments: paymentsReducer,
     // Add other reducers here as they are created
   },
   devTools: true,

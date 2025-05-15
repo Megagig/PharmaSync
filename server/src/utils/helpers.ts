@@ -10,7 +10,9 @@ export const formatDate = (date: Date): string => {
  */
 export const daysBetween = (date1: Date, date2: Date): number => {
   const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-  const diffDays = Math.round(Math.abs((date1.getTime() - date2.getTime()) / oneDay));
+  const diffDays = Math.round(
+    Math.abs((date1.getTime() - date2.getTime()) / oneDay)
+  );
   return diffDays;
 };
 
@@ -38,7 +40,8 @@ export const isDateWithinDays = (date: Date, days: number): boolean => {
  * Generates a random alphanumeric string of specified length
  */
 export const generateRandomString = (length: number): string => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -52,7 +55,7 @@ export const generateRandomString = (length: number): string => {
 export const formatPhoneNumber = (phoneNumber: string): string => {
   // Remove all non-numeric characters
   const cleaned = phoneNumber.replace(/\D/g, '');
-  
+
   // Check if it's a Nigerian number
   if (cleaned.startsWith('234')) {
     return `+${cleaned}`;
@@ -69,7 +72,7 @@ export const formatPhoneNumber = (phoneNumber: string): string => {
 export const isValidNigerianPhoneNumber = (phoneNumber: string): boolean => {
   // Remove all non-numeric characters
   const cleaned = phoneNumber.replace(/\D/g, '');
-  
+
   // Check if it's a valid Nigerian number
   if (cleaned.startsWith('234')) {
     return cleaned.length === 13;
@@ -78,4 +81,30 @@ export const isValidNigerianPhoneNumber = (phoneNumber: string): boolean => {
   } else {
     return cleaned.length === 10;
   }
+};
+
+/**
+ * Generates a SKU (Stock Keeping Unit) for products
+ */
+export const generateSKU = (prefix: string = 'PROD'): string => {
+  // Format: PREFIX-XXXXX (where XXXXX is a sequential number)
+  const randomNum = Math.floor(10000 + Math.random() * 90000);
+  return `${prefix}-${randomNum}`;
+};
+
+/**
+ * Generates a reference number for various entities
+ */
+export const generateReferenceNumber = async (
+  prefix: string
+): Promise<string> => {
+  // Format: PREFIX-YYYYMMDD-XXXXX (where XXXXX is a sequential number)
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const dateStr = `${year}${month}${day}`;
+
+  const randomNum = Math.floor(10000 + Math.random() * 90000);
+  return `${prefix}-${dateStr}-${randomNum}`;
 };

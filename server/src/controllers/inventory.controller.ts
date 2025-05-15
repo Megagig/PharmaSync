@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
-import asyncHandler from 'express-async-handler';
-import Medication from '../models/medication.model';
+import mongoose from 'mongoose';
 import Product from '../models/product.model';
+import Medication from '../models/medication.model';
 import { AppError } from '../utils/error';
+import { IMedication } from '../interfaces/medication.interface';
+import { IProduct } from '../interfaces/product.interface';
+import asyncHandler from 'express-async-handler';
 
 /**
  * @desc    Get low stock alerts
@@ -11,68 +14,78 @@ import { AppError } from '../utils/error';
  */
 export const getLowStockAlerts = asyncHandler(
   async (req: Request, res: Response) => {
-    const threshold = parseInt(req.query.threshold as string) || 10;
-    const productType = req.query.productType as string;
+    try {
+      const threshold = parseInt(req.query.threshold as string) || 10;
+      const productType = req.query.productType as string;
 
-    // Build query
-    const query: any = {};
+      // Get medications with stock below threshold
+      const medications = await Medication.find({
+        $or: [
+          { totalStock: { $lte: threshold } },
+          { totalStock: { $lte: '$reorderLevel' } },
+        ],
+      }).select(
+        'name genericName brandName strength dosageForm totalStock reorderLevel minimumStockLevel'
+      );
 
-    if (productType) {
-      query.type = productType;
-    }
+      // Get products with stock below threshold
+      const productQuery: any = {
+        $or: [
+          { totalStock: { $lte: threshold } },
+          { totalStock: { $lte: '$reorderPoint' } },
+        ],
+      };
 
-    // Find products with stock below threshold
-    const lowStockProducts = await Product.find({
-      ...query,
-      $expr: {
-        $lte: [{ $sum: '$inventory.quantity' }, '$minimumStockLevel'],
-      },
-    })
-      .select('name sku type category inventory minimumStockLevel reorderPoint')
-      .sort({ 'inventory.quantity': 1 });
+      if (productType) {
+        productQuery.type = productType;
+      }
 
-    // Find medications with stock below threshold (for backward compatibility)
-    const lowStockMedications = await Medication.find({
-      totalStock: { $lte: threshold },
-    })
-      .select(
-        'name genericName brandName strength dosageForm totalStock reorderLevel'
-      )
-      .sort({ totalStock: 1 });
+      const products = await Product.find(productQuery).select(
+        'name sku type category totalStock minimumStockLevel reorderPoint'
+      );
 
-    // Combine and format results
-    const lowStockItems = [
-      ...lowStockProducts.map((product) => ({
-        id: product._id,
-        name: product.name,
-        sku: product.sku,
-        type: 'product',
-        productType: product.type,
-        category: product.category,
-        totalStock: product.inventory.reduce(
-          (total, item) => total + item.quantity,
-          0
-        ),
-        minimumStockLevel: product.minimumStockLevel,
-        reorderPoint: product.reorderPoint,
-      })),
-      ...lowStockMedications.map((medication) => ({
-        id: medication._id,
-        name: medication.name,
-        genericName: medication.genericName,
-        brandName: medication.brandName,
-        strength: medication.strength,
-        dosageForm: medication.dosageForm,
+      // Transform medications to match the expected format
+      const medicationItems = medications.map((med: IMedication) => ({
+        id: med._id,
+        name: med.name,
         type: 'medication',
-        totalStock: medication.totalStock,
-        reorderLevel: medication.reorderLevel,
-      })),
-    ];
+        genericName: med.genericName,
+        brandName: med.brandName,
+        strength: med.strength,
+        dosageForm: med.dosageForm,
+        totalStock: med.totalStock,
+        minimumStockLevel: med.minimumStockLevel || 0,
+        reorderPoint: med.reorderLevel || 0,
+      }));
 
-    res.status(200).json({
-      status: 'success',
-      data: lowStockItems,
-    });
+      // Transform products to match the expected format
+      const productItems = products.map((prod: IProduct) => ({
+        id: prod._id,
+        name: prod.name,
+        type: 'product',
+        sku: prod.sku,
+        productType: prod.type,
+        category: prod.category,
+        totalStock: prod.totalStock,
+        minimumStockLevel: prod.minimumStockLevel || 0,
+        reorderPoint: prod.reorderPoint || 0,
+      }));
+
+      // Combine both lists
+      const allItems = [...medicationItems, ...productItems];
+
+      res.status(200).json({
+        success: true,
+        data: allItems,
+      });
+    } catch (error) {
+      console.error('Error fetching low stock alerts:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching low stock alerts',
+        error: (error as Error).message,
+      });
+    }
   }
 );
 
@@ -88,89 +101,102 @@ export const getExpiringStockAlerts = asyncHandler(
     expiryDate.setDate(expiryDate.getDate() + days);
     const productType = req.query.productType as string;
 
-    // Build query for products
-    const productQuery: any = {};
+    // Get medications with inventory items expiring within the specified days
+    const medications = await Medication.aggregate([
+      {
+        $unwind: '$inventory',
+      },
+      {
+        $match: {
+          'inventory.expiryDate': { $lte: expiryDate },
+          'inventory.quantity': { $gt: 0 },
+        },
+      },
+      {
+        $project: {
+          id: '$_id',
+          name: '$name',
+          type: { $literal: 'medication' },
+          genericName: 1,
+          brandName: 1,
+          strength: 1,
+          dosageForm: 1,
+          batchNumber: '$inventory.batchNumber',
+          quantity: '$inventory.quantity',
+          location: '$inventory.location',
+          expiryDate: '$inventory.expiryDate',
+          daysUntilExpiry: {
+            $ceil: {
+              $divide: [
+                { $subtract: ['$inventory.expiryDate', new Date()] },
+                1000 * 60 * 60 * 24,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $sort: { daysUntilExpiry: 1 },
+      },
+    ]);
+
+    // Get products with inventory items expiring within the specified days
+    const productQuery: any[] = [
+      {
+        $unwind: '$inventory',
+      },
+      {
+        $match: {
+          'inventory.expiryDate': { $lte: expiryDate },
+          'inventory.quantity': { $gt: 0 },
+        },
+      },
+    ];
 
     if (productType) {
-      productQuery.type = productType;
+      productQuery.unshift({
+        $match: { type: productType },
+      });
     }
 
-    // Find products with batches expiring within the specified days
-    const products = await Product.find({
+    const products = await Product.aggregate([
       ...productQuery,
-      'inventory.expiryDate': { $lte: expiryDate, $gte: new Date() },
-    });
+      {
+        $project: {
+          id: '$_id',
+          name: '$name',
+          type: { $literal: 'product' },
+          productType: '$type',
+          category: '$category',
+          sku: '$sku',
+          batchNumber: '$inventory.batchNumber',
+          quantity: '$inventory.quantity',
+          location: '$inventory.location',
+          expiryDate: '$inventory.expiryDate',
+          daysUntilExpiry: {
+            $ceil: {
+              $divide: [
+                { $subtract: ['$inventory.expiryDate', new Date()] },
+                1000 * 60 * 60 * 24,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $sort: { daysUntilExpiry: 1 },
+      },
+    ]);
 
-    // Find medications with batches expiring within the specified days (for backward compatibility)
-    const medications = await Medication.find({
-      'inventory.expiryDate': { $lte: expiryDate, $gte: new Date() },
-    });
-
-    // Filter and format the results
-    const expiringItems = [];
-
-    // Process products
-    for (const product of products) {
-      const expiringBatches = product.inventory.filter(
-        (batch) =>
-          batch.expiryDate <= expiryDate &&
-          batch.expiryDate >= new Date() &&
-          batch.quantity > 0
-      );
-
-      for (const batch of expiringBatches) {
-        expiringItems.push({
-          id: product._id,
-          name: product.name,
-          sku: product.sku,
-          type: 'product',
-          productType: product.type,
-          category: product.category,
-          batchNumber: batch.batchNumber,
-          quantity: batch.quantity,
-          location: batch.location,
-          expiryDate: batch.expiryDate,
-          daysUntilExpiry: Math.ceil(
-            (batch.expiryDate.getTime() - new Date().getTime()) /
-              (1000 * 60 * 60 * 24)
-          ),
-        });
-      }
-    }
-
-    // Process medications (for backward compatibility)
-    for (const medication of medications) {
-      const expiringBatches = medication.inventory.filter(
-        (batch) =>
-          batch.expiryDate <= expiryDate &&
-          batch.expiryDate >= new Date() &&
-          batch.quantity > 0
-      );
-
-      for (const batch of expiringBatches) {
-        expiringItems.push({
-          id: medication._id,
-          name: medication.name,
-          type: 'medication',
-          strength: medication.strength,
-          dosageForm: medication.dosageForm,
-          batchNumber: batch.batchNumber,
-          quantity: batch.quantity,
-          expiryDate: batch.expiryDate,
-          daysUntilExpiry: Math.ceil(
-            (batch.expiryDate.getTime() - new Date().getTime()) /
-              (1000 * 60 * 60 * 24)
-          ),
-        });
-      }
-    }
+    // Combine both lists
+    const allItems = [...medications, ...products];
 
     // Sort by days until expiry
-    expiringItems.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
+    allItems.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
 
     res.status(200).json({
       status: 'success',
-      data: expiringItems,
+      data: allItems,
     });
   }
 );
@@ -412,135 +438,5 @@ export const getInventoryMovement = asyncHandler(
       status: 'success',
       data: results,
     });
-  }
-);
-
-/**
- * @desc    Adjust inventory
- * @route   POST /api/inventory/adjust
- * @access  Private
- */
-export const adjustInventory = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { medicationId, productId, batchNumber, quantity, reason, location } =
-      req.body;
-
-    // Check if we're adjusting a medication or a product
-    if (medicationId) {
-      // Validate medication
-      const medication = await Medication.findById(medicationId);
-      if (!medication) {
-        throw new AppError('Medication not found', 404);
-      }
-
-      // Find the batch
-      const batchIndex = medication.inventory.findIndex(
-        (batch) => batch.batchNumber === batchNumber
-      );
-
-      if (batchIndex === -1) {
-        throw new AppError(
-          `Batch ${batchNumber} not found for this medication`,
-          404
-        );
-      }
-
-      // Calculate new quantity
-      const currentQuantity = medication.inventory[batchIndex].quantity;
-      const newQuantity = currentQuantity + quantity;
-
-      if (newQuantity < 0) {
-        throw new AppError(
-          'Adjustment would result in negative inventory',
-          400
-        );
-      }
-
-      // Update batch quantity
-      medication.inventory[batchIndex].quantity = newQuantity;
-
-      // Add adjustment note
-      const adjustmentNote = `Inventory adjusted by ${
-        quantity > 0 ? '+' : ''
-      }${quantity} units. Reason: ${reason}`;
-      medication.notes = medication.notes
-        ? `${medication.notes}\n\n${adjustmentNote}`
-        : adjustmentNote;
-
-      await medication.save();
-
-      res.status(200).json({
-        status: 'success',
-        data: {
-          type: 'medication',
-          name: medication.name,
-          batchNumber,
-          previousQuantity: currentQuantity,
-          adjustmentQuantity: quantity,
-          newQuantity,
-          reason,
-        },
-      });
-    } else if (productId) {
-      // Validate product
-      const product = await Product.findById(productId);
-      if (!product) {
-        throw new AppError('Product not found', 404);
-      }
-
-      // Find the batch
-      const batchIndex = product.inventory.findIndex(
-        (batch) =>
-          batch.batchNumber === batchNumber && batch.location === location
-      );
-
-      if (batchIndex === -1) {
-        throw new AppError(
-          `Batch ${batchNumber} not found for this product at location ${location}`,
-          404
-        );
-      }
-
-      // Calculate new quantity
-      const currentQuantity = product.inventory[batchIndex].quantity;
-      const newQuantity = currentQuantity + quantity;
-
-      if (newQuantity < 0) {
-        throw new AppError(
-          'Adjustment would result in negative inventory',
-          400
-        );
-      }
-
-      // Update batch quantity
-      product.inventory[batchIndex].quantity = newQuantity;
-
-      // Add adjustment note
-      const adjustmentNote = `Inventory adjusted by ${
-        quantity > 0 ? '+' : ''
-      }${quantity} units at location ${location}. Reason: ${reason}`;
-      product.notes = product.notes
-        ? `${product.notes}\n\n${adjustmentNote}`
-        : adjustmentNote;
-
-      await product.save();
-
-      res.status(200).json({
-        status: 'success',
-        data: {
-          type: 'product',
-          name: product.name,
-          sku: product.sku,
-          batchNumber,
-          location,
-          previousQuantity: currentQuantity,
-          adjustmentQuantity: quantity,
-          newQuantity,
-          reason,
-        },
-      });
-    } else {
-      throw new AppError('Either medicationId or productId is required', 400);
-    }
   }
 );

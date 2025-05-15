@@ -20,20 +20,49 @@ const productSchema = z.object({
   barcode: z.string().optional(),
   description: z.string().optional(),
   type: z.enum(Object.values(ProductType) as [string, ...string[]]),
-  category: z.enum(Object.values(ProductCategory) as [string, ...string[]]),
+  category: z
+    .enum(Object.values(ProductCategory) as [string, ...string[]])
+    .or(z.string()),
   brand: z.string().optional(),
   manufacturer: z.string().optional(),
   requiresPrescription: z.boolean().default(false),
+  costPrice: z.number().min(0, 'Cost price must be non-negative'),
+  sellingPrice: z.number().min(0, 'Selling price must be non-negative'),
+  wholesalePrice: z
+    .number()
+    .min(0, 'Wholesale price must be non-negative')
+    .optional(),
+  retailPrice: z
+    .number()
+    .min(0, 'Retail price must be non-negative')
+    .optional(),
   defaultPrice: z.number().min(0, 'Price must be non-negative'),
-  minimumStockLevel: z.number().int().min(0, 'Minimum stock level must be non-negative'),
-  maximumStockLevel: z.number().int().min(0, 'Maximum stock level must be non-negative').optional(),
+  minimumStockLevel: z
+    .number()
+    .int()
+    .min(0, 'Minimum stock level must be non-negative'),
+  maximumStockLevel: z
+    .number()
+    .int()
+    .min(0, 'Maximum stock level must be non-negative')
+    .optional(),
   reorderPoint: z.number().int().min(0, 'Reorder point must be non-negative'),
-  reorderQuantity: z.number().int().min(0, 'Reorder quantity must be non-negative').optional(),
+  reorderQuantity: z
+    .number()
+    .int()
+    .min(0, 'Reorder quantity must be non-negative')
+    .optional(),
   isActive: z.boolean().default(true),
   isTaxable: z.boolean().default(true),
-  taxRate: z.number().min(0, 'Tax rate must be non-negative').max(100, 'Tax rate cannot exceed 100%').optional(),
+  taxRate: z
+    .number()
+    .min(0, 'Tax rate must be non-negative')
+    .max(100, 'Tax rate cannot exceed 100%')
+    .optional(),
   notes: z.string().optional(),
   medicationId: z.string().optional(),
+  customType: z.string().optional(),
+  customCategory: z.string().optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -44,6 +73,8 @@ const ProductForm = () => {
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [medications, setMedications] = useState<any[]>([]);
+  const [showCustomType, setShowCustomType] = useState(false);
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
 
   const {
     control,
@@ -58,11 +89,17 @@ const ProductForm = () => {
       type: ProductType.MEDICATION,
       category: ProductCategory.ANALGESIC,
       requiresPrescription: false,
+      costPrice: 0,
+      sellingPrice: 0,
+      wholesalePrice: 0,
+      retailPrice: 0,
       defaultPrice: 0,
       minimumStockLevel: 10,
       reorderPoint: 5,
       isActive: true,
       isTaxable: true,
+      customType: '',
+      customCategory: '',
     },
   });
 
@@ -103,11 +140,26 @@ const ProductForm = () => {
 
   const onSubmit = async (data: ProductFormData) => {
     try {
+      // Handle custom type and category
+      const formData = { ...data };
+
+      if (showCustomType && formData.customType) {
+        formData.type = formData.customType;
+      }
+
+      if (showCustomCategory && formData.customCategory) {
+        formData.category = formData.customCategory;
+      }
+
+      // Remove custom fields before sending to API
+      delete formData.customType;
+      delete formData.customCategory;
+
       if (id) {
-        await api.patch(`/products/${id}`, data);
+        await api.patch(`/products/${id}`, formData);
         showToast('Product updated successfully', 'success');
       } else {
-        await api.post('/products', data);
+        await api.post('/products', formData);
         showToast('Product created successfully', 'success');
       }
       navigate('/inventory/products');
@@ -174,17 +226,49 @@ const ProductForm = () => {
                 render={({ field }) => (
                   <Select
                     label="Product Type"
-                    options={Object.values(ProductType).map(type => ({
-                      value: type,
-                      label: type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                    }))}
+                    options={[
+                      ...Object.values(ProductType).map((type) => ({
+                        value: type,
+                        label: type
+                          .replace(/_/g, ' ')
+                          .replace(/\b\w/g, (l) => l.toUpperCase()),
+                      })),
+                      { value: 'custom', label: 'Add Custom Type' },
+                    ]}
                     error={errors.type?.message}
                     required
                     {...field}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      if (e.target.value === 'custom') {
+                        // Show custom type input
+                        setShowCustomType(true);
+                      } else {
+                        setShowCustomType(false);
+                      }
+                    }}
                   />
                 )}
               />
             </div>
+
+            {watch('type') === 'custom' && (
+              <div>
+                <Controller
+                  name="customType"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      label="Custom Product Type"
+                      placeholder="Enter custom product type"
+                      error={errors.customType?.message}
+                      required
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+            )}
 
             <div>
               <Controller
@@ -193,17 +277,49 @@ const ProductForm = () => {
                 render={({ field }) => (
                   <Select
                     label="Category"
-                    options={Object.values(ProductCategory).map(category => ({
-                      value: category,
-                      label: category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-                    }))}
+                    options={[
+                      ...Object.values(ProductCategory).map((category) => ({
+                        value: category,
+                        label: category
+                          .replace(/_/g, ' ')
+                          .replace(/\b\w/g, (l) => l.toUpperCase()),
+                      })),
+                      { value: 'custom', label: 'Add Custom Category' },
+                    ]}
                     error={errors.category?.message}
                     required
                     {...field}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      if (e.target.value === 'custom') {
+                        // Show custom category input
+                        setShowCustomCategory(true);
+                      } else {
+                        setShowCustomCategory(false);
+                      }
+                    }}
                   />
                 )}
               />
             </div>
+
+            {watch('category') === 'custom' && (
+              <div>
+                <Controller
+                  name="customCategory"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      label="Custom Category"
+                      placeholder="Enter custom category"
+                      error={errors.customCategory?.message}
+                      required
+                      {...field}
+                    />
+                  )}
+                />
+              </div>
+            )}
 
             <div>
               <Controller
@@ -245,6 +361,92 @@ const ProductForm = () => {
                     placeholder="Enter manufacturer"
                     error={errors.manufacturer?.message}
                     {...field}
+                  />
+                )}
+              />
+            </div>
+
+            <div>
+              <Controller
+                name="costPrice"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    label="Cost Price (₦)"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    placeholder="Enter cost price"
+                    error={errors.costPrice?.message}
+                    required
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  />
+                )}
+              />
+            </div>
+
+            <div>
+              <Controller
+                name="sellingPrice"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    label="Selling Price (₦)"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    placeholder="Enter selling price"
+                    error={errors.sellingPrice?.message}
+                    required
+                    {...field}
+                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                  />
+                )}
+              />
+            </div>
+
+            <div>
+              <Controller
+                name="wholesalePrice"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    label="Wholesale Price (₦)"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    placeholder="Enter wholesale price (optional)"
+                    error={errors.wholesalePrice?.message}
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value ? parseFloat(e.target.value) : undefined
+                      )
+                    }
+                  />
+                )}
+              />
+            </div>
+
+            <div>
+              <Controller
+                name="retailPrice"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    label="Retail Price (₦)"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    placeholder="Enter retail price (optional)"
+                    error={errors.retailPrice?.message}
+                    {...field}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value ? parseFloat(e.target.value) : undefined
+                      )
+                    }
                   />
                 )}
               />
@@ -320,7 +522,11 @@ const ProductForm = () => {
                     placeholder="Enter reorder quantity"
                     error={errors.reorderQuantity?.message}
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value ? parseInt(e.target.value) : undefined
+                      )
+                    }
                   />
                 )}
               />
@@ -338,7 +544,11 @@ const ProductForm = () => {
                     placeholder="Enter maximum stock level"
                     error={errors.maximumStockLevel?.message}
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                    onChange={(e) =>
+                      field.onChange(
+                        e.target.value ? parseInt(e.target.value) : undefined
+                      )
+                    }
                   />
                 )}
               />
@@ -354,9 +564,11 @@ const ProductForm = () => {
                       label="Link to Medication"
                       options={[
                         { value: '', label: 'None' },
-                        ...medications.map(med => ({
+                        ...medications.map((med) => ({
                           value: med._id,
-                          label: `${med.name} ${med.strength || ''} ${med.dosageForm || ''}`.trim(),
+                          label: `${med.name} ${med.strength || ''} ${
+                            med.dosageForm || ''
+                          }`.trim(),
                         })),
                       ]}
                       error={errors.medicationId?.message}
@@ -456,7 +668,13 @@ const ProductForm = () => {
                       placeholder="Enter tax rate"
                       error={errors.taxRate?.message}
                       {...field}
-                      onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value
+                            ? parseFloat(e.target.value)
+                            : undefined
+                        )
+                      }
                     />
                   )}
                 />
@@ -472,11 +690,7 @@ const ProductForm = () => {
             >
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              isLoading={isSubmitting}
-            >
+            <Button type="submit" variant="primary" isLoading={isSubmitting}>
               {id ? 'Update Product' : 'Create Product'}
             </Button>
           </div>

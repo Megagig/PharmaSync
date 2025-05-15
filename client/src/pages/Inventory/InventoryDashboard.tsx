@@ -222,7 +222,7 @@ const InventoryDashboard = () => {
         <Card>
           <div
             className="p-4 text-center cursor-pointer hover:bg-gray-50"
-            onClick={() => navigate('/suppliers')}
+            onClick={() => navigate('/inventory/suppliers')}
           >
             <svg
               className="w-8 h-8 mx-auto text-indigo-600"
@@ -572,6 +572,7 @@ const InventoryDashboard = () => {
           {isLoading ? (
             <p className="text-gray-500">Loading inventory valuation...</p>
           ) : inventoryValuation &&
+            inventoryValuation.medications &&
             inventoryValuation.medications.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">

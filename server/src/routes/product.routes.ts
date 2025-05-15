@@ -11,6 +11,7 @@ import {
   addPriceLevel,
   updatePriceLevel,
   removePriceLevel,
+  getProductHistory,
 } from '../controllers/product.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
@@ -48,16 +49,20 @@ router
     validate(updateProductSchema),
     updateProduct
   )
-  .delete(
-    restrictTo([RoleType.ADMIN]),
-    deleteProduct
-  );
+  .delete(restrictTo([RoleType.ADMIN]), deleteProduct);
+
+// Get product history
+router.route('/:id/history').get(getProductHistory);
 
 // Inventory management
 router
   .route('/:id/inventory')
   .post(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.PHARMACY_TECHNICIAN]),
+    restrictTo([
+      RoleType.ADMIN,
+      RoleType.PHARMACIST,
+      RoleType.PHARMACY_TECHNICIAN,
+    ]),
     validate(addProductInventoryItemSchema),
     addInventoryItem
   );
@@ -65,7 +70,11 @@ router
 router
   .route('/:id/inventory/:itemId')
   .patch(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.PHARMACY_TECHNICIAN]),
+    restrictTo([
+      RoleType.ADMIN,
+      RoleType.PHARMACIST,
+      RoleType.PHARMACY_TECHNICIAN,
+    ]),
     validate(updateProductInventoryItemSchema),
     updateInventoryItem
   )
@@ -90,9 +99,6 @@ router
     validate(updateProductPriceLevelSchema),
     updatePriceLevel
   )
-  .delete(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
-    removePriceLevel
-  );
+  .delete(restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]), removePriceLevel);
 
 export default router;

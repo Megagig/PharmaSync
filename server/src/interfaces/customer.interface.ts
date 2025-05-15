@@ -24,6 +24,7 @@ export interface ICustomerAddress {
   postalCode: string;
   country: string;
   isDefault?: boolean;
+  _id?: Types.ObjectId;
 }
 
 export interface ICustomer extends Document {

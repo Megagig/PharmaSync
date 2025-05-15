@@ -57,13 +57,21 @@ import InventoryMovement from '@/pages/Inventory/InventoryMovement';
 import ProductList from '@/pages/Inventory/Products/ProductList';
 import ProductForm from '@/pages/Inventory/Products/ProductForm';
 import ProductInventory from '@/pages/Inventory/Products/ProductInventory';
+import ProductHistory from '@/pages/Inventory/Products/ProductHistory';
 import StockLevelsList from '@/pages/Inventory/StockLevels/StockLevelsList';
 import PriceManagementList from '@/pages/Inventory/PriceManagement/PriceManagementList';
 import ExpiryTrackingList from '@/pages/Inventory/ExpiryTracking/ExpiryTrackingList';
 import PurchasesList from '@/pages/Inventory/Purchases/PurchasesList';
-import CustomerList from '@/pages/Inventory/Customers/CustomerList';
+import CustomersList from '@/pages/Inventory/Customers/CustomersList';
+import SuppliersList from '@/pages/Inventory/Suppliers/SuppliersList';
 import LocationList from '@/pages/Inventory/Locations/LocationList';
 import InventoryReportsList from '@/pages/Inventory/Reports/InventoryReportsList';
+
+// Sales pages
+import SalesList from '@/pages/Sales/SalesList';
+import CreateSale from '@/pages/Sales/CreateSale';
+import SaleDetail from '@/pages/Sales/SaleDetail';
+import SaleReceipt from '@/pages/Sales/SaleReceipt';
 
 // Reports pages
 import ReportsDashboard from '@/pages/Reports/ReportsDashboard';
@@ -192,6 +200,12 @@ const AppRoutes = () => {
           <Route path="/dispensing/:id" element={<DispensingDetail />} />
           <Route path="/dispensing/:id/receipt" element={<Receipt />} />
 
+          {/* Sales & Invoicing */}
+          <Route path="/sales" element={<SalesList />} />
+          <Route path="/sales/new" element={<CreateSale />} />
+          <Route path="/sales/:id" element={<SaleDetail />} />
+          <Route path="/sales/:id/receipt" element={<SaleReceipt />} />
+
           {/* Inventory Management */}
           <Route path="/inventory" element={<InventoryDashboard />} />
           <Route path="/inventory/adjust" element={<InventoryAdjustment />} />
@@ -203,6 +217,10 @@ const AppRoutes = () => {
             path="/inventory/products/:id/inventory"
             element={<ProductInventory />}
           />
+          <Route
+            path="/inventory/products/:id/history"
+            element={<ProductHistory />}
+          />
           <Route path="/inventory/stock-levels" element={<StockLevelsList />} />
           <Route
             path="/inventory/price-management"
@@ -213,7 +231,12 @@ const AppRoutes = () => {
             element={<ExpiryTrackingList />}
           />
           <Route path="/inventory/purchases" element={<PurchasesList />} />
-          <Route path="/inventory/customers" element={<CustomerList />} />
+          <Route path="/inventory/customers" element={<CustomersList />} />
+          <Route path="/inventory/suppliers" element={<SuppliersList />} />
+          <Route
+            path="/suppliers"
+            element={<Navigate to="/inventory/suppliers" replace />}
+          />
           <Route path="/inventory/locations" element={<LocationList />} />
           <Route path="/inventory/reports" element={<InventoryReportsList />} />
 

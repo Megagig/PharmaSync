@@ -84,6 +84,7 @@ export interface IMedication extends Document {
   minimumStockLevel: number;
   notes?: string;
   totalStock?: number;
+  reorderLevel?: number; // Added for compatibility with inventory controller
   createdBy: Types.ObjectId; // Reference to user ID
   createdAt: Date;
   updatedAt: Date;

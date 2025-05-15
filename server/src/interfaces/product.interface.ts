@@ -27,19 +27,19 @@ export enum ProductCategory {
   STEROID = 'steroid',
   VITAMIN = 'vitamin',
   SUPPLEMENT = 'supplement',
-  
+
   // Medical supply categories
   BANDAGE = 'bandage',
   SYRINGE = 'syringe',
   GLOVE = 'glove',
   MASK = 'mask',
   SANITIZER = 'sanitizer',
-  
+
   // Equipment categories
   THERMOMETER = 'thermometer',
   BLOOD_PRESSURE_MONITOR = 'blood_pressure_monitor',
   GLUCOSE_METER = 'glucose_meter',
-  
+
   // Other categories
   COSMETIC = 'cosmetic',
   HYGIENE = 'hygiene',
@@ -86,6 +86,7 @@ export interface IProduct extends Document {
   medicationId?: Types.ObjectId; // Reference to medication if type is MEDICATION
   images?: string[];
   tags?: string[];
+  totalStock?: number; // Virtual property for total stock across all inventory items
   createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;

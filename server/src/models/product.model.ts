@@ -182,8 +182,8 @@ productSchema.virtual('totalStock').get(function (this: IProduct) {
   return this.inventory.reduce((total, item) => total + item.quantity, 0);
 });
 
-// Generate SKU before saving if not provided
-productSchema.pre('save', function (next) {
+// Generate SKU before validation if not provided
+productSchema.pre('validate', function (next) {
   if (!this.sku) {
     // Format: PT-XXXXX (where PT is product type prefix and XXXXX is a sequential number)
     const typePrefix = this.type.substring(0, 2).toUpperCase();

@@ -1,8 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import {
-  ILocation,
-  LocationType,
-} from '../interfaces/location.interface';
+import { ILocation, LocationType } from '../interfaces/location.interface';
 
 const locationAddressSchema = new Schema(
   {
@@ -121,7 +118,9 @@ locationSchema.pre('save', function (next) {
 // Ensure only one default location
 locationSchema.pre('save', async function (next) {
   if (this.isDefault && this.isModified('isDefault')) {
-    await this.constructor.updateMany(
+    // Cast this.constructor to any to avoid TypeScript error
+    const LocationModel = this.constructor as any;
+    await LocationModel.updateMany(
       { _id: { $ne: this._id } },
       { $set: { isDefault: false } }
     );

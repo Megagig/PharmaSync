@@ -245,6 +245,16 @@ const ProductList = () => {
                           </Button>
                           <Button
                             variant="text"
+                            onClick={() =>
+                              navigate(
+                                `/inventory/products/${product._id}/history`
+                              )
+                            }
+                          >
+                            History
+                          </Button>
+                          <Button
+                            variant="text"
                             color="danger"
                             onClick={() => handleDelete(product._id)}
                           >
