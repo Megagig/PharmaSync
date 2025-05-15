@@ -11,7 +11,9 @@ const PatientDetail = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { currentPatient, isLoading, error } = useSelector((state: RootState) => state.patients);
+  const { currentPatient, isLoading, error } = useSelector(
+    (state: RootState) => state.patients
+  );
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -163,7 +165,7 @@ const PatientDetail = () => {
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex space-x-8 overflow-x-auto">
           <button
             className={`${
               activeTab === 'overview'
@@ -196,6 +198,66 @@ const PatientDetail = () => {
           </button>
           <button
             className={`${
+              activeTab === 'medicationHistory'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            onClick={() => setActiveTab('medicationHistory')}
+          >
+            Medication History
+          </button>
+          <button
+            className={`${
+              activeTab === 'clinicalAssessments'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            onClick={() => setActiveTab('clinicalAssessments')}
+          >
+            Clinical Assessments
+          </button>
+          <button
+            className={`${
+              activeTab === 'laboratoryFindings'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            onClick={() => setActiveTab('laboratoryFindings')}
+          >
+            Laboratory Findings
+          </button>
+          <button
+            className={`${
+              activeTab === 'drugTherapyProblems'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            onClick={() => setActiveTab('drugTherapyProblems')}
+          >
+            Drug Therapy Problems
+          </button>
+          <button
+            className={`${
+              activeTab === 'carePlans'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            onClick={() => setActiveTab('carePlans')}
+          >
+            Care Plans
+          </button>
+          <button
+            className={`${
+              activeTab === 'soapNotes'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            onClick={() => setActiveTab('soapNotes')}
+          >
+            SOAP Notes
+          </button>
+          <button
+            className={`${
               activeTab === 'medications'
                 ? 'border-primary-500 text-primary-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -212,53 +274,101 @@ const PatientDetail = () => {
         <Card>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Personal Information
+              </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">Full Name</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Full Name
+                  </span>
                   <span className="text-sm text-gray-900">
                     {currentPatient.firstName} {currentPatient.lastName}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">Date of Birth</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Date of Birth
+                  </span>
                   <span className="text-sm text-gray-900">
                     {formatDate(new Date(currentPatient.dateOfBirth))} (
                     {calculateAge(new Date(currentPatient.dateOfBirth))} years)
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">Gender</span>
-                  <span className="text-sm text-gray-900 capitalize">{currentPatient.gender}</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Gender
+                  </span>
+                  <span className="text-sm text-gray-900 capitalize">
+                    {currentPatient.gender}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">Blood Group</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Blood Group
+                  </span>
                   <span className="text-sm text-gray-900">
                     {currentPatient.bloodGroup || 'Not specified'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-gray-500">
+                    Genotype
+                  </span>
+                  <span className="text-sm text-gray-900">
+                    {currentPatient.genotype || 'Not specified'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-gray-500">
+                    Marital Status
+                  </span>
+                  <span className="text-sm text-gray-900 capitalize">
+                    {currentPatient.maritalStatus || 'Not specified'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm font-medium text-gray-500">
+                    Weight
+                  </span>
+                  <span className="text-sm text-gray-900">
+                    {currentPatient.weight
+                      ? `${currentPatient.weight} kg`
+                      : 'Not specified'}
                   </span>
                 </div>
               </div>
             </div>
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Contact Information
+              </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">Phone Number</span>
-                  <span className="text-sm text-gray-900">{currentPatient.phoneNumber}</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Phone Number
+                  </span>
+                  <span className="text-sm text-gray-900">
+                    {currentPatient.phoneNumber}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">Email</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Email
+                  </span>
                   <span className="text-sm text-gray-900">
                     {currentPatient.email || 'Not specified'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">Address</span>
+                  <span className="text-sm font-medium text-gray-500">
+                    Address
+                  </span>
                   <span className="text-sm text-gray-900">
                     {currentPatient.address
-                      ? `${currentPatient.address}, ${currentPatient.city || ''} ${
-                          currentPatient.state || ''
-                        }`
+                      ? `${currentPatient.address}, ${
+                          currentPatient.city || ''
+                        } ${currentPatient.state || ''}`
                       : 'Not specified'}
                   </span>
                 </div>
@@ -268,7 +378,9 @@ const PatientDetail = () => {
           {currentPatient.notes && (
             <div className="mt-6">
               <h3 className="text-lg font-medium text-gray-900 mb-2">Notes</h3>
-              <p className="text-sm text-gray-700 whitespace-pre-line">{currentPatient.notes}</p>
+              <p className="text-sm text-gray-700 whitespace-pre-line">
+                {currentPatient.notes}
+              </p>
             </div>
           )}
         </Card>
@@ -358,7 +470,9 @@ const PatientDetail = () => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() =>
-                              navigate(`/patients/${id}/allergies/${allergy._id}/edit`)
+                              navigate(
+                                `/patients/${id}/allergies/${allergy._id}/edit`
+                              )
                             }
                             className="text-indigo-600 hover:text-indigo-900"
                           >
@@ -366,7 +480,9 @@ const PatientDetail = () => {
                           </button>
                           <button
                             onClick={() =>
-                              navigate(`/patients/${id}/allergies/${allergy._id}/delete`)
+                              navigate(
+                                `/patients/${id}/allergies/${allergy._id}/delete`
+                              )
                             }
                             className="text-red-600 hover:text-red-900"
                           >
@@ -386,7 +502,9 @@ const PatientDetail = () => {
       {activeTab === 'conditions' && (
         <Card>
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Medical Conditions</h3>
+            <h3 className="text-lg font-medium text-gray-900">
+              Medical Conditions
+            </h3>
             <Button
               variant="primary"
               size="sm"
@@ -410,7 +528,9 @@ const PatientDetail = () => {
             </Button>
           </div>
           {currentPatient.medicalConditions.length === 0 ? (
-            <p className="text-sm text-gray-500">No medical conditions recorded.</p>
+            <p className="text-sm text-gray-500">
+              No medical conditions recorded.
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -467,7 +587,9 @@ const PatientDetail = () => {
                         <div className="flex space-x-2">
                           <button
                             onClick={() =>
-                              navigate(`/patients/${id}/conditions/${condition._id}/edit`)
+                              navigate(
+                                `/patients/${id}/conditions/${condition._id}/edit`
+                              )
                             }
                             className="text-indigo-600 hover:text-indigo-900"
                           >
@@ -475,7 +597,727 @@ const PatientDetail = () => {
                           </button>
                           <button
                             onClick={() =>
-                              navigate(`/patients/${id}/conditions/${condition._id}/delete`)
+                              navigate(
+                                `/patients/${id}/conditions/${condition._id}/delete`
+                              )
+                            }
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {activeTab === 'medicationHistory' && (
+        <Card>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              Medication History
+            </h3>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate(`/patients/${id}/medication-history/new`)}
+              leftIcon={
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+            >
+              Add Medication History
+            </Button>
+          </div>
+          {!currentPatient.medicationHistory ||
+          currentPatient.medicationHistory.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No medication history recorded.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Medication
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Purpose
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Dosage/Frequency
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Duration
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Status
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentPatient.medicationHistory.map((medication) => (
+                    <tr key={medication._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {medication.medication}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {medication.purpose}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {medication.dosage}, {medication.frequency}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {medication.duration}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {medication.isCurrent ? 'Current' : 'Past'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/medication-history/${medication._id}/edit`
+                              )
+                            }
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/medication-history/${medication._id}/delete`
+                              )
+                            }
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {activeTab === 'clinicalAssessments' && (
+        <Card>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              Clinical Assessments
+            </h3>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() =>
+                navigate(`/patients/${id}/clinical-assessments/new`)
+              }
+              leftIcon={
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+            >
+              Add Assessment
+            </Button>
+          </div>
+          {!currentPatient.clinicalAssessments ||
+          currentPatient.clinicalAssessments.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No clinical assessments recorded.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      BP
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      RR
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Temp
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Heart Sounds
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentPatient.clinicalAssessments.map((assessment) => (
+                    <tr key={assessment._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {formatDate(new Date(assessment.date))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {assessment.bloodPressure}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {assessment.respiratoryRate}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {assessment.temperature}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {assessment.heartSounds}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/clinical-assessments/${assessment._id}/edit`
+                              )
+                            }
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/clinical-assessments/${assessment._id}/delete`
+                              )
+                            }
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {activeTab === 'laboratoryFindings' && (
+        <Card>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              Laboratory Findings
+            </h3>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() =>
+                navigate(`/patients/${id}/laboratory-findings/new`)
+              }
+              leftIcon={
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+            >
+              Add Lab Result
+            </Button>
+          </div>
+          {!currentPatient.laboratoryFindings ||
+          currentPatient.laboratoryFindings.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No laboratory findings recorded.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      PCV
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      FBC
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      FBS
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      HbA1c
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentPatient.laboratoryFindings.map((finding) => (
+                    <tr key={finding._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {formatDate(new Date(finding.date))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {finding.pcv || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {finding.fbc || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {finding.fbs || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {finding.hbA1c || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/laboratory-findings/${finding._id}/edit`
+                              )
+                            }
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/laboratory-findings/${finding._id}/delete`
+                              )
+                            }
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {activeTab === 'drugTherapyProblems' && (
+        <Card>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              Drug Therapy Problems
+            </h3>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() =>
+                navigate(`/patients/${id}/drug-therapy-problems/new`)
+              }
+              leftIcon={
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+            >
+              Add Problem
+            </Button>
+          </div>
+          {!currentPatient.drugTherapyProblems ||
+          currentPatient.drugTherapyProblems.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No drug therapy problems recorded.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Type
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Description
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Status
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentPatient.drugTherapyProblems.map((problem) => (
+                    <tr key={problem._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {formatDate(new Date(problem.date))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
+                        {problem.type.replace(/_/g, ' ')}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                        {problem.description}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {problem.isResolved ? 'Resolved' : 'Unresolved'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/drug-therapy-problems/${problem._id}/edit`
+                              )
+                            }
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/drug-therapy-problems/${problem._id}/delete`
+                              )
+                            }
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {activeTab === 'carePlans' && (
+        <Card>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Care Plans</h3>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate(`/patients/${id}/care-plans/new`)}
+              leftIcon={
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+            >
+              Add Care Plan
+            </Button>
+          </div>
+          {!currentPatient.carePlans ||
+          currentPatient.carePlans.length === 0 ? (
+            <p className="text-sm text-gray-500">No care plans recorded.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Follow-up Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Status
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentPatient.carePlans.map((plan) => (
+                    <tr key={plan._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {formatDate(new Date(plan.date))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(new Date(plan.followUpDate))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {plan.drugTherapyProblemResolved
+                          ? 'Resolved'
+                          : 'Unresolved'}{' '}
+                        /{plan.needsReview ? ' Needs Review' : ' Adequate'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/care-plans/${plan._id}/edit`
+                              )
+                            }
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/care-plans/${plan._id}/delete`
+                              )
+                            }
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {activeTab === 'soapNotes' && (
+        <Card>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-medium text-gray-900">SOAP Notes</h3>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate(`/patients/${id}/soap-notes/new`)}
+              leftIcon={
+                <svg
+                  className="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              }
+            >
+              Add SOAP Note
+            </Button>
+          </div>
+          {!currentPatient.soapNotes ||
+          currentPatient.soapNotes.length === 0 ? (
+            <p className="text-sm text-gray-500">No SOAP notes recorded.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Subjective
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Assessment
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {currentPatient.soapNotes.map((note) => (
+                    <tr key={note._id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {formatDate(new Date(note.date))}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                        {note.subjective}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                        {note.assessment}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/soap-notes/${note._id}/edit`
+                              )
+                            }
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() =>
+                              navigate(
+                                `/patients/${id}/soap-notes/${note._id}/delete`
+                              )
                             }
                             className="text-red-600 hover:text-red-900"
                           >
@@ -553,7 +1395,9 @@ const PatientDetail = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() =>
-                            navigate(`/patients/${id}/medications/${medicationId}/remove`)
+                            navigate(
+                              `/patients/${id}/medications/${medicationId}/remove`
+                            )
                           }
                           className="text-red-600 hover:text-red-900"
                         >
@@ -573,7 +1417,10 @@ const PatientDetail = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div
+              className="fixed inset-0 transition-opacity"
+              aria-hidden="true"
+            >
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
             <span
@@ -607,8 +1454,8 @@ const PatientDetail = () => {
                     </h3>
                     <div className="mt-2">
                       <p className="text-sm text-gray-500">
-                        Are you sure you want to delete this patient? This action cannot be
-                        undone.
+                        Are you sure you want to delete this patient? This
+                        action cannot be undone.
                       </p>
                     </div>
                   </div>

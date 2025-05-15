@@ -1,32 +1,114 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import { RootState } from '@/store/store';
 import { fetchPatients, deletePatient } from '@/store/slices/patientSlice';
-import { formatDate } from '@/utils/date.utils';
+import { formatDate, calculateAge } from '@/utils/date.utils';
 import Button from '@/components/common/Button/Button';
 import Card from '@/components/common/Card/Card';
+import PatientFilters, {
+  PatientFilterValues,
+} from '@/components/domain/Patients/PatientFilters';
 
 const PatientList = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { patients, isLoading, error, totalPatients, totalPages, currentPage } = useSelector(
-    (state: RootState) => state.patients
-  );
-  const [search, setSearch] = useState('');
+  const { patients, isLoading, error, totalPatients, totalPages, currentPage } =
+    useSelector((state: RootState) => state.patients);
+  const [filters, setFilters] = useState<PatientFilterValues>({
+    search: '',
+  });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<string | null>(null);
+  const [currentFilters, setCurrentFilters] = useState<any>({
+    page: 1,
+    limit: 10,
+  });
+
+  const fetchPatientsWithFilters = useCallback(
+    (page = 1) => {
+      const apiFilters: any = {
+        page,
+        limit: 10,
+        search: filters.search || '',
+      };
+
+      if (filters.gender) {
+        apiFilters.gender = filters.gender;
+      }
+
+      if (filters.bloodGroup) {
+        apiFilters.bloodGroup = filters.bloodGroup;
+      }
+
+      if (filters.genotype) {
+        apiFilters.genotype = filters.genotype;
+      }
+
+      if (filters.maritalStatus) {
+        apiFilters.maritalStatus = filters.maritalStatus;
+      }
+
+      if (
+        filters.ageRange &&
+        (filters.ageRange[0] !== '' || filters.ageRange[1] !== '')
+      ) {
+        if (filters.ageRange[0] !== '') {
+          apiFilters.minAge = filters.ageRange[0];
+        }
+        if (filters.ageRange[1] !== '') {
+          apiFilters.maxAge = filters.ageRange[1];
+        }
+      }
+
+      if (filters.hasAllergies !== null) {
+        apiFilters.hasAllergies = filters.hasAllergies;
+      }
+
+      if (filters.hasMedicalConditions !== null) {
+        apiFilters.hasMedicalConditions = filters.hasMedicalConditions;
+      }
+
+      if (filters.hasMedicationHistory !== null) {
+        apiFilters.hasMedicationHistory = filters.hasMedicationHistory;
+      }
+
+      if (filters.hasClinicalAssessments !== null) {
+        apiFilters.hasClinicalAssessments = filters.hasClinicalAssessments;
+      }
+
+      if (filters.hasLaboratoryFindings !== null) {
+        apiFilters.hasLaboratoryFindings = filters.hasLaboratoryFindings;
+      }
+
+      if (filters.hasDrugTherapyProblems !== null) {
+        apiFilters.hasDrugTherapyProblems = filters.hasDrugTherapyProblems;
+      }
+
+      if (filters.hasCarePlans !== null) {
+        apiFilters.hasCarePlans = filters.hasCarePlans;
+      }
+
+      if (filters.hasSoapNotes !== null) {
+        apiFilters.hasSoapNotes = filters.hasSoapNotes;
+      }
+
+      setCurrentFilters(apiFilters);
+      dispatch(fetchPatients(apiFilters));
+    },
+    [dispatch, filters]
+  );
 
   useEffect(() => {
-    dispatch(fetchPatients({ page: 1, limit: 10 }));
-  }, [dispatch]);
+    fetchPatientsWithFilters(1);
+  }, [fetchPatientsWithFilters]);
 
-  const handleSearch = () => {
-    dispatch(fetchPatients({ page: 1, limit: 10, search }));
+  const handleFilterChange = (newFilters: PatientFilterValues) => {
+    setFilters(newFilters);
   };
 
   const handlePageChange = (page: number) => {
-    dispatch(fetchPatients({ page, limit: 10, search }));
+    fetchPatientsWithFilters(page);
   };
 
   const handleDeleteClick = (patientId: string) => {
@@ -73,23 +155,12 @@ const PatientList = () => {
         </Button>
       </div>
 
-      <Card>
-        <div className="mb-4">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Search patients..."
-              className="form-input"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-            />
-            <Button variant="outline" onClick={handleSearch}>
-              Search
-            </Button>
-          </div>
-        </div>
+      <PatientFilters
+        onFilterChange={handleFilterChange}
+        initialFilters={filters}
+      />
 
+      <Card>
         {isLoading ? (
           <div className="flex justify-center py-8">
             <svg
@@ -160,13 +231,19 @@ const PatientList = () => {
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
-                    Date of Birth
+                    Age
                   </th>
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     Phone
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Records
                   </th>
                   <th
                     scope="col"
@@ -196,20 +273,58 @@ const PatientList = () => {
                               {patient.firstName} {patient.lastName}
                             </Link>
                           </div>
-                          <div className="text-sm text-gray-500">{patient.email}</div>
+                          <div className="text-sm text-gray-500">
+                            {patient.email}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 capitalize">{patient.gender}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatDate(new Date(patient.dateOfBirth))}
+                      <div className="text-sm text-gray-900 capitalize">
+                        {patient.gender}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{patient.phoneNumber}</div>
+                      <div className="text-sm text-gray-900">
+                        {calculateAge(new Date(patient.dateOfBirth))}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {patient.phoneNumber}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-wrap gap-1">
+                        {patient.allergies && patient.allergies.length > 0 && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Allergies
+                          </span>
+                        )}
+                        {patient.medicationHistory &&
+                          patient.medicationHistory.length > 0 && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              Medications
+                            </span>
+                          )}
+                        {patient.clinicalAssessments &&
+                          patient.clinicalAssessments.length > 0 && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Assessments
+                            </span>
+                          )}
+                        {patient.drugTherapyProblems &&
+                          patient.drugTherapyProblems.length > 0 && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              DTP
+                            </span>
+                          )}
+                        {patient.carePlans && patient.carePlans.length > 0 && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            Care Plans
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
@@ -244,7 +359,9 @@ const PatientList = () => {
         {totalPages > 1 && (
           <div className="flex justify-between items-center mt-4 px-6 py-3 border-t border-gray-200">
             <div className="text-sm text-gray-700">
-              Showing <span className="font-medium">{(currentPage - 1) * 10 + 1}</span> to{' '}
+              Showing{' '}
+              <span className="font-medium">{(currentPage - 1) * 10 + 1}</span>{' '}
+              to{' '}
               <span className="font-medium">
                 {Math.min(currentPage * 10, totalPatients)}
               </span>{' '}
@@ -276,7 +393,10 @@ const PatientList = () => {
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div
+              className="fixed inset-0 transition-opacity"
+              aria-hidden="true"
+            >
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
             <span
@@ -310,8 +430,8 @@ const PatientList = () => {
                     </h3>
                     <div className="mt-2">
                       <p className="text-sm text-gray-500">
-                        Are you sure you want to delete this patient? This action cannot be
-                        undone.
+                        Are you sure you want to delete this patient? This
+                        action cannot be undone.
                       </p>
                     </div>
                   </div>

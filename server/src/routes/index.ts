@@ -9,6 +9,7 @@ import purchaseOrderRoutes from './purchaseOrder.routes';
 import inventoryRoutes from './inventory.routes';
 import reportsRoutes from './reports.routes';
 import reportRoutes from './report.routes';
+import reportingRoutes from './reporting.routes';
 import userRoutes from './user.routes';
 import roleRoutes from './role.routes';
 import userRoleRoutes from './userRole.routes';
@@ -16,6 +17,10 @@ import activityLogRoutes from './activityLog.routes';
 import scheduleRoutes from './schedule.routes';
 import notificationRoutes from './notification.routes';
 import messageRoutes from './message.routes';
+import dashboardRoutes from './dashboard.routes';
+import followUpRoutes from './followUp.routes';
+import appointmentRoutes from './appointment.routes';
+import integrationRoutes from './integration.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -46,5 +51,10 @@ router.use('/schedule', scheduleRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/messages', messageRoutes);
 router.use('/report', reportRoutes);
+router.use('/reporting', reportingRoutes);
+router.use('/dashboard', dashboardRoutes);
+router.use('/follow-ups', followUpRoutes);
+router.use('/appointments', appointmentRoutes);
+router.use('/integrations', integrationRoutes);
 
 export default router;

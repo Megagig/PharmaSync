@@ -9,12 +9,15 @@ import purchaseOrderReducer from './slices/purchaseOrderSlice';
 import inventoryReducer from './slices/inventorySlice';
 import reportsReducer from './slices/reportsSlice';
 import reportReducer from './slices/reportSlice';
+import reportingReducer from './slices/reportingSlice';
 import userReducer from './slices/userSlice';
 import roleReducer from './slices/roleSlice';
 import activityLogReducer from './slices/activityLogSlice';
 import scheduleReducer from './slices/scheduleSlice';
 import notificationReducer from './slices/notificationSlice';
 import messageReducer from './slices/messageSlice';
+import dashboardReducer from './slices/dashboardSlice';
+import appointmentReducer from './slices/appointmentSlice';
 
 export const store = configureStore({
   reducer: {
@@ -34,6 +37,9 @@ export const store = configureStore({
     schedule: scheduleReducer,
     notifications: notificationReducer,
     messages: messageReducer,
+    dashboard: dashboardReducer,
+    appointments: appointmentReducer,
+    reporting: reportingReducer,
     // Add other reducers here as they are created
   },
   devTools: true,

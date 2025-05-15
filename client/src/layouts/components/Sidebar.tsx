@@ -32,9 +32,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
   const { currentUser } = useSelector((state: RootState) => state.users);
   const { userPermissions } = useSelector((state: RootState) => state.roles);
-  
+
   const [menuItems, setMenuItems] = useState<any[]>([]);
-  
+
   useEffect(() => {
     // Define all menu items
     const allMenuItems = [
@@ -45,7 +45,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         permission: { resource: 'dashboard', action: 'read' },
       },
       {
-        title: 'Patients',
+        title: 'Patient Management',
         icon: <FiUsers className="h-5 w-5" />,
         path: '/patients',
         permission: { resource: 'patients', action: 'read' },
@@ -137,19 +137,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         permission: { resource: 'settings', action: 'read' },
       },
     ];
-    
+
     // Filter menu items based on user permissions
     const filteredMenuItems = allMenuItems.filter((item) => {
       // Check if the item is admin-only
       if (item.adminOnly) {
         // Check if user has admin role (legacy check)
         const hasAdminRole = currentUser?.role === UserRole.ADMIN;
-        
+
         // Check if user has admin role in new role system
         const hasAdminRoleNew = currentUser?.roles?.some(
-          (role) => role.type === RoleType.ADMIN || role.type === RoleType.SUPER_ADMIN
+          (role) =>
+            role.type === RoleType.ADMIN || role.type === RoleType.SUPER_ADMIN
         );
-        
+
         // Check if user has the specific permission
         const hasPermission = userPermissions?.some(
           (permission) =>
@@ -157,10 +158,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             (permission.actions.includes(item.permission.action) ||
               permission.actions.includes('manage'))
         );
-        
+
         return hasAdminRole || hasAdminRoleNew || hasPermission;
       }
-      
+
       // For non-admin items, check if user has the specific permission
       const hasPermission = userPermissions?.some(
         (permission) =>
@@ -168,18 +169,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           (permission.actions.includes(item.permission.action) ||
             permission.actions.includes('manage'))
       );
-      
+
       // If no permissions are loaded yet, show all items
       return userPermissions ? hasPermission : true;
     });
-    
+
     setMenuItems(filteredMenuItems);
   }, [currentUser, userPermissions]);
-  
+
   const isActive = (path: string) => {
     return location.pathname.startsWith(path);
   };
-  
+
   return (
     <>
       {/* Mobile sidebar backdrop */}
@@ -189,7 +190,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           onClick={toggleSidebar}
         ></div>
       )}
-      
+
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
@@ -198,11 +199,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       >
         <div className="flex items-center justify-between h-16 px-4 border-b">
           <Link to="/" className="flex items-center">
-            <img
-              src="/logo.svg"
-              alt="PharmaSync Logo"
-              className="h-8 w-auto"
-            />
+            <img src="/logo.svg" alt="PharmaSync Logo" className="h-8 w-auto" />
             <span className="ml-2 text-xl font-semibold text-gray-900">
               PharmaSync
             </span>
@@ -214,7 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             <FiX className="h-5 w-5" />
           </button>
         </div>
-        
+
         <div className="overflow-y-auto h-full py-4">
           <nav className="px-2 space-y-1">
             {menuItems.map((item) => (
@@ -232,7 +229,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
               </Link>
             ))}
           </nav>
-          
+
           <div className="px-4 mt-8">
             <div className="pt-4 border-t border-gray-200">
               <Link
@@ -248,7 +245,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           </div>
         </div>
       </aside>
-      
+
       {/* Mobile menu button */}
       <div className="fixed bottom-4 right-4 z-20 lg:hidden">
         <button

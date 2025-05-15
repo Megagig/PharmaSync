@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { RootState } from '@/store/store';
 import { fetchNotifications } from '@/store/slices/notificationSlice';
-import NotificationBadge from '@/components/common/NotificationBadge/NotificationBadge';
+import NotificationBell from '@/components/common/Notifications/NotificationBell';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -86,7 +86,7 @@ const Header = ({ toggleSidebar }: HeaderProps) => {
             </button>
 
             {/* Notifications */}
-            <NotificationBadge />
+            <NotificationBell />
 
             {/* Theme toggle */}
             <button

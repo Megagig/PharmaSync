@@ -23,6 +23,12 @@ import CreatePatient from '@/pages/Patients/CreatePatient';
 import EditPatient from '@/pages/Patients/EditPatient';
 import AddAllergy from '@/pages/Patients/AddAllergy';
 import AddMedicalCondition from '@/pages/Patients/AddMedicalCondition';
+import AddMedicationHistory from '@/pages/Patients/AddMedicationHistory';
+import AddClinicalAssessment from '@/pages/Patients/AddClinicalAssessment';
+import AddLaboratoryFinding from '@/pages/Patients/AddLaboratoryFinding';
+import AddDrugTherapyProblem from '@/pages/Patients/AddDrugTherapyProblem';
+import AddCarePlan from '@/pages/Patients/AddCarePlan';
+import AddSoapNote from '@/pages/Patients/AddSoapNote';
 
 // Medication pages
 import MedicationList from '@/pages/Medications/MedicationList';
@@ -115,6 +121,30 @@ const AppRoutes = () => {
           <Route
             path="/patients/:id/conditions/new"
             element={<AddMedicalCondition />}
+          />
+          <Route
+            path="/patients/:id/medication-history/new"
+            element={<AddMedicationHistory />}
+          />
+          <Route
+            path="/patients/:id/clinical-assessments/new"
+            element={<AddClinicalAssessment />}
+          />
+          <Route
+            path="/patients/:id/laboratory-findings/new"
+            element={<AddLaboratoryFinding />}
+          />
+          <Route
+            path="/patients/:id/drug-therapy-problems/new"
+            element={<AddDrugTherapyProblem />}
+          />
+          <Route
+            path="/patients/:id/care-plans/new"
+            element={<AddCarePlan />}
+          />
+          <Route
+            path="/patients/:id/soap-notes/new"
+            element={<AddSoapNote />}
           />
 
           {/* Medications */}

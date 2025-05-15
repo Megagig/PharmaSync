@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { PatientFormData, Gender, BloodGroup } from '@/types/patient.types';
+import {
+  PatientFormData,
+  Gender,
+  BloodGroup,
+  MaritalStatus,
+  Genotype,
+} from '@/types/patient.types';
 import Button from '@/components/common/Button/Button';
 
 interface PatientFormProps {
@@ -9,7 +15,11 @@ interface PatientFormProps {
   isLoading: boolean;
 }
 
-const PatientForm = ({ initialData, onSubmit, isLoading }: PatientFormProps) => {
+const PatientForm = ({
+  initialData,
+  onSubmit,
+  isLoading,
+}: PatientFormProps) => {
   const {
     register,
     handleSubmit,
@@ -34,7 +44,9 @@ const PatientForm = ({ initialData, onSubmit, isLoading }: PatientFormProps) => 
             className={`form-input ${errors.firstName ? 'border-red-300' : ''}`}
             {...register('firstName', { required: 'First name is required' })}
           />
-          {errors.firstName && <p className="form-error">{errors.firstName.message}</p>}
+          {errors.firstName && (
+            <p className="form-error">{errors.firstName.message}</p>
+          )}
         </div>
 
         {/* Last Name */}
@@ -48,7 +60,9 @@ const PatientForm = ({ initialData, onSubmit, isLoading }: PatientFormProps) => 
             className={`form-input ${errors.lastName ? 'border-red-300' : ''}`}
             {...register('lastName', { required: 'Last name is required' })}
           />
-          {errors.lastName && <p className="form-error">{errors.lastName.message}</p>}
+          {errors.lastName && (
+            <p className="form-error">{errors.lastName.message}</p>
+          )}
         </div>
 
         {/* Date of Birth */}
@@ -59,10 +73,16 @@ const PatientForm = ({ initialData, onSubmit, isLoading }: PatientFormProps) => 
           <input
             type="date"
             id="dateOfBirth"
-            className={`form-input ${errors.dateOfBirth ? 'border-red-300' : ''}`}
-            {...register('dateOfBirth', { required: 'Date of birth is required' })}
+            className={`form-input ${
+              errors.dateOfBirth ? 'border-red-300' : ''
+            }`}
+            {...register('dateOfBirth', {
+              required: 'Date of birth is required',
+            })}
           />
-          {errors.dateOfBirth && <p className="form-error">{errors.dateOfBirth.message}</p>}
+          {errors.dateOfBirth && (
+            <p className="form-error">{errors.dateOfBirth.message}</p>
+          )}
         </div>
 
         {/* Gender */}
@@ -79,7 +99,9 @@ const PatientForm = ({ initialData, onSubmit, isLoading }: PatientFormProps) => 
             <option value={Gender.FEMALE}>Female</option>
             <option value={Gender.OTHER}>Other</option>
           </select>
-          {errors.gender && <p className="form-error">{errors.gender.message}</p>}
+          {errors.gender && (
+            <p className="form-error">{errors.gender.message}</p>
+          )}
         </div>
 
         {/* Phone Number */}
@@ -90,10 +112,16 @@ const PatientForm = ({ initialData, onSubmit, isLoading }: PatientFormProps) => 
           <input
             type="tel"
             id="phoneNumber"
-            className={`form-input ${errors.phoneNumber ? 'border-red-300' : ''}`}
-            {...register('phoneNumber', { required: 'Phone number is required' })}
+            className={`form-input ${
+              errors.phoneNumber ? 'border-red-300' : ''
+            }`}
+            {...register('phoneNumber', {
+              required: 'Phone number is required',
+            })}
           />
-          {errors.phoneNumber && <p className="form-error">{errors.phoneNumber.message}</p>}
+          {errors.phoneNumber && (
+            <p className="form-error">{errors.phoneNumber.message}</p>
+          )}
         </div>
 
         {/* Email */}
@@ -176,6 +204,66 @@ const PatientForm = ({ initialData, onSubmit, isLoading }: PatientFormProps) => 
           </select>
         </div>
 
+        {/* Genotype */}
+        <div>
+          <label htmlFor="genotype" className="form-label">
+            Genotype
+          </label>
+          <select
+            id="genotype"
+            className="form-input"
+            {...register('genotype')}
+          >
+            <option value="">Select Genotype</option>
+            <option value={Genotype.AA}>AA</option>
+            <option value={Genotype.AS}>AS</option>
+            <option value={Genotype.SS}>SS</option>
+            <option value={Genotype.AC}>AC</option>
+            <option value={Genotype.SC}>SC</option>
+            <option value={Genotype.CC}>CC</option>
+          </select>
+        </div>
+
+        {/* Marital Status */}
+        <div>
+          <label htmlFor="maritalStatus" className="form-label">
+            Marital Status
+          </label>
+          <select
+            id="maritalStatus"
+            className="form-input"
+            {...register('maritalStatus')}
+          >
+            <option value="">Select Marital Status</option>
+            <option value={MaritalStatus.SINGLE}>Single</option>
+            <option value={MaritalStatus.MARRIED}>Married</option>
+            <option value={MaritalStatus.DIVORCED}>Divorced</option>
+            <option value={MaritalStatus.WIDOWED}>Widowed</option>
+          </select>
+        </div>
+
+        {/* Weight */}
+        <div>
+          <label htmlFor="weight" className="form-label">
+            Weight (kg)
+          </label>
+          <input
+            type="number"
+            id="weight"
+            step="0.1"
+            min="0"
+            className="form-input"
+            {...register('weight', {
+              valueAsNumber: true,
+              validate: (value) =>
+                !value || value > 0 || 'Weight must be greater than 0',
+            })}
+          />
+          {errors.weight && (
+            <p className="form-error">{errors.weight.message}</p>
+          )}
+        </div>
+
         {/* Notes */}
         <div className="sm:col-span-2">
           <label htmlFor="notes" className="form-label">
@@ -191,7 +279,11 @@ const PatientForm = ({ initialData, onSubmit, isLoading }: PatientFormProps) => 
       </div>
 
       <div className="flex justify-end space-x-3">
-        <Button variant="outline" type="button" onClick={() => window.history.back()}>
+        <Button
+          variant="outline"
+          type="button"
+          onClick={() => window.history.back()}
+        >
           Cancel
         </Button>
         <Button variant="primary" type="submit" isLoading={isLoading}>

@@ -5,8 +5,12 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import routes from './routes';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware';
-import { morganMiddleware, requestLogger } from './middleware/logger.middleware';
+import {
+  morganMiddleware,
+  requestLogger,
+} from './middleware/logger.middleware';
 import env from './config/env.config';
+import { scheduleFollowUpNotificationsJob } from './jobs/followUpNotifications.job';
 
 const app: Express = express();
 
@@ -40,5 +44,11 @@ app.use('/api', routes);
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+// Schedule jobs
+if (env.NODE_ENV === 'production') {
+  // Only schedule jobs in production to avoid running them in development and test environments
+  scheduleFollowUpNotificationsJob();
+}
 
 export default app;
