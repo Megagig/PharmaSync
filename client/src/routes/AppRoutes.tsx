@@ -54,6 +54,14 @@ import Receipt from '@/pages/Dispensing/Receipt';
 import InventoryDashboard from '@/pages/Inventory/InventoryDashboard';
 import InventoryAdjustment from '@/pages/Inventory/InventoryAdjustment';
 import InventoryMovement from '@/pages/Inventory/InventoryMovement';
+import ProductList from '@/pages/Inventory/Products/ProductList';
+import StockLevelsList from '@/pages/Inventory/StockLevels/StockLevelsList';
+import PriceManagementList from '@/pages/Inventory/PriceManagement/PriceManagementList';
+import ExpiryTrackingList from '@/pages/Inventory/ExpiryTracking/ExpiryTrackingList';
+import PurchasesList from '@/pages/Inventory/Purchases/PurchasesList';
+import CustomerList from '@/pages/Inventory/Customers/CustomerList';
+import LocationList from '@/pages/Inventory/Locations/LocationList';
+import InventoryReportsList from '@/pages/Inventory/Reports/InventoryReportsList';
 
 // Reports pages
 import ReportsDashboard from '@/pages/Reports/ReportsDashboard';
@@ -182,10 +190,24 @@ const AppRoutes = () => {
           <Route path="/dispensing/:id" element={<DispensingDetail />} />
           <Route path="/dispensing/:id/receipt" element={<Receipt />} />
 
-          {/* Inventory */}
+          {/* Inventory Management */}
           <Route path="/inventory" element={<InventoryDashboard />} />
           <Route path="/inventory/adjust" element={<InventoryAdjustment />} />
           <Route path="/inventory/movement" element={<InventoryMovement />} />
+          <Route path="/inventory/products" element={<ProductList />} />
+          <Route path="/inventory/stock-levels" element={<StockLevelsList />} />
+          <Route
+            path="/inventory/price-management"
+            element={<PriceManagementList />}
+          />
+          <Route
+            path="/inventory/expiry-tracking"
+            element={<ExpiryTrackingList />}
+          />
+          <Route path="/inventory/purchases" element={<PurchasesList />} />
+          <Route path="/inventory/customers" element={<CustomerList />} />
+          <Route path="/inventory/locations" element={<LocationList />} />
+          <Route path="/inventory/reports" element={<InventoryReportsList />} />
 
           {/* Reports */}
           <Route path="/reports" element={<ReportsDashboard />} />
