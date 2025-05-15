@@ -34,6 +34,7 @@ interface Supplier {
   name: string;
   code: string;
   type: string;
+  contactPerson: string;
   address?: SupplierAddress;
   phone?: string;
   email?: string;
@@ -61,6 +62,7 @@ const supplierSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   code: z.string().optional(),
   type: z.nativeEnum(SupplierType),
+  contactPerson: z.string().min(1, 'Contact person is required'),
   address: z
     .object({
       street: z.string().min(1, 'Street is required'),
@@ -109,6 +111,7 @@ const SuppliersList = () => {
     defaultValues: {
       name: '',
       type: SupplierType.DISTRIBUTOR,
+      contactPerson: '',
       isActive: true,
       isPreferred: false,
     },
@@ -167,6 +170,17 @@ const SuppliersList = () => {
 
   const onSubmit = async (data: SupplierFormData) => {
     try {
+      // Make sure address is included
+      if (!data.address) {
+        data.address = {
+          street: 'Default Street',
+          city: 'Default City',
+          state: 'Default State',
+          postalCode: '00000',
+          country: 'Nigeria',
+        };
+      }
+
       if (editingSupplierId) {
         await api.patch(`/suppliers/${editingSupplierId}`, data);
         showToast('Supplier updated successfully', 'success');
@@ -188,6 +202,7 @@ const SuppliersList = () => {
       name: supplier.name,
       code: supplier.code,
       type: supplier.type as SupplierType,
+      contactPerson: supplier.contactPerson || '',
       address: supplier.address,
       phone: supplier.phone,
       email: supplier.email,
@@ -283,6 +298,21 @@ const SuppliersList = () => {
                         label="Code"
                         placeholder="Enter supplier code (leave blank for auto-generation)"
                         error={errors.code?.message}
+                        {...field}
+                      />
+                    )}
+                  />
+                </div>
+                <div>
+                  <Controller
+                    name="contactPerson"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        label="Contact Person"
+                        placeholder="Enter contact person name"
+                        error={errors.contactPerson?.message}
+                        required
                         {...field}
                       />
                     )}

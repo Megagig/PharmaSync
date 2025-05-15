@@ -155,7 +155,7 @@ returnSchema.pre('save', async function (next) {
     // Format: RET-YYYYMMDD-XXXX (e.g., RET-20230615-1234)
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    const randomStr = generateRandomString(4, '0123456789');
+    const randomStr = generateRandomString(4);
     this.returnNumber = `RET-${dateStr}-${randomStr}`;
   }
   next();

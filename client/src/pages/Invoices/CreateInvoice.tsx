@@ -16,13 +16,16 @@ const CreateInvoice = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { isLoading, error } = useSelector((state: RootState) => state.invoices);
+  const { isLoading, error } = useSelector(
+    (state: RootState) => state.invoices
+  );
 
   // Get query parameters
   const queryParams = new URLSearchParams(location.search);
-  const initialType = queryParams.get('type') === 'purchase' 
-    ? InvoiceType.PURCHASE 
-    : InvoiceType.SALES;
+  const initialType =
+    queryParams.get('type') === 'purchase'
+      ? InvoiceType.PURCHASE
+      : InvoiceType.SALES;
   const initialSaleId = queryParams.get('sale') || '';
   const initialPurchaseOrderId = queryParams.get('purchaseOrder') || '';
 
@@ -31,7 +34,7 @@ const CreateInvoice = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [sales, setSales] = useState<any[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
-  
+
   const [selectedProduct, setSelectedProduct] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [quantity, setQuantity] = useState(1);
@@ -43,12 +46,15 @@ const CreateInvoice = () => {
   const [formData, setFormData] = useState<InvoiceFormData>({
     type: initialType,
     invoiceDate: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days from now
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split('T')[0], // 30 days from now
     items: [],
     discount: 0,
     tax: 0,
     notes: '',
-    termsAndConditions: 'Payment is due within 30 days of invoice date. Late payments are subject to a 5% fee.',
+    termsAndConditions:
+      'Payment is due within 30 days of invoice date. Late payments are subject to a 5% fee.',
     sale: initialSaleId,
     purchaseOrder: initialPurchaseOrderId,
   });
@@ -59,9 +65,23 @@ const CreateInvoice = () => {
       const fetchCustomers = async () => {
         try {
           const response = await api.get('/customers?isActive=true');
-          setCustomers(response.data.data);
+          // Check if response.data.data exists and is an array
+          if (
+            response.data &&
+            response.data.data &&
+            Array.isArray(response.data.data)
+          ) {
+            setCustomers(response.data.data);
+          } else if (response.data && Array.isArray(response.data)) {
+            // Handle case where API returns array directly
+            setCustomers(response.data);
+          } else {
+            console.error('Unexpected API response format:', response.data);
+            setCustomers([]);
+          }
         } catch (error) {
           console.error('Error fetching customers:', error);
+          setCustomers([]);
         }
       };
       fetchCustomers();
@@ -72,9 +92,23 @@ const CreateInvoice = () => {
       const fetchSuppliers = async () => {
         try {
           const response = await api.get('/suppliers?isActive=true');
-          setSuppliers(response.data.data);
+          // Check if response.data.data exists and is an array
+          if (
+            response.data &&
+            response.data.data &&
+            Array.isArray(response.data.data)
+          ) {
+            setSuppliers(response.data.data);
+          } else if (response.data && Array.isArray(response.data)) {
+            // Handle case where API returns array directly
+            setSuppliers(response.data);
+          } else {
+            console.error('Unexpected API response format:', response.data);
+            setSuppliers([]);
+          }
         } catch (error) {
           console.error('Error fetching suppliers:', error);
+          setSuppliers([]);
         }
       };
       fetchSuppliers();
@@ -84,9 +118,23 @@ const CreateInvoice = () => {
     const fetchProducts = async () => {
       try {
         const response = await api.get('/products?isActive=true');
-        setProducts(response.data.data);
+        // Check if response.data.data exists and is an array
+        if (
+          response.data &&
+          response.data.data &&
+          Array.isArray(response.data.data)
+        ) {
+          setProducts(response.data.data);
+        } else if (response.data && Array.isArray(response.data)) {
+          // Handle case where API returns array directly
+          setProducts(response.data);
+        } else {
+          console.error('Unexpected API response format:', response.data);
+          setProducts([]);
+        }
       } catch (error) {
         console.error('Error fetching products:', error);
+        setProducts([]);
       }
     };
     fetchProducts();
@@ -97,14 +145,23 @@ const CreateInvoice = () => {
         try {
           const response = await api.get(`/sales/${initialSaleId}`);
           const sale = response.data.data;
-          
+
           // Pre-populate form with sale data
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
-            customer: typeof sale.customer === 'object' ? sale.customer._id : sale.customer,
+            customer:
+              typeof sale.customer === 'object'
+                ? sale.customer._id
+                : sale.customer,
             items: sale.items.map((item: any) => ({
-              product: typeof item.product === 'object' ? item.product._id : item.product,
-              description: typeof item.product === 'object' ? item.product.name : 'Product',
+              product:
+                typeof item.product === 'object'
+                  ? item.product._id
+                  : item.product,
+              description:
+                typeof item.product === 'object'
+                  ? item.product.name
+                  : 'Product',
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               discount: item.discount || 0,
@@ -124,16 +181,25 @@ const CreateInvoice = () => {
     if (initialPurchaseOrderId) {
       const fetchPurchaseOrder = async () => {
         try {
-          const response = await api.get(`/purchase-orders/${initialPurchaseOrderId}`);
+          const response = await api.get(
+            `/purchase-orders/${initialPurchaseOrderId}`
+          );
           const po = response.data.data;
-          
+
           // Pre-populate form with purchase order data
-          setFormData(prev => ({
+          setFormData((prev) => ({
             ...prev,
-            supplier: typeof po.supplier === 'object' ? po.supplier._id : po.supplier,
+            supplier:
+              typeof po.supplier === 'object' ? po.supplier._id : po.supplier,
             items: po.items.map((item: any) => ({
-              product: typeof item.product === 'object' ? item.product._id : item.product,
-              description: typeof item.product === 'object' ? item.product.name : 'Product',
+              product:
+                typeof item.product === 'object'
+                  ? item.product._id
+                  : item.product,
+              description:
+                typeof item.product === 'object'
+                  ? item.product.name
+                  : 'Product',
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               discount: 0,
@@ -165,10 +231,10 @@ const CreateInvoice = () => {
       const response = await api.get(`/products/${selectedProduct}`);
       const product = response.data.data;
       setProductDetails(product);
-      
+
       // Set default price
       setUnitPrice(product.defaultPrice);
-      
+
       // Set description
       setProductDescription(product.name);
     } catch (error) {
@@ -176,7 +242,11 @@ const CreateInvoice = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -203,7 +273,9 @@ const CreateInvoice = () => {
 
   const handleAddItem = () => {
     if (!selectedProduct || !productDescription || quantity <= 0) {
-      alert('Please select a product, enter a description, and specify a valid quantity');
+      alert(
+        'Please select a product, enter a description, and specify a valid quantity'
+      );
       return;
     }
 
@@ -237,13 +309,26 @@ const CreateInvoice = () => {
     }));
   };
 
-  const calculateItemSubtotal = (quantity: number, unitPrice: number, discount: number, tax: number) => {
+  const calculateItemSubtotal = (
+    quantity: number,
+    unitPrice: number,
+    discount: number,
+    tax: number
+  ) => {
     return (quantity * unitPrice - discount) * (1 + tax / 100);
   };
 
   const calculateSubtotal = () => {
     return formData.items.reduce((sum, item) => {
-      return sum + calculateItemSubtotal(item.quantity, item.unitPrice, item.discount || 0, item.tax || 0);
+      return (
+        sum +
+        calculateItemSubtotal(
+          item.quantity,
+          item.unitPrice,
+          item.discount || 0,
+          item.tax || 0
+        )
+      );
     }, 0);
   };
 
@@ -284,7 +369,8 @@ const CreateInvoice = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">
-          Create New {formData.type === InvoiceType.SALES ? 'Sales' : 'Purchase'} Invoice
+          Create New{' '}
+          {formData.type === InvoiceType.SALES ? 'Sales' : 'Purchase'} Invoice
         </h1>
         <Button variant="outline" onClick={() => navigate('/invoices')}>
           Cancel
@@ -324,11 +410,18 @@ const CreateInvoice = () => {
                     disabled={!!initialSaleId}
                   >
                     <option value="">Select Customer</option>
-                    {customers.map((customer) => (
-                      <option key={customer._id} value={customer._id}>
-                        {customer.firstName} {customer.lastName} ({customer.customerNumber})
+                    {Array.isArray(customers) && customers.length > 0 ? (
+                      customers.map((customer) => (
+                        <option key={customer._id} value={customer._id}>
+                          {customer.firstName} {customer.lastName} (
+                          {customer.customerNumber})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>
+                        No customers available
                       </option>
-                    ))}
+                    )}
                   </Select>
                 )}
 
@@ -342,11 +435,17 @@ const CreateInvoice = () => {
                     disabled={!!initialPurchaseOrderId}
                   >
                     <option value="">Select Supplier</option>
-                    {suppliers.map((supplier) => (
-                      <option key={supplier._id} value={supplier._id}>
-                        {supplier.name} ({supplier.supplierCode})
+                    {Array.isArray(suppliers) && suppliers.length > 0 ? (
+                      suppliers.map((supplier) => (
+                        <option key={supplier._id} value={supplier._id}>
+                          {supplier.name} ({supplier.supplierCode})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>
+                        No suppliers available
                       </option>
-                    ))}
+                    )}
                   </Select>
                 )}
 
@@ -423,11 +522,17 @@ const CreateInvoice = () => {
                   onChange={(e) => setSelectedProduct(e.target.value)}
                 >
                   <option value="">Select Product</option>
-                  {products.map((product) => (
-                    <option key={product._id} value={product._id}>
-                      {product.name} ({product.sku})
+                  {Array.isArray(products) && products.length > 0 ? (
+                    products.map((product) => (
+                      <option key={product._id} value={product._id}>
+                        {product.name} ({product.sku})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      No products available
                     </option>
-                  ))}
+                  )}
                 </Select>
 
                 <Input
@@ -525,14 +630,16 @@ const CreateInvoice = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {formData.items.map((item, index) => {
-                      const product = products.find((p) => p._id === item.product);
+                      const product = Array.isArray(products)
+                        ? products.find((p) => p._id === item.product)
+                        : null;
                       const subtotal = calculateItemSubtotal(
-                        item.quantity, 
-                        item.unitPrice, 
-                        item.discount || 0, 
+                        item.quantity,
+                        item.unitPrice,
+                        item.discount || 0,
                         item.tax || 0
                       );
-                      
+
                       return (
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -572,7 +679,10 @@ const CreateInvoice = () => {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-right font-medium">
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-right font-medium"
+                      >
                         Subtotal:
                       </td>
                       <td className="px-6 py-4 font-medium">
@@ -581,7 +691,10 @@ const CreateInvoice = () => {
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-right font-medium">
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-right font-medium"
+                      >
                         Discount:
                       </td>
                       <td className="px-6 py-4 font-medium">
@@ -590,7 +703,10 @@ const CreateInvoice = () => {
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-right font-medium">
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-right font-medium"
+                      >
                         Tax:
                       </td>
                       <td className="px-6 py-4 font-medium">
@@ -599,7 +715,10 @@ const CreateInvoice = () => {
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-right font-bold">
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-right font-bold"
+                      >
                         Total:
                       </td>
                       <td className="px-6 py-4 font-bold">

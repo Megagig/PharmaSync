@@ -44,9 +44,23 @@ const CreateSale = () => {
     const fetchCustomers = async () => {
       try {
         const response = await api.get('/customers?isActive=true');
-        setCustomers(response.data.data);
+        // Check if response.data.data exists and is an array
+        if (
+          response.data &&
+          response.data.data &&
+          Array.isArray(response.data.data)
+        ) {
+          setCustomers(response.data.data);
+        } else if (response.data && Array.isArray(response.data)) {
+          // Handle case where API returns array directly
+          setCustomers(response.data);
+        } else {
+          console.error('Unexpected API response format:', response.data);
+          setCustomers([]);
+        }
       } catch (error) {
         console.error('Error fetching customers:', error);
+        setCustomers([]);
       }
     };
 
@@ -96,7 +110,7 @@ const CreateSale = () => {
       const response = await api.get(`/products/${selectedProduct}`);
       const product = response.data.data;
       setProductDetails(product);
-      
+
       // Get available batches with stock
       const batches = product.inventory
         .filter((item: any) => item.quantity > 0)
@@ -106,12 +120,12 @@ const CreateSale = () => {
           expiryDate: item.expiryDate,
           costPrice: item.costPrice,
         }));
-      
+
       setAvailableBatches(batches);
-      
+
       // Set default price
       setUnitPrice(product.defaultPrice);
-      
+
       // Clear selected batch
       setSelectedBatch('');
     } catch (error) {
@@ -119,7 +133,11 @@ const CreateSale = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -181,7 +199,11 @@ const CreateSale = () => {
   };
 
   const calculateSubtotal = () => {
-    return formData.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice - (item.discount || 0)), 0);
+    return formData.items.reduce(
+      (sum, item) =>
+        sum + (item.quantity * item.unitPrice - (item.discount || 0)),
+      0
+    );
   };
 
   const calculateTotal = () => {
@@ -215,7 +237,9 @@ const CreateSale = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Create New Sale</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Create New Sale
+        </h1>
         <Button variant="outline" onClick={() => navigate('/sales')}>
           Cancel
         </Button>
@@ -241,11 +265,18 @@ const CreateSale = () => {
                   required
                 >
                   <option value="">Select Customer</option>
-                  {customers.map((customer) => (
-                    <option key={customer._id} value={customer._id}>
-                      {customer.firstName} {customer.lastName} ({customer.customerNumber})
+                  {Array.isArray(customers) && customers.length > 0 ? (
+                    customers.map((customer) => (
+                      <option key={customer._id} value={customer._id}>
+                        {customer.firstName} {customer.lastName} (
+                        {customer.customerNumber})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      No customers available
                     </option>
-                  ))}
+                  )}
                 </Select>
 
                 <DatePicker
@@ -263,11 +294,17 @@ const CreateSale = () => {
                   required
                 >
                   <option value="">Select Location</option>
-                  {locations.map((location) => (
-                    <option key={location._id} value={location._id}>
-                      {location.name}
+                  {Array.isArray(locations) && locations.length > 0 ? (
+                    locations.map((location) => (
+                      <option key={location._id} value={location._id}>
+                        {location.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      No locations available
                     </option>
-                  ))}
+                  )}
                 </Select>
 
                 <Select
@@ -329,11 +366,17 @@ const CreateSale = () => {
                   onChange={(e) => setSelectedProduct(e.target.value)}
                 >
                   <option value="">Select Product</option>
-                  {products.map((product) => (
-                    <option key={product._id} value={product._id}>
-                      {product.name} ({product.sku})
+                  {Array.isArray(products) && products.length > 0 ? (
+                    products.map((product) => (
+                      <option key={product._id} value={product._id}>
+                        {product.name} ({product.sku})
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>
+                      No products available
                     </option>
-                  ))}
+                  )}
                 </Select>
 
                 {selectedProduct && (
@@ -344,11 +387,23 @@ const CreateSale = () => {
                       onChange={(e) => setSelectedBatch(e.target.value)}
                     >
                       <option value="">Select Batch</option>
-                      {availableBatches.map((batch) => (
-                        <option key={batch.batchNumber} value={batch.batchNumber}>
-                          {batch.batchNumber} - Qty: {batch.quantity} - Expires: {new Date(batch.expiryDate).toLocaleDateString()}
+                      {Array.isArray(availableBatches) &&
+                      availableBatches.length > 0 ? (
+                        availableBatches.map((batch) => (
+                          <option
+                            key={batch.batchNumber}
+                            value={batch.batchNumber}
+                          >
+                            {batch.batchNumber} - Qty: {batch.quantity} -
+                            Expires:{' '}
+                            {new Date(batch.expiryDate).toLocaleDateString()}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>
+                          No batches available
                         </option>
-                      ))}
+                      )}
                     </Select>
 
                     <Input
@@ -357,7 +412,13 @@ const CreateSale = () => {
                       value={quantity}
                       onChange={(e) => setQuantity(Number(e.target.value))}
                       min="1"
-                      max={selectedBatch ? availableBatches.find(b => b.batchNumber === selectedBatch)?.quantity || 1 : 1}
+                      max={
+                        selectedBatch
+                          ? availableBatches.find(
+                              (b) => b.batchNumber === selectedBatch
+                            )?.quantity || 1
+                          : 1
+                      }
                     />
 
                     <Input
@@ -430,9 +491,12 @@ const CreateSale = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {formData.items.map((item, index) => {
-                      const product = products.find((p) => p._id === item.product);
-                      const subtotal = item.quantity * item.unitPrice - (item.discount || 0);
-                      
+                      const product = Array.isArray(products)
+                        ? products.find((p) => p._id === item.product)
+                        : null;
+                      const subtotal =
+                        item.quantity * item.unitPrice - (item.discount || 0);
+
                       return (
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -469,7 +533,10 @@ const CreateSale = () => {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={5} className="px-6 py-4 text-right font-medium">
+                      <td
+                        colSpan={5}
+                        className="px-6 py-4 text-right font-medium"
+                      >
                         Subtotal:
                       </td>
                       <td className="px-6 py-4 font-medium">
@@ -478,7 +545,10 @@ const CreateSale = () => {
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={5} className="px-6 py-4 text-right font-medium">
+                      <td
+                        colSpan={5}
+                        className="px-6 py-4 text-right font-medium"
+                      >
                         Discount:
                       </td>
                       <td className="px-6 py-4 font-medium">
@@ -487,7 +557,10 @@ const CreateSale = () => {
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={5} className="px-6 py-4 text-right font-medium">
+                      <td
+                        colSpan={5}
+                        className="px-6 py-4 text-right font-medium"
+                      >
                         Tax:
                       </td>
                       <td className="px-6 py-4 font-medium">
@@ -496,7 +569,10 @@ const CreateSale = () => {
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={5} className="px-6 py-4 text-right font-bold">
+                      <td
+                        colSpan={5}
+                        className="px-6 py-4 text-right font-bold"
+                      >
                         Total:
                       </td>
                       <td className="px-6 py-4 font-bold">

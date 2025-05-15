@@ -175,7 +175,10 @@ export const updateReminder = asyncHandler(
     if (scheduledDate) reminder.scheduledDate = new Date(scheduledDate);
 
     // If status is changed to SENT, update sentDate
-    if (status === ReminderStatus.SENT && reminder.status !== ReminderStatus.SENT) {
+    if (
+      status === ReminderStatus.SENT &&
+      reminder.status !== ReminderStatus.SENT
+    ) {
       reminder.sentDate = new Date();
     }
 
@@ -201,7 +204,7 @@ export const deleteReminder = asyncHandler(
       throw new AppError('Reminder not found', 404);
     }
 
-    await reminder.remove();
+    await Reminder.deleteOne({ _id: reminder._id });
 
     res.status(200).json({
       status: 'success',
@@ -275,13 +278,19 @@ export const generateInvoiceDueReminders = asyncHandler(
 
       if (!existingReminder) {
         const customer = invoice.customer as any;
-        
+
         // Create a new reminder
         const reminder = await Reminder.create({
           customer: customer._id,
           type: ReminderType.INVOICE_DUE,
           subject: `Invoice ${invoice.invoiceNumber} is due soon`,
-          message: `Dear ${customer.firstName} ${customer.lastName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} for ${invoice.total} is due on ${new Date(invoice.dueDate).toLocaleDateString()}.\n\nPlease make your payment before the due date to avoid late fees.\n\nThank you for your business.`,
+          message: `Dear ${customer.firstName} ${
+            customer.lastName
+          },\n\nThis is a friendly reminder that invoice ${
+            invoice.invoiceNumber
+          } for ${invoice.total} is due on ${new Date(
+            invoice.dueDate
+          ).toLocaleDateString()}.\n\nPlease make your payment before the due date to avoid late fees.\n\nThank you for your business.`,
           scheduledDate: new Date(), // Schedule for today
           invoice: invoice._id,
           createdBy: req.user.id,
@@ -310,7 +319,9 @@ export const generateInvoiceOverdueReminders = asyncHandler(
   async (req: Request, res: Response) => {
     // Find invoices that are overdue and don't have reminders yet
     const invoices = await Invoice.find({
-      status: { $in: [InvoiceStatus.SENT, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE] },
+      status: {
+        $in: [InvoiceStatus.SENT, InvoiceStatus.PARTIAL, InvoiceStatus.OVERDUE],
+      },
       dueDate: { $lt: new Date() },
     }).populate('customer');
 
@@ -326,13 +337,19 @@ export const generateInvoiceOverdueReminders = asyncHandler(
 
       if (!existingReminder) {
         const customer = invoice.customer as any;
-        
+
         // Create a new reminder
         const reminder = await Reminder.create({
           customer: customer._id,
           type: ReminderType.INVOICE_OVERDUE,
           subject: `Invoice ${invoice.invoiceNumber} is overdue`,
-          message: `Dear ${customer.firstName} ${customer.lastName},\n\nThis is a reminder that invoice ${invoice.invoiceNumber} for ${invoice.total} was due on ${new Date(invoice.dueDate).toLocaleDateString()} and is now overdue.\n\nPlease make your payment as soon as possible.\n\nThank you for your business.`,
+          message: `Dear ${customer.firstName} ${
+            customer.lastName
+          },\n\nThis is a reminder that invoice ${invoice.invoiceNumber} for ${
+            invoice.total
+          } was due on ${new Date(
+            invoice.dueDate
+          ).toLocaleDateString()} and is now overdue.\n\nPlease make your payment as soon as possible.\n\nThank you for your business.`,
           scheduledDate: new Date(), // Schedule for today
           invoice: invoice._id,
           createdBy: req.user.id,

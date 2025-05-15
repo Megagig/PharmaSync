@@ -114,21 +114,13 @@ export const getReturnById = asyncHandler(
  */
 export const createReturn = asyncHandler(
   async (req: Request, res: Response) => {
-    const {
-      sale: saleId,
-      returnDate,
-      items,
-      tax,
-      notes,
-    } = req.body;
+    const { sale: saleId, returnDate, items, tax, notes } = req.body;
 
     // Verify sale exists
-    const sale = await Sale.findById(saleId)
-      .populate('customer')
-      .populate({
-        path: 'items.product',
-        select: 'name sku barcode',
-      });
+    const sale = await Sale.findById(saleId).populate('customer').populate({
+      path: 'items.product',
+      select: 'name sku barcode',
+    });
 
     if (!sale) {
       throw new AppError('Sale not found', 404);
@@ -139,14 +131,14 @@ export const createReturn = asyncHandler(
     let subtotal = 0;
 
     for (const item of items) {
-      const { 
-        product: productId, 
-        quantity, 
-        unitPrice, 
-        batchNumber, 
-        reason, 
-        condition, 
-        returnToStock 
+      const {
+        product: productId,
+        quantity,
+        unitPrice,
+        batchNumber,
+        reason,
+        condition,
+        returnToStock,
       } = item;
 
       // Verify product exists
@@ -157,8 +149,8 @@ export const createReturn = asyncHandler(
 
       // Verify item was in the original sale
       const saleItem = sale.items.find(
-        (si: any) => 
-          si.product._id.toString() === productId && 
+        (si: any) =>
+          si.product._id.toString() === productId &&
           si.batchNumber === batchNumber
       );
 
@@ -209,7 +201,10 @@ export const createReturn = asyncHandler(
             batchNumber,
             quantity,
             costPrice: unitPrice, // Use the unit price as cost price
-            expiryDate: saleItem.expiryDate,
+            expiryDate:
+              saleItem.expiryDate ||
+              new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Default to 1 year from now if not provided
+            location: 'main', // Default location
           });
         }
 
@@ -224,7 +219,8 @@ export const createReturn = asyncHandler(
     // Create return record
     const returnDoc = await Return.create({
       sale: saleId,
-      customer: typeof sale.customer === 'object' ? sale.customer._id : sale.customer,
+      customer:
+        typeof sale.customer === 'object' ? sale.customer._id : sale.customer,
       returnDate: returnDate || new Date(),
       status: ReturnStatus.PENDING,
       items: processedItems,
@@ -240,8 +236,8 @@ export const createReturn = asyncHandler(
     // Update sale status if all items are returned
     const allItemsReturned = sale.items.every((saleItem: any) => {
       const returnItem = items.find(
-        (ri: any) => 
-          ri.product === saleItem.product._id.toString() && 
+        (ri: any) =>
+          ri.product === saleItem.product._id.toString() &&
           ri.batchNumber === saleItem.batchNumber
       );
       return returnItem && returnItem.quantity >= saleItem.quantity;
@@ -304,7 +300,10 @@ export const approveReturn = asyncHandler(
 
     // Check if return is in pending status
     if (returnDoc.status !== ReturnStatus.PENDING) {
-      throw new AppError(`Return cannot be approved in ${returnDoc.status} status`, 400);
+      throw new AppError(
+        `Return cannot be approved in ${returnDoc.status} status`,
+        400
+      );
     }
 
     // Update return status
@@ -345,7 +344,10 @@ export const processRefund = asyncHandler(
 
     // Check if return is approved
     if (returnDoc.status !== ReturnStatus.APPROVED) {
-      throw new AppError(`Return must be approved before processing refund`, 400);
+      throw new AppError(
+        `Return must be approved before processing refund`,
+        400
+      );
     }
 
     // Update refund details

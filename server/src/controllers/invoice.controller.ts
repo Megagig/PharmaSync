@@ -153,7 +153,14 @@ export const createInvoice = asyncHandler(
     let subtotal = 0;
 
     for (const item of items) {
-      const { product, description, quantity, unitPrice, discount = 0, tax = 0 } = item;
+      const {
+        product,
+        description,
+        quantity,
+        unitPrice,
+        discount = 0,
+        tax = 0,
+      } = item;
 
       // Verify product exists
       const productExists = await Product.findById(product);
@@ -212,7 +219,9 @@ export const createInvoice = asyncHandler(
 
     // If created from purchase order, update purchase order with invoice reference
     if (purchaseOrder) {
-      await PurchaseOrder.findByIdAndUpdate(purchaseOrder, { invoice: invoice._id });
+      await PurchaseOrder.findByIdAndUpdate(purchaseOrder, {
+        invoice: invoice._id,
+      });
     }
 
     res.status(201).json({
@@ -261,7 +270,14 @@ export const updateInvoice = asyncHandler(
       let subtotal = 0;
 
       for (const item of items) {
-        const { product, description, quantity, unitPrice, discount = 0, tax = 0 } = item;
+        const {
+          product,
+          description,
+          quantity,
+          unitPrice,
+          discount = 0,
+          tax = 0,
+        } = item;
 
         // Verify product exists
         const productExists = await Product.findById(product);
@@ -285,7 +301,11 @@ export const updateInvoice = asyncHandler(
         });
       }
 
-      invoice.items = processedItems;
+      // Clear existing items and add new ones
+      invoice.items.splice(0, invoice.items.length); // Clear the array while preserving the DocumentArray
+      processedItems.forEach((item) => {
+        invoice.items.push(item);
+      });
       invoice.subtotal = subtotal;
     }
 
@@ -293,7 +313,7 @@ export const updateInvoice = asyncHandler(
     if (discount !== undefined) {
       invoice.discount = discount;
     }
-    
+
     if (tax !== undefined) {
       invoice.tax = tax;
     }

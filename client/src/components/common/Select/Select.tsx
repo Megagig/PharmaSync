@@ -10,7 +10,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
   helperText?: string;
   fullWidth?: boolean;
-  options: SelectOption[];
+  options?: SelectOption[];
   placeholder?: string;
 }
 
@@ -22,19 +22,19 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
       helperText,
       className = '',
       fullWidth = false,
-      options,
+      options = [],
       placeholder,
       ...props
     },
     ref
   ) => {
     const selectClasses = `
-      block w-full px-3 py-2 
-      border ${error ? 'border-red-500' : 'border-gray-300'} 
-      rounded-md shadow-sm 
-      focus:outline-none 
-      focus:ring-primary-500 
-      focus:border-primary-500 
+      block w-full px-3 py-2
+      border ${error ? 'border-red-500' : 'border-gray-300'}
+      rounded-md shadow-sm
+      focus:outline-none
+      focus:ring-primary-500
+      focus:border-primary-500
       ${className}
     `;
 
@@ -51,11 +51,17 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               {placeholder}
             </option>
           )}
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
+          {options && options.length > 0 ? (
+            options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))
+          ) : (
+            <option value="" disabled>
+              No options available
             </option>
-          ))}
+          )}
         </select>
         {(error || helperText) && (
           <p
