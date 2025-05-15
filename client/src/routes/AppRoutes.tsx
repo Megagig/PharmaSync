@@ -55,6 +55,8 @@ import InventoryDashboard from '@/pages/Inventory/InventoryDashboard';
 import InventoryAdjustment from '@/pages/Inventory/InventoryAdjustment';
 import InventoryMovement from '@/pages/Inventory/InventoryMovement';
 import ProductList from '@/pages/Inventory/Products/ProductList';
+import ProductForm from '@/pages/Inventory/Products/ProductForm';
+import ProductInventory from '@/pages/Inventory/Products/ProductInventory';
 import StockLevelsList from '@/pages/Inventory/StockLevels/StockLevelsList';
 import PriceManagementList from '@/pages/Inventory/PriceManagement/PriceManagementList';
 import ExpiryTrackingList from '@/pages/Inventory/ExpiryTracking/ExpiryTrackingList';
@@ -195,6 +197,12 @@ const AppRoutes = () => {
           <Route path="/inventory/adjust" element={<InventoryAdjustment />} />
           <Route path="/inventory/movement" element={<InventoryMovement />} />
           <Route path="/inventory/products" element={<ProductList />} />
+          <Route path="/inventory/products/new" element={<ProductForm />} />
+          <Route path="/inventory/products/:id" element={<ProductForm />} />
+          <Route
+            path="/inventory/products/:id/inventory"
+            element={<ProductInventory />}
+          />
           <Route path="/inventory/stock-levels" element={<StockLevelsList />} />
           <Route
             path="/inventory/price-management"

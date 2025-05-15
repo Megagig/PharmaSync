@@ -21,6 +21,11 @@ import dashboardRoutes from './dashboard.routes';
 import followUpRoutes from './followUp.routes';
 import appointmentRoutes from './appointment.routes';
 import integrationRoutes from './integration.routes';
+import productRoutes from './product.routes';
+import customerRoutes from './customer.routes';
+import locationRoutes from './location.routes';
+import inventoryMovementRoutes from './inventoryMovement.routes';
+import priceLevelRoutes from './priceLevel.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -42,6 +47,11 @@ router.use('/dispensing', dispensingRoutes);
 router.use('/suppliers', supplierRoutes);
 router.use('/purchase-orders', purchaseOrderRoutes);
 router.use('/inventory', inventoryRoutes);
+router.use('/inventory/movements', inventoryMovementRoutes);
+router.use('/products', productRoutes);
+router.use('/customers', customerRoutes);
+router.use('/locations', locationRoutes);
+router.use('/price-levels', priceLevelRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/users', userRoutes);
 router.use('/roles', roleRoutes);
