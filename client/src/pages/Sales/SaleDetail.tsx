@@ -15,7 +15,9 @@ const SaleDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { currentSale, isLoading, error } = useSelector((state: RootState) => state.sales);
+  const { currentSale, isLoading, error } = useSelector(
+    (state: RootState) => state.sales
+  );
 
   const [isEditing, setIsEditing] = useState(false);
   const [status, setStatus] = useState('');
@@ -383,6 +385,16 @@ const SaleDetail = () => {
                         Receive Payment
                       </Button>
                     )}
+                    {currentSale.status === SaleStatus.COMPLETED && (
+                      <Button
+                        variant="warning"
+                        onClick={() =>
+                          navigate(`/returns/new?sale=${currentSale._id}`)
+                        }
+                      >
+                        Create Return
+                      </Button>
+                    )}
                   </div>
                 </>
               )}
@@ -420,8 +432,9 @@ const SaleDetail = () => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {currentSale.items.map((item, index) => {
-                  const product = typeof item.product === 'object' ? item.product : null;
-                  
+                  const product =
+                    typeof item.product === 'object' ? item.product : null;
+
                   return (
                     <tr key={index}>
                       <td className="px-6 py-4 whitespace-nowrap">

@@ -1,5 +1,3 @@
-import { Document, Types } from 'mongoose';
-
 export enum CustomerType {
   RETAIL = 'retail',
   WHOLESALE = 'wholesale',
@@ -17,79 +15,24 @@ export enum HealthcareProfessionalType {
   OTHER = 'other',
 }
 
-export interface ICustomerAddress {
+export enum CreditStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+  BLOCKED = 'blocked',
+}
+
+export interface CustomerAddress {
+  _id?: string;
   street: string;
   city: string;
   state: string;
   postalCode: string;
   country: string;
   isDefault?: boolean;
-  _id?: Types.ObjectId;
 }
 
-export interface ICustomer extends Document {
-  customerNumber: string;
-  type: CustomerType;
-  healthcareProfessionalType?: HealthcareProfessionalType;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  phone: string;
-  addresses: ICustomerAddress[];
-  organization?: string;
-  taxId?: string;
-  priceLevel: string; // e.g., 'retail', 'wholesale', 'special'
-  creditLimit?: number;
-  currentBalance: number;
-  creditStatus?: 'active' | 'suspended' | 'blocked';
-  notes?: string;
-  isActive: boolean;
-  patientId?: Types.ObjectId; // Reference to patient if type is PATIENT
-  createdBy: Types.ObjectId;
-  createdAt: Date;
-  updatedAt: Date;
-  _id: Types.ObjectId;
-}
-
-export interface ICustomerCreate {
-  customerNumber?: string;
-  type: CustomerType;
-  healthcareProfessionalType?: HealthcareProfessionalType;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  phone: string;
-  addresses: ICustomerAddress[];
-  organization?: string;
-  taxId?: string;
-  priceLevel: string;
-  creditLimit?: number;
-  creditStatus?: 'active' | 'suspended' | 'blocked';
-  notes?: string;
-  patientId?: string;
-}
-
-export interface ICustomerUpdate {
-  type?: CustomerType;
-  healthcareProfessionalType?: HealthcareProfessionalType;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
-  addresses?: ICustomerAddress[];
-  organization?: string;
-  taxId?: string;
-  priceLevel?: string;
-  creditLimit?: number;
-  currentBalance?: number;
-  creditStatus?: 'active' | 'suspended' | 'blocked';
-  notes?: string;
-  isActive?: boolean;
-  patientId?: string;
-}
-
-export interface ICustomerResponse {
-  id: string;
+export interface Customer {
+  _id: string;
   customerNumber: string;
   type: CustomerType;
   healthcareProfessionalType?: HealthcareProfessionalType;
@@ -98,16 +41,53 @@ export interface ICustomerResponse {
   fullName: string;
   email?: string;
   phone: string;
-  addresses: ICustomerAddress[];
+  addresses: CustomerAddress[];
   organization?: string;
   taxId?: string;
   priceLevel: string;
   creditLimit?: number;
   currentBalance: number;
-  creditStatus?: 'active' | 'suspended' | 'blocked';
+  creditStatus?: CreditStatus;
   notes?: string;
   isActive: boolean;
   patientId?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerFormData {
+  customerNumber?: string;
+  type: CustomerType;
+  healthcareProfessionalType?: HealthcareProfessionalType;
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone: string;
+  addresses: CustomerAddress[];
+  organization?: string;
+  taxId?: string;
+  priceLevel: string;
+  creditLimit?: number;
+  creditStatus?: CreditStatus;
+  notes?: string;
+  patientId?: string;
+}
+
+export interface CustomerUpdateData {
+  type?: CustomerType;
+  healthcareProfessionalType?: HealthcareProfessionalType;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  addresses?: CustomerAddress[];
+  organization?: string;
+  taxId?: string;
+  priceLevel?: string;
+  creditLimit?: number;
+  currentBalance?: number;
+  creditStatus?: CreditStatus;
+  notes?: string;
+  isActive?: boolean;
+  patientId?: string;
 }

@@ -5,6 +5,8 @@ import { fetchDashboardStats } from '@/store/slices/dashboardSlice';
 import PatientStatistics from '@/components/domain/Dashboard/PatientStatistics';
 import MedicationStatistics from '@/components/domain/Dashboard/MedicationStatistics';
 import DrugTherapyProblemStatistics from '@/components/domain/Dashboard/DrugTherapyProblemStatistics';
+import RecentSales from '@/components/domain/Dashboard/RecentSales';
+import RecentReturns from '@/components/domain/Dashboard/RecentReturns';
 import DateRangeFilter, {
   DateRange,
 } from '@/components/domain/Dashboard/DateRangeFilter';
@@ -68,6 +70,12 @@ const Dashboard: React.FC = () => {
 
       {/* Drug Therapy Problem Statistics */}
       <DrugTherapyProblemStatistics />
+
+      {/* Sales and Returns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <RecentSales />
+        <RecentReturns />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>

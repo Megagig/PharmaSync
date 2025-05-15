@@ -73,6 +73,35 @@ import CreateSale from '@/pages/Sales/CreateSale';
 import SaleDetail from '@/pages/Sales/SaleDetail';
 import SaleReceipt from '@/pages/Sales/SaleReceipt';
 
+// Invoice pages
+import InvoicesList from '@/pages/Invoices/InvoicesList';
+import CreateInvoice from '@/pages/Invoices/CreateInvoice';
+import InvoiceDetail from '@/pages/Invoices/InvoiceDetail';
+import InvoicePrint from '@/pages/Invoices/InvoicePrint';
+
+// Payment pages
+import PaymentsList from '@/pages/Payments/PaymentsList';
+import CreatePayment from '@/pages/Payments/CreatePayment';
+import PaymentDetail from '@/pages/Payments/PaymentDetail';
+import PaymentReceipt from '@/pages/Payments/PaymentReceipt';
+
+// Return pages
+import ReturnsList from '@/pages/Returns/ReturnsList';
+import CreateReturn from '@/pages/Returns/CreateReturn';
+import ReturnDetail from '@/pages/Returns/ReturnDetail';
+
+// Customer pages
+import CustomerDetail from '@/pages/Customers/CustomerDetail';
+import CustomerCredit from '@/pages/Customers/CustomerCredit';
+
+// Invoice pages
+import BatchInvoice from '@/pages/Invoices/BatchInvoice';
+
+// Reminder pages
+import RemindersList from '@/pages/Reminders/RemindersList';
+import CreateReminder from '@/pages/Reminders/CreateReminder';
+import ReminderDetail from '@/pages/Reminders/ReminderDetail';
+
 // Reports pages
 import ReportsDashboard from '@/pages/Reports/ReportsDashboard';
 import SalesReport from '@/pages/Reports/SalesReport';
@@ -205,6 +234,29 @@ const AppRoutes = () => {
           <Route path="/sales/new" element={<CreateSale />} />
           <Route path="/sales/:id" element={<SaleDetail />} />
           <Route path="/sales/:id/receipt" element={<SaleReceipt />} />
+
+          <Route path="/invoices" element={<InvoicesList />} />
+          <Route path="/invoices/new" element={<CreateInvoice />} />
+          <Route path="/invoices/:id" element={<InvoiceDetail />} />
+          <Route path="/invoices/:id/print" element={<InvoicePrint />} />
+
+          <Route path="/payments" element={<PaymentsList />} />
+          <Route path="/payments/new" element={<CreatePayment />} />
+          <Route path="/payments/:id" element={<PaymentDetail />} />
+          <Route path="/payments/:id/receipt" element={<PaymentReceipt />} />
+
+          <Route path="/returns" element={<ReturnsList />} />
+          <Route path="/returns/new" element={<CreateReturn />} />
+          <Route path="/returns/:id" element={<ReturnDetail />} />
+
+          <Route path="/customers/:id" element={<CustomerDetail />} />
+          <Route path="/customers/:id/credit" element={<CustomerCredit />} />
+
+          <Route path="/invoices/batch" element={<BatchInvoice />} />
+
+          <Route path="/reminders" element={<RemindersList />} />
+          <Route path="/reminders/new" element={<CreateReminder />} />
+          <Route path="/reminders/:id" element={<ReminderDetail />} />
 
           {/* Inventory Management */}
           <Route path="/inventory" element={<InventoryDashboard />} />

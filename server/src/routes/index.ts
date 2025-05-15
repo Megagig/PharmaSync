@@ -30,6 +30,8 @@ import transferRoutes from './transfer.routes';
 import saleRoutes from './sale.routes';
 import invoiceRoutes from './invoice.routes';
 import paymentRoutes from './payment.routes';
+import returnRoutes from './return.routes';
+import reminderRoutes from './reminder.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -60,6 +62,8 @@ router.use('/price-levels', priceLevelRoutes);
 router.use('/sales', saleRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/payments', paymentRoutes);
+router.use('/returns', returnRoutes);
+router.use('/reminders', reminderRoutes);
 router.use('/reports', reportsRoutes);
 router.use('/users', userRoutes);
 router.use('/roles', roleRoutes);

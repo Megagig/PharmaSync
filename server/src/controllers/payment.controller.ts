@@ -6,9 +6,11 @@ import Supplier from '../models/supplier.model';
 import Invoice from '../models/invoice.model';
 import Sale from '../models/sale.model';
 import PurchaseOrder from '../models/purchaseOrder.model';
+import CreditTransaction from '../models/creditTransaction.model';
 import { PaymentDirection } from '../interfaces/payment.interface';
 import { InvoiceStatus } from '../interfaces/invoice.interface';
 import { PaymentStatus } from '../interfaces/sale.interface';
+import { CreditTransactionType } from '../interfaces/credit.interface';
 import { AppError } from '../utils/error';
 
 /**
@@ -209,14 +211,14 @@ export const createPayment = asyncHandler(
       if (invoiceDoc) {
         invoiceDoc.amountPaid += amount;
         invoiceDoc.balance = invoiceDoc.total - invoiceDoc.amountPaid;
-        
+
         // Update status based on payment
         if (invoiceDoc.balance <= 0) {
           invoiceDoc.status = InvoiceStatus.PAID;
         } else if (invoiceDoc.amountPaid > 0) {
           invoiceDoc.status = InvoiceStatus.PARTIAL;
         }
-        
+
         await invoiceDoc.save();
       }
     }
@@ -230,8 +232,36 @@ export const createPayment = asyncHandler(
         } else if (amount > 0) {
           saleDoc.paymentStatus = PaymentStatus.PARTIAL;
         }
-        
+
         await saleDoc.save();
+
+        // If this is a payment for a credit sale, update customer credit balance
+        if (
+          saleDoc.paymentMethod === 'credit' &&
+          direction === PaymentDirection.RECEIVED &&
+          customer
+        ) {
+          const customerDoc = await Customer.findById(customer);
+          if (customerDoc) {
+            // Update customer balance
+            const newBalance = Math.max(0, customerDoc.currentBalance - amount);
+            customerDoc.currentBalance = newBalance;
+            await customerDoc.save();
+
+            // Create credit transaction
+            await CreditTransaction.create({
+              customer,
+              transactionType: CreditTransactionType.PAYMENT,
+              amount,
+              balance: newBalance,
+              description: `Payment for sale: ${saleDoc.saleNumber}`,
+              reference: payment.paymentNumber,
+              sale: sale,
+              payment: payment._id,
+              createdBy: req.user.id,
+            });
+          }
+        }
       }
     }
 
@@ -244,7 +274,7 @@ export const createPayment = asyncHandler(
         } else if (amount > 0) {
           purchaseOrderDoc.paymentStatus = 'partial';
         }
-        
+
         await purchaseOrderDoc.save();
       }
     }
@@ -286,14 +316,14 @@ export const updatePayment = asyncHandler(
     // If amount changed, update related entities
     if (amount !== undefined && amount !== oldAmount) {
       const amountDifference = amount - oldAmount;
-      
+
       // Update invoice if linked
       if (payment.invoice) {
         const invoiceDoc = await Invoice.findById(payment.invoice);
         if (invoiceDoc) {
           invoiceDoc.amountPaid += amountDifference;
           invoiceDoc.balance = invoiceDoc.total - invoiceDoc.amountPaid;
-          
+
           // Update status based on payment
           if (invoiceDoc.balance <= 0) {
             invoiceDoc.status = InvoiceStatus.PAID;
@@ -302,11 +332,11 @@ export const updatePayment = asyncHandler(
           } else {
             invoiceDoc.status = InvoiceStatus.SENT;
           }
-          
+
           await invoiceDoc.save();
         }
       }
-      
+
       // Update sale if linked
       if (payment.sale) {
         const saleDoc = await Sale.findById(payment.sale);
@@ -314,11 +344,12 @@ export const updatePayment = asyncHandler(
           // Update payment status based on total payment amount
           const totalPayments = await Payment.aggregate([
             { $match: { sale: saleDoc._id } },
-            { $group: { _id: null, total: { $sum: '$amount' } } }
+            { $group: { _id: null, total: { $sum: '$amount' } } },
           ]);
-          
-          const totalPaid = totalPayments.length > 0 ? totalPayments[0].total : 0;
-          
+
+          const totalPaid =
+            totalPayments.length > 0 ? totalPayments[0].total : 0;
+
           if (totalPaid >= saleDoc.total) {
             saleDoc.paymentStatus = PaymentStatus.PAID;
           } else if (totalPaid > 0) {
@@ -326,23 +357,26 @@ export const updatePayment = asyncHandler(
           } else {
             saleDoc.paymentStatus = PaymentStatus.UNPAID;
           }
-          
+
           await saleDoc.save();
         }
       }
-      
+
       // Update purchase order if linked
       if (payment.purchaseOrder) {
-        const purchaseOrderDoc = await PurchaseOrder.findById(payment.purchaseOrder);
+        const purchaseOrderDoc = await PurchaseOrder.findById(
+          payment.purchaseOrder
+        );
         if (purchaseOrderDoc) {
           // Update payment status based on total payment amount
           const totalPayments = await Payment.aggregate([
             { $match: { purchaseOrder: purchaseOrderDoc._id } },
-            { $group: { _id: null, total: { $sum: '$amount' } } }
+            { $group: { _id: null, total: { $sum: '$amount' } } },
           ]);
-          
-          const totalPaid = totalPayments.length > 0 ? totalPayments[0].total : 0;
-          
+
+          const totalPaid =
+            totalPayments.length > 0 ? totalPayments[0].total : 0;
+
           if (totalPaid >= purchaseOrderDoc.total) {
             purchaseOrderDoc.paymentStatus = 'paid';
           } else if (totalPaid > 0) {
@@ -350,7 +384,7 @@ export const updatePayment = asyncHandler(
           } else {
             purchaseOrderDoc.paymentStatus = 'unpaid';
           }
-          
+
           await purchaseOrderDoc.save();
         }
       }

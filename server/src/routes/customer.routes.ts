@@ -18,18 +18,26 @@ import {
   updateCustomerAddressSchema,
 } from '../validators/customer.validator';
 import { RoleType } from '../interfaces/role.interface';
+import creditRoutes from './credit.routes';
 
 const router = Router();
 
 // Protect all routes
 router.use(protect);
 
+// Use credit routes
+router.use('/:customerId/credit', creditRoutes);
+
 // Get all customers and create customer
 router
   .route('/')
   .get(getAllCustomers)
   .post(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.PHARMACY_TECHNICIAN]),
+    restrictTo([
+      RoleType.ADMIN,
+      RoleType.PHARMACIST,
+      RoleType.PHARMACY_TECHNICIAN,
+    ]),
     validate(createCustomerSchema),
     createCustomer
   );
@@ -39,20 +47,25 @@ router
   .route('/:id')
   .get(getCustomerById)
   .patch(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.PHARMACY_TECHNICIAN]),
+    restrictTo([
+      RoleType.ADMIN,
+      RoleType.PHARMACIST,
+      RoleType.PHARMACY_TECHNICIAN,
+    ]),
     validate(updateCustomerSchema),
     updateCustomer
   )
-  .delete(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
-    deleteCustomer
-  );
+  .delete(restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]), deleteCustomer);
 
 // Address management
 router
   .route('/:id/addresses')
   .post(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.PHARMACY_TECHNICIAN]),
+    restrictTo([
+      RoleType.ADMIN,
+      RoleType.PHARMACIST,
+      RoleType.PHARMACY_TECHNICIAN,
+    ]),
     validate(addCustomerAddressSchema),
     addCustomerAddress
   );
@@ -60,12 +73,20 @@ router
 router
   .route('/:id/addresses/:addressId')
   .patch(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.PHARMACY_TECHNICIAN]),
+    restrictTo([
+      RoleType.ADMIN,
+      RoleType.PHARMACIST,
+      RoleType.PHARMACY_TECHNICIAN,
+    ]),
     validate(updateCustomerAddressSchema),
     updateCustomerAddress
   )
   .delete(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.PHARMACY_TECHNICIAN]),
+    restrictTo([
+      RoleType.ADMIN,
+      RoleType.PHARMACIST,
+      RoleType.PHARMACY_TECHNICIAN,
+    ]),
     removeCustomerAddress
   );
 
