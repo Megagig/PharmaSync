@@ -16,32 +16,32 @@ export const getPatientDemographicsReport = async (
 ) => {
   // Build query based on date range
   const query: any = {};
-  
+
   if (startDate || endDate) {
     query.createdAt = {};
-    
+
     if (startDate) {
       query.createdAt.$gte = startDate;
     }
-    
+
     if (endDate) {
       query.createdAt.$lte = endDate;
     }
   }
-  
+
   // Get all patients within the date range
   const patients = await Patient.find(query);
-  
+
   // Calculate total patients
   const totalPatients = patients.length;
-  
+
   // Calculate gender distribution
   const genderDistribution = {
-    male: patients.filter(patient => patient.gender === 'male').length,
-    female: patients.filter(patient => patient.gender === 'female').length,
-    other: patients.filter(patient => patient.gender === 'other').length,
+    male: patients.filter((patient) => patient.gender === 'male').length,
+    female: patients.filter((patient) => patient.gender === 'female').length,
+    other: patients.filter((patient) => patient.gender === 'other').length,
   };
-  
+
   // Calculate age distribution
   const ageDistribution = {
     children: 0, // 0-18
@@ -50,8 +50,8 @@ export const getPatientDemographicsReport = async (
     seniors: 0, // 51-65
     elderly: 0, // 65+
   };
-  
-  patients.forEach(patient => {
+
+  patients.forEach((patient) => {
     const age = calculateAge(new Date(patient.dateOfBirth));
     if (age <= 18) {
       ageDistribution.children++;
@@ -65,31 +65,34 @@ export const getPatientDemographicsReport = async (
       ageDistribution.elderly++;
     }
   });
-  
+
   // Calculate blood group distribution
   const bloodGroupDistribution: { [key: string]: number } = {};
-  patients.forEach(patient => {
+  patients.forEach((patient) => {
     if (patient.bloodGroup) {
-      bloodGroupDistribution[patient.bloodGroup] = (bloodGroupDistribution[patient.bloodGroup] || 0) + 1;
+      bloodGroupDistribution[patient.bloodGroup] =
+        (bloodGroupDistribution[patient.bloodGroup] || 0) + 1;
     }
   });
-  
+
   // Calculate genotype distribution
   const genotypeDistribution: { [key: string]: number } = {};
-  patients.forEach(patient => {
+  patients.forEach((patient) => {
     if (patient.genotype) {
-      genotypeDistribution[patient.genotype] = (genotypeDistribution[patient.genotype] || 0) + 1;
+      genotypeDistribution[patient.genotype] =
+        (genotypeDistribution[patient.genotype] || 0) + 1;
     }
   });
-  
+
   // Calculate marital status distribution
   const maritalStatusDistribution: { [key: string]: number } = {};
-  patients.forEach(patient => {
+  patients.forEach((patient) => {
     if (patient.maritalStatus) {
-      maritalStatusDistribution[patient.maritalStatus] = (maritalStatusDistribution[patient.maritalStatus] || 0) + 1;
+      maritalStatusDistribution[patient.maritalStatus] =
+        (maritalStatusDistribution[patient.maritalStatus] || 0) + 1;
     }
   });
-  
+
   return {
     totalPatients,
     genderDistribution,
@@ -112,97 +115,122 @@ export const getMedicationUsageReport = async (
 ) => {
   // Build query based on date range
   const query: any = {};
-  
+
   if (startDate || endDate) {
     query.createdAt = {};
-    
+
     if (startDate) {
       query.createdAt.$gte = startDate;
     }
-    
+
     if (endDate) {
       query.createdAt.$lte = endDate;
     }
   }
-  
+
   // Get all prescriptions within the date range
   const prescriptions = await Prescription.find(query)
-    .populate('medications.medication')
-    .populate('patient');
-  
+    .populate('items.medication')
+    .populate({
+      path: 'patient',
+      select: 'firstName lastName dateOfBirth gender',
+    });
+
   // Get all dispensings within the date range
   const dispensings = await Dispensing.find(query)
-    .populate('medications.medication')
-    .populate('patient');
-  
+    .populate('items.medication')
+    .populate({
+      path: 'patient',
+      select: 'firstName lastName dateOfBirth gender',
+    });
+
   // Calculate total prescriptions and dispensings
   const totalPrescriptions = prescriptions.length;
   const totalDispensings = dispensings.length;
-  
+
   // Calculate medication frequency
   const medicationFrequency: { [key: string]: number } = {};
   const medicationsByCategory: { [key: string]: number } = {};
-  const medicationsByPatientAge: { [key: string]: { [key: string]: number } } = {
-    children: {}, // 0-18
-    youngAdults: {}, // 19-35
-    middleAged: {}, // 36-50
-    seniors: {}, // 51-65
-    elderly: {}, // 65+
-  };
-  
+  const medicationsByPatientAge: { [key: string]: { [key: string]: number } } =
+    {
+      children: {}, // 0-18
+      youngAdults: {}, // 19-35
+      middleAged: {}, // 36-50
+      seniors: {}, // 51-65
+      elderly: {}, // 65+
+    };
+
   // Process prescriptions
-  prescriptions.forEach(prescription => {
-    prescription.medications.forEach((med: any) => {
-      if (med.medication) {
-        const medicationName = med.medication.name;
-        const medicationCategory = med.medication.category || 'Uncategorized';
-        
-        // Update medication frequency
-        medicationFrequency[medicationName] = (medicationFrequency[medicationName] || 0) + 1;
-        
-        // Update medications by category
-        medicationsByCategory[medicationCategory] = (medicationsByCategory[medicationCategory] || 0) + 1;
-        
-        // Update medications by patient age
-        if (prescription.patient && prescription.patient.dateOfBirth) {
-          const age = calculateAge(new Date(prescription.patient.dateOfBirth));
-          let ageGroup = 'elderly';
-          
-          if (age <= 18) {
-            ageGroup = 'children';
-          } else if (age <= 35) {
-            ageGroup = 'youngAdults';
-          } else if (age <= 50) {
-            ageGroup = 'middleAged';
-          } else if (age <= 65) {
-            ageGroup = 'seniors';
+  prescriptions.forEach((prescription) => {
+    if (prescription.items && Array.isArray(prescription.items)) {
+      prescription.items.forEach((item: any) => {
+        if (item.medication) {
+          const medicationName = item.medication.name;
+          const medicationCategory =
+            item.medication.category || 'Uncategorized';
+
+          // Update medication frequency
+          medicationFrequency[medicationName] =
+            (medicationFrequency[medicationName] || 0) + 1;
+
+          // Update medications by category
+          medicationsByCategory[medicationCategory] =
+            (medicationsByCategory[medicationCategory] || 0) + 1;
+
+          // Update medications by patient age
+          const patientObj = prescription.patient as any;
+          if (
+            patientObj &&
+            typeof patientObj === 'object' &&
+            patientObj.dateOfBirth
+          ) {
+            const age = calculateAge(new Date(patientObj.dateOfBirth));
+            let ageGroup = 'elderly';
+
+            if (age <= 18) {
+              ageGroup = 'children';
+            } else if (age <= 35) {
+              ageGroup = 'youngAdults';
+            } else if (age <= 50) {
+              ageGroup = 'middleAged';
+            } else if (age <= 65) {
+              ageGroup = 'seniors';
+            }
+
+            if (!medicationsByPatientAge[ageGroup]) {
+              medicationsByPatientAge[ageGroup] = {};
+            }
+
+            medicationsByPatientAge[ageGroup][medicationName] =
+              (medicationsByPatientAge[ageGroup][medicationName] || 0) + 1;
           }
-          
-          medicationsByPatientAge[ageGroup][medicationName] = (medicationsByPatientAge[ageGroup][medicationName] || 0) + 1;
         }
-      }
-    });
+      });
+    }
   });
-  
+
   // Calculate average medications per prescription
   const totalMedicationsInPrescriptions = prescriptions.reduce(
-    (total, prescription) => total + prescription.medications.length,
+    (total, prescription) =>
+      total + (prescription.items ? prescription.items.length : 0),
     0
   );
-  const avgMedicationsPerPrescription = totalPrescriptions > 0
-    ? totalMedicationsInPrescriptions / totalPrescriptions
-    : 0;
-  
+  const avgMedicationsPerPrescription =
+    totalPrescriptions > 0
+      ? totalMedicationsInPrescriptions / totalPrescriptions
+      : 0;
+
   // Format medication frequency for chart display
   const topMedications = Object.entries(medicationFrequency)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
     .map(([name, count]) => ({ name, count }));
-  
+
   // Format medications by category for chart display
-  const medicationCategories = Object.entries(medicationsByCategory)
-    .map(([name, count]) => ({ name, count }));
-  
+  const medicationCategories = Object.entries(medicationsByCategory).map(
+    ([name, count]) => ({ name, count })
+  );
+
   return {
     totalPrescriptions,
     totalDispensings,
@@ -225,28 +253,28 @@ export const getDrugTherapyProblemReport = async (
 ) => {
   // Build query based on date range
   const query: any = {};
-  
+
   if (startDate || endDate) {
     query.createdAt = {};
-    
+
     if (startDate) {
       query.createdAt.$gte = startDate;
     }
-    
+
     if (endDate) {
       query.createdAt.$lte = endDate;
     }
   }
-  
+
   // Get all patients within the date range
   const patients = await Patient.find(query);
-  
+
   // Calculate drug therapy problem statistics
   let totalDTPs = 0;
   let resolvedDTPs = 0;
   let inProgressDTPs = 0;
   let unresolvedDTPs = 0;
-  
+
   const dtpCategories: { [key: string]: number } = {};
   const dtpByAgeGroup: { [key: string]: number } = {
     children: 0, // 0-18
@@ -255,11 +283,11 @@ export const getDrugTherapyProblemReport = async (
     seniors: 0, // 51-65
     elderly: 0, // 65+
   };
-  
-  patients.forEach(patient => {
+
+  patients.forEach((patient) => {
     if (patient.drugTherapyProblems && patient.drugTherapyProblems.length > 0) {
       totalDTPs += patient.drugTherapyProblems.length;
-      
+
       patient.drugTherapyProblems.forEach((dtp: any) => {
         // Count by status
         const status = (dtp as any).status || 'unresolved';
@@ -270,11 +298,12 @@ export const getDrugTherapyProblemReport = async (
         } else {
           unresolvedDTPs++;
         }
-        
+
         // Count by category
-        const category = (dtp as any).category || dtp.problem || 'Uncategorized';
+        const category =
+          (dtp as any).category || dtp.problem || 'Uncategorized';
         dtpCategories[category] = (dtpCategories[category] || 0) + 1;
-        
+
         // Count by age group
         const age = calculateAge(new Date(patient.dateOfBirth));
         if (age <= 18) {
@@ -291,14 +320,15 @@ export const getDrugTherapyProblemReport = async (
       });
     }
   });
-  
+
   // Format DTP categories for chart display
-  const dtpCategoriesChart = Object.entries(dtpCategories)
-    .map(([name, count]) => ({ name, count }));
-  
+  const dtpCategoriesChart = Object.entries(dtpCategories).map(
+    ([name, count]) => ({ name, count })
+  );
+
   // Calculate resolution rate
   const resolutionRate = totalDTPs > 0 ? (resolvedDTPs / totalDTPs) * 100 : 0;
-  
+
   return {
     totalDTPs,
     resolvedDTPs,
@@ -322,37 +352,37 @@ export const getPatientOutcomesReport = async (
 ) => {
   // Build query based on date range
   const query: any = {};
-  
+
   if (startDate || endDate) {
     query.createdAt = {};
-    
+
     if (startDate) {
       query.createdAt.$gte = startDate;
     }
-    
+
     if (endDate) {
       query.createdAt.$lte = endDate;
     }
   }
-  
+
   // Get all patients within the date range
   const patients = await Patient.find(query);
-  
+
   // Calculate care plan statistics
   let totalCarePlans = 0;
   let completedCarePlans = 0;
   let inProgressCarePlans = 0;
-  
+
   // Calculate SOAP note statistics
   let totalSoapNotes = 0;
   let followUpCompleted = 0;
   let followUpScheduled = 0;
-  
-  patients.forEach(patient => {
+
+  patients.forEach((patient) => {
     // Process care plans
     if (patient.carePlans && patient.carePlans.length > 0) {
       totalCarePlans += patient.carePlans.length;
-      
+
       patient.carePlans.forEach((plan: any) => {
         if (plan.status === 'completed') {
           completedCarePlans++;
@@ -361,11 +391,11 @@ export const getPatientOutcomesReport = async (
         }
       });
     }
-    
+
     // Process SOAP notes
     if (patient.soapNotes && patient.soapNotes.length > 0) {
       totalSoapNotes += patient.soapNotes.length;
-      
+
       patient.soapNotes.forEach((note: any) => {
         if (note.followUpCompleted) {
           followUpCompleted++;
@@ -375,13 +405,15 @@ export const getPatientOutcomesReport = async (
       });
     }
   });
-  
+
   // Calculate completion rates
-  const carePlanCompletionRate = totalCarePlans > 0 ? (completedCarePlans / totalCarePlans) * 100 : 0;
-  const followUpCompletionRate = (followUpCompleted + followUpScheduled) > 0 
-    ? (followUpCompleted / (followUpCompleted + followUpScheduled)) * 100 
-    : 0;
-  
+  const carePlanCompletionRate =
+    totalCarePlans > 0 ? (completedCarePlans / totalCarePlans) * 100 : 0;
+  const followUpCompletionRate =
+    followUpCompleted + followUpScheduled > 0
+      ? (followUpCompleted / (followUpCompleted + followUpScheduled)) * 100
+      : 0;
+
   return {
     carePlans: {
       total: totalCarePlans,

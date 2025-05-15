@@ -1,6 +1,6 @@
 import Appointment from '../models/appointment.model';
 import { IAppointment } from '../interfaces/appointment.interface';
-import { AppError } from '../utils/error.utils';
+import { AppError } from '../utils/error';
 
 /**
  * Get all appointments
@@ -16,7 +16,9 @@ export const getAllAppointments = async (): Promise<IAppointment[]> => {
  * @param id Appointment ID
  * @returns Appointment or null if not found
  */
-export const getAppointmentById = async (id: string): Promise<IAppointment | null> => {
+export const getAppointmentById = async (
+  id: string
+): Promise<IAppointment | null> => {
   const appointment = await Appointment.findById(id);
   return appointment;
 };
@@ -26,7 +28,9 @@ export const getAppointmentById = async (id: string): Promise<IAppointment | nul
  * @param appointmentData Appointment data
  * @returns Created appointment
  */
-export const createAppointment = async (appointmentData: any): Promise<IAppointment> => {
+export const createAppointment = async (
+  appointmentData: any
+): Promise<IAppointment> => {
   // Check for overlapping appointments
   const overlappingAppointments = await Appointment.find({
     $or: [
@@ -38,7 +42,10 @@ export const createAppointment = async (appointmentData: any): Promise<IAppointm
   });
 
   if (overlappingAppointments.length > 0) {
-    throw new AppError('There is already an appointment scheduled for this time', 400);
+    throw new AppError(
+      'There is already an appointment scheduled for this time',
+      400
+    );
   }
 
   const appointment = await Appointment.create(appointmentData);
@@ -67,7 +74,10 @@ export const updateAppointment = async (
   });
 
   if (overlappingAppointments.length > 0) {
-    throw new AppError('There is already an appointment scheduled for this time', 400);
+    throw new AppError(
+      'There is already an appointment scheduled for this time',
+      400
+    );
   }
 
   const appointment = await Appointment.findByIdAndUpdate(id, appointmentData, {
@@ -83,7 +93,9 @@ export const updateAppointment = async (
  * @param id Appointment ID
  * @returns Deleted appointment or null if not found
  */
-export const deleteAppointment = async (id: string): Promise<IAppointment | null> => {
+export const deleteAppointment = async (
+  id: string
+): Promise<IAppointment | null> => {
   const appointment = await Appointment.findByIdAndDelete(id);
   return appointment;
 };
@@ -93,8 +105,12 @@ export const deleteAppointment = async (id: string): Promise<IAppointment | null
  * @param patientId Patient ID
  * @returns List of appointments for the patient
  */
-export const getAppointmentsByPatientId = async (patientId: string): Promise<IAppointment[]> => {
-  const appointments = await Appointment.find({ patientId }).sort({ startTime: 1 });
+export const getAppointmentsByPatientId = async (
+  patientId: string
+): Promise<IAppointment[]> => {
+  const appointments = await Appointment.find({ patientId }).sort({
+    startTime: 1,
+  });
   return appointments;
 };
 

@@ -3,7 +3,7 @@ import integrationManagerService from '../services/integration/integrationManage
 import ehrIntegrationService from '../services/integration/ehrIntegration.service';
 import pharmacySystemIntegrationService from '../services/integration/pharmacySystemIntegration.service';
 import drugDatabaseIntegrationService from '../services/integration/drugDatabaseIntegration.service';
-import { AppError } from '../utils/error.utils';
+import { AppError } from '../utils/error';
 
 /**
  * @desc    Get integration status
@@ -17,7 +17,7 @@ export const getIntegrationStatus = async (
 ) => {
   try {
     const status = integrationManagerService.getIntegrationStatus();
-    
+
     res.status(200).json({
       status: 'success',
       data: status,
@@ -41,15 +41,17 @@ export const searchEHRPatients = async (
     if (!ehrIntegrationService.isIntegrationEnabled()) {
       return next(new AppError('EHR integration is not enabled', 400));
     }
-    
+
     const { query } = req.query;
-    
+
     if (!query) {
       return next(new AppError('Search query is required', 400));
     }
-    
-    const patients = await ehrIntegrationService.searchPatients(query as string);
-    
+
+    const patients = await ehrIntegrationService.searchPatients(
+      query as string
+    );
+
     res.status(200).json({
       status: 'success',
       data: patients,
@@ -73,15 +75,17 @@ export const importEHRPatient = async (
     if (!ehrIntegrationService.isIntegrationEnabled()) {
       return next(new AppError('EHR integration is not enabled', 400));
     }
-    
+
     const { ehrPatientId } = req.body;
-    
+
     if (!ehrPatientId) {
       return next(new AppError('EHR patient ID is required', 400));
     }
-    
-    const result = await integrationManagerService.importPatientWithRelatedData(ehrPatientId);
-    
+
+    const result = await integrationManagerService.importPatientWithRelatedData(
+      ehrPatientId
+    );
+
     res.status(200).json({
       status: 'success',
       data: result,
@@ -103,17 +107,21 @@ export const searchDrugDatabaseMedications = async (
 ) => {
   try {
     if (!drugDatabaseIntegrationService.isIntegrationEnabled()) {
-      return next(new AppError('Drug database integration is not enabled', 400));
+      return next(
+        new AppError('Drug database integration is not enabled', 400)
+      );
     }
-    
+
     const { query } = req.query;
-    
+
     if (!query) {
       return next(new AppError('Search query is required', 400));
     }
-    
-    const medications = await drugDatabaseIntegrationService.searchMedications(query as string);
-    
+
+    const medications = await drugDatabaseIntegrationService.searchMedications(
+      query as string
+    );
+
     res.status(200).json({
       status: 'success',
       data: medications,
@@ -135,17 +143,21 @@ export const importDrugDatabaseMedication = async (
 ) => {
   try {
     if (!drugDatabaseIntegrationService.isIntegrationEnabled()) {
-      return next(new AppError('Drug database integration is not enabled', 400));
+      return next(
+        new AppError('Drug database integration is not enabled', 400)
+      );
     }
-    
+
     const { externalMedicationId } = req.body;
-    
+
     if (!externalMedicationId) {
       return next(new AppError('External medication ID is required', 400));
     }
-    
-    const medication = await drugDatabaseIntegrationService.importMedication(externalMedicationId);
-    
+
+    const medication = await drugDatabaseIntegrationService.importMedication(
+      externalMedicationId
+    );
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -167,17 +179,24 @@ export const checkDrugInteractions = async (
 ) => {
   try {
     if (!drugDatabaseIntegrationService.isIntegrationEnabled()) {
-      return next(new AppError('Drug database integration is not enabled', 400));
+      return next(
+        new AppError('Drug database integration is not enabled', 400)
+      );
     }
-    
+
     const { medicationIds } = req.body;
-    
-    if (!medicationIds || !Array.isArray(medicationIds) || medicationIds.length === 0) {
+
+    if (
+      !medicationIds ||
+      !Array.isArray(medicationIds) ||
+      medicationIds.length === 0
+    ) {
       return next(new AppError('Medication IDs are required', 400));
     }
-    
-    const interactions = await drugDatabaseIntegrationService.checkDrugInteractions(medicationIds);
-    
+
+    const interactions =
+      await drugDatabaseIntegrationService.checkDrugInteractions(medicationIds);
+
     res.status(200).json({
       status: 'success',
       data: interactions,
@@ -199,11 +218,13 @@ export const syncPharmacyInventory = async (
 ) => {
   try {
     if (!pharmacySystemIntegrationService.isIntegrationEnabled()) {
-      return next(new AppError('Pharmacy system integration is not enabled', 400));
+      return next(
+        new AppError('Pharmacy system integration is not enabled', 400)
+      );
     }
-    
+
     const inventory = await integrationManagerService.syncInventory();
-    
+
     res.status(200).json({
       status: 'success',
       data: inventory,
@@ -225,15 +246,17 @@ export const sendPrescriptionToPharmacy = async (
 ) => {
   try {
     if (!pharmacySystemIntegrationService.isIntegrationEnabled()) {
-      return next(new AppError('Pharmacy system integration is not enabled', 400));
+      return next(
+        new AppError('Pharmacy system integration is not enabled', 400)
+      );
     }
-    
+
     const { prescriptionId } = req.body;
-    
+
     if (!prescriptionId) {
       return next(new AppError('Prescription ID is required', 400));
     }
-    
+
     // In a real implementation, you would fetch the prescription from the database
     // For this example, we'll use a mock prescription
     const mockPrescription = {
@@ -263,9 +286,11 @@ export const sendPrescriptionToPharmacy = async (
       ],
       notes: 'Patient has penicillin allergy',
     };
-    
-    const result = await integrationManagerService.sendPrescriptionToPharmacy(mockPrescription);
-    
+
+    const result = await integrationManagerService.sendPrescriptionToPharmacy(
+      mockPrescription
+    );
+
     res.status(200).json({
       status: 'success',
       data: result,
@@ -287,21 +312,26 @@ export const getMedicationWithAdditionalInfo = async (
 ) => {
   try {
     if (!drugDatabaseIntegrationService.isIntegrationEnabled()) {
-      return next(new AppError('Drug database integration is not enabled', 400));
+      return next(
+        new AppError('Drug database integration is not enabled', 400)
+      );
     }
-    
+
     const { id } = req.params;
     const { externalId } = req.query;
-    
+
     if (!id || !externalId) {
-      return next(new AppError('Medication ID and external ID are required', 400));
+      return next(
+        new AppError('Medication ID and external ID are required', 400)
+      );
     }
-    
-    const medication = await integrationManagerService.getMedicationWithAdditionalInfo(
-      id,
-      externalId as string
-    );
-    
+
+    const medication =
+      await integrationManagerService.getMedicationWithAdditionalInfo(
+        id,
+        externalId as string
+      );
+
     res.status(200).json({
       status: 'success',
       data: medication,

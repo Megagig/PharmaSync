@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AppError } from '../../utils/error.utils';
+import { AppError } from '../../utils/error';
 import Medication from '../../models/medication.model';
 import { logger } from '../../utils/logger.utils';
 import config from '../../config/config';
@@ -14,7 +14,9 @@ class DrugDatabaseIntegrationService {
 
   constructor() {
     // Load configuration from environment variables
-    this.baseUrl = config.integrations.drugDatabase.baseUrl || 'https://api.drugdatabase.example.com';
+    this.baseUrl =
+      config.integrations.drugDatabase.baseUrl ||
+      'https://api.drugdatabase.example.com';
     this.apiKey = config.integrations.drugDatabase.apiKey || '';
     this.isEnabled = config.integrations.drugDatabase.enabled === 'true';
   }
@@ -40,15 +42,20 @@ class DrugDatabaseIntegrationService {
       const response = await axios.get(`${this.baseUrl}/medications/search`, {
         params: { query },
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
       });
 
       return response.data.results || [];
     } catch (error: any) {
-      logger.error(`Error searching medications in drug database: ${error.message}`);
-      throw new AppError(`Failed to search medications in drug database: ${error.message}`, 500);
+      logger.error(
+        `Error searching medications in drug database: ${error.message}`
+      );
+      throw new AppError(
+        `Failed to search medications in drug database: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -63,17 +70,25 @@ class DrugDatabaseIntegrationService {
     }
 
     try {
-      const response = await axios.get(`${this.baseUrl}/medications/${medicationId}`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.get(
+        `${this.baseUrl}/medications/${medicationId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       return response.data;
     } catch (error: any) {
-      logger.error(`Error fetching medication details from drug database: ${error.message}`);
-      throw new AppError(`Failed to fetch medication details from drug database: ${error.message}`, 500);
+      logger.error(
+        `Error fetching medication details from drug database: ${error.message}`
+      );
+      throw new AppError(
+        `Failed to fetch medication details from drug database: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -89,23 +104,34 @@ class DrugDatabaseIntegrationService {
 
     try {
       // Check if medication already exists
-      const existingMedication = await Medication.findOne({ externalId: medicationId });
+      const existingMedication = await Medication.findOne({
+        externalId: medicationId,
+      });
       if (existingMedication) {
-        return this.updateMedicationFromDrugDatabase(existingMedication._id.toString(), medicationId);
+        return this.updateMedicationFromDrugDatabase(
+          existingMedication._id.toString(),
+          medicationId
+        );
       }
 
       // Fetch medication data from drug database
       const drugDbMedication = await this.getMedicationDetails(medicationId);
 
       // Map drug database medication data to our medication model
-      const medicationData = this.mapDrugDbMedicationToLocalMedication(drugDbMedication);
+      const medicationData =
+        this.mapDrugDbMedicationToLocalMedication(drugDbMedication);
 
       // Create new medication
       const medication = await Medication.create(medicationData);
       return medication;
     } catch (error: any) {
-      logger.error(`Error importing medication from drug database: ${error.message}`);
-      throw new AppError(`Failed to import medication from drug database: ${error.message}`, 500);
+      logger.error(
+        `Error importing medication from drug database: ${error.message}`
+      );
+      throw new AppError(
+        `Failed to import medication from drug database: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -115,23 +141,33 @@ class DrugDatabaseIntegrationService {
    * @param externalMedicationId External medication ID
    * @returns Updated medication
    */
-  async updateMedicationFromDrugDatabase(medicationId: string, externalMedicationId: string): Promise<any> {
+  async updateMedicationFromDrugDatabase(
+    medicationId: string,
+    externalMedicationId: string
+  ): Promise<any> {
     if (!this.isIntegrationEnabled()) {
       throw new AppError('Drug database integration is not enabled', 400);
     }
 
     try {
       // Fetch medication data from drug database
-      const drugDbMedication = await this.getMedicationDetails(externalMedicationId);
+      const drugDbMedication = await this.getMedicationDetails(
+        externalMedicationId
+      );
 
       // Map drug database medication data to our medication model
-      const medicationData = this.mapDrugDbMedicationToLocalMedication(drugDbMedication);
+      const medicationData =
+        this.mapDrugDbMedicationToLocalMedication(drugDbMedication);
 
       // Update medication
-      const medication = await Medication.findByIdAndUpdate(medicationId, medicationData, {
-        new: true,
-        runValidators: true,
-      });
+      const medication = await Medication.findByIdAndUpdate(
+        medicationId,
+        medicationData,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
 
       if (!medication) {
         throw new AppError('Medication not found', 404);
@@ -139,8 +175,13 @@ class DrugDatabaseIntegrationService {
 
       return medication;
     } catch (error: any) {
-      logger.error(`Error updating medication from drug database: ${error.message}`);
-      throw new AppError(`Failed to update medication from drug database: ${error.message}`, 500);
+      logger.error(
+        `Error updating medication from drug database: ${error.message}`
+      );
+      throw new AppError(
+        `Failed to update medication from drug database: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -155,19 +196,26 @@ class DrugDatabaseIntegrationService {
     }
 
     try {
-      const response = await axios.post(`${this.baseUrl}/interactions/check`, {
-        medications: medicationIds,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
+      const response = await axios.post(
+        `${this.baseUrl}/interactions/check`,
+        {
+          medications: medicationIds,
         },
-      });
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       return response.data.interactions || [];
     } catch (error: any) {
       logger.error(`Error checking drug interactions: ${error.message}`);
-      throw new AppError(`Failed to check drug interactions: ${error.message}`, 500);
+      throw new AppError(
+        `Failed to check drug interactions: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -182,17 +230,25 @@ class DrugDatabaseIntegrationService {
     }
 
     try {
-      const response = await axios.get(`${this.baseUrl}/medications/${medicationId}/contraindications`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.get(
+        `${this.baseUrl}/medications/${medicationId}/contraindications`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       return response.data.contraindications || [];
     } catch (error: any) {
-      logger.error(`Error fetching medication contraindications: ${error.message}`);
-      throw new AppError(`Failed to fetch medication contraindications: ${error.message}`, 500);
+      logger.error(
+        `Error fetching medication contraindications: ${error.message}`
+      );
+      throw new AppError(
+        `Failed to fetch medication contraindications: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -207,17 +263,23 @@ class DrugDatabaseIntegrationService {
     }
 
     try {
-      const response = await axios.get(`${this.baseUrl}/medications/${medicationId}/side-effects`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.get(
+        `${this.baseUrl}/medications/${medicationId}/side-effects`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       return response.data.sideEffects || [];
     } catch (error: any) {
       logger.error(`Error fetching medication side effects: ${error.message}`);
-      throw new AppError(`Failed to fetch medication side effects: ${error.message}`, 500);
+      throw new AppError(
+        `Failed to fetch medication side effects: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -235,11 +297,12 @@ class DrugDatabaseIntegrationService {
       strength: drugDbMedication.strength,
       manufacturer: drugDbMedication.manufacturer,
       category: drugDbMedication.category,
-      activeIngredients: drugDbMedication.activeIngredients?.map((ingredient: any) => ({
-        name: ingredient.name,
-        quantity: ingredient.quantity,
-        unit: ingredient.unit,
-      })) || [],
+      activeIngredients:
+        drugDbMedication.activeIngredients?.map((ingredient: any) => ({
+          name: ingredient.name,
+          quantity: ingredient.quantity,
+          unit: ingredient.unit,
+        })) || [],
       contraindications: drugDbMedication.contraindications || [],
       sideEffects: drugDbMedication.sideEffects || [],
       interactions: drugDbMedication.interactions || [],

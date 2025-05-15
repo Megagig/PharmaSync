@@ -1,7 +1,7 @@
 import express from 'express';
 import * as integrationController from '../controllers/integration.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import { authorize } from '../middleware/authorization.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
+import { UserRole } from '../interfaces/user.interface';
 
 const router = express.Router();
 
@@ -11,20 +11,14 @@ router.use(authenticate);
 // Get integration status (admin only)
 router.get(
   '/status',
-  authorize(['admin']),
+  authorize(UserRole.ADMIN),
   integrationController.getIntegrationStatus
 );
 
 // EHR integration routes
-router.get(
-  '/ehr/patients/search',
-  integrationController.searchEHRPatients
-);
+router.get('/ehr/patients/search', integrationController.searchEHRPatients);
 
-router.post(
-  '/ehr/patients/import',
-  integrationController.importEHRPatient
-);
+router.post('/ehr/patients/import', integrationController.importEHRPatient);
 
 // Drug database integration routes
 router.get(
@@ -45,7 +39,7 @@ router.post(
 // Pharmacy system integration routes
 router.post(
   '/pharmacy-system/inventory/sync',
-  authorize(['admin', 'pharmacist']),
+  authorize(UserRole.ADMIN, UserRole.PHARMACIST),
   integrationController.syncPharmacyInventory
 );
 

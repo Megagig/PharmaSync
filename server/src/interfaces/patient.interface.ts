@@ -122,6 +122,7 @@ export interface ISoapNote {
   objective: string;
   assessment: string;
   plan: string;
+  followUpDate?: Date;
   _id?: Types.ObjectId;
 }
 

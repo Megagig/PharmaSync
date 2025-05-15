@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { AppError } from '../../utils/error.utils';
+import { AppError } from '../../utils/error';
 import Patient from '../../models/patient.model';
 import { logger } from '../../utils/logger.utils';
 import config from '../../config/config';
@@ -14,7 +14,8 @@ class EHRIntegrationService {
 
   constructor() {
     // Load configuration from environment variables
-    this.baseUrl = config.integrations.ehr.baseUrl || 'https://api.ehrsystem.example.com';
+    this.baseUrl =
+      config.integrations.ehr.baseUrl || 'https://api.ehrsystem.example.com';
     this.apiKey = config.integrations.ehr.apiKey || '';
     this.isEnabled = config.integrations.ehr.enabled === 'true';
   }
@@ -37,17 +38,23 @@ class EHRIntegrationService {
     }
 
     try {
-      const response = await axios.get(`${this.baseUrl}/patients/${ehrPatientId}`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.get(
+        `${this.baseUrl}/patients/${ehrPatientId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       return response.data;
     } catch (error: any) {
       logger.error(`Error fetching patient from EHR: ${error.message}`);
-      throw new AppError(`Failed to fetch patient from EHR: ${error.message}`, 500);
+      throw new AppError(
+        `Failed to fetch patient from EHR: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -65,7 +72,7 @@ class EHRIntegrationService {
       const response = await axios.get(`${this.baseUrl}/patients/search`, {
         params: { query },
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
         },
       });
@@ -73,7 +80,10 @@ class EHRIntegrationService {
       return response.data.results || [];
     } catch (error: any) {
       logger.error(`Error searching patients in EHR: ${error.message}`);
-      throw new AppError(`Failed to search patients in EHR: ${error.message}`, 500);
+      throw new AppError(
+        `Failed to search patients in EHR: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -91,7 +101,10 @@ class EHRIntegrationService {
       // Check if patient already exists
       const existingPatient = await Patient.findOne({ ehrPatientId });
       if (existingPatient) {
-        return this.updatePatientFromEHR(existingPatient._id.toString(), ehrPatientId);
+        return this.updatePatientFromEHR(
+          existingPatient._id.toString(),
+          ehrPatientId
+        );
       }
 
       // Fetch patient data from EHR
@@ -105,7 +118,10 @@ class EHRIntegrationService {
       return patient;
     } catch (error: any) {
       logger.error(`Error importing patient from EHR: ${error.message}`);
-      throw new AppError(`Failed to import patient from EHR: ${error.message}`, 500);
+      throw new AppError(
+        `Failed to import patient from EHR: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -115,7 +131,10 @@ class EHRIntegrationService {
    * @param ehrPatientId External EHR patient ID
    * @returns Updated patient
    */
-  async updatePatientFromEHR(patientId: string, ehrPatientId: string): Promise<any> {
+  async updatePatientFromEHR(
+    patientId: string,
+    ehrPatientId: string
+  ): Promise<any> {
     if (!this.isIntegrationEnabled()) {
       throw new AppError('EHR integration is not enabled', 400);
     }
@@ -140,7 +159,10 @@ class EHRIntegrationService {
       return patient;
     } catch (error: any) {
       logger.error(`Error updating patient from EHR: ${error.message}`);
-      throw new AppError(`Failed to update patient from EHR: ${error.message}`, 500);
+      throw new AppError(
+        `Failed to update patient from EHR: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -155,17 +177,25 @@ class EHRIntegrationService {
     }
 
     try {
-      const response = await axios.get(`${this.baseUrl}/patients/${ehrPatientId}/medications`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.get(
+        `${this.baseUrl}/patients/${ehrPatientId}/medications`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       return response.data.medications || [];
     } catch (error: any) {
-      logger.error(`Error fetching patient medications from EHR: ${error.message}`);
-      throw new AppError(`Failed to fetch patient medications from EHR: ${error.message}`, 500);
+      logger.error(
+        `Error fetching patient medications from EHR: ${error.message}`
+      );
+      throw new AppError(
+        `Failed to fetch patient medications from EHR: ${error.message}`,
+        500
+      );
     }
   }
 
@@ -180,17 +210,25 @@ class EHRIntegrationService {
     }
 
     try {
-      const response = await axios.get(`${this.baseUrl}/patients/${ehrPatientId}/allergies`, {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await axios.get(
+        `${this.baseUrl}/patients/${ehrPatientId}/allergies`,
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       return response.data.allergies || [];
     } catch (error: any) {
-      logger.error(`Error fetching patient allergies from EHR: ${error.message}`);
-      throw new AppError(`Failed to fetch patient allergies from EHR: ${error.message}`, 500);
+      logger.error(
+        `Error fetching patient allergies from EHR: ${error.message}`
+      );
+      throw new AppError(
+        `Failed to fetch patient allergies from EHR: ${error.message}`,
+        500
+      );
     }
   }
 

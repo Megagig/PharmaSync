@@ -1,7 +1,7 @@
 import express from 'express';
 import * as followUpController from '../controllers/followUp.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import { authorize } from '../middleware/authorization.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
+import { UserRole } from '../interfaces/user.interface';
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.use(authenticate);
 // Trigger follow-up notifications (admin only)
 router.post(
   '/trigger-notifications',
-  authorize(['admin']),
+  authorize(UserRole.ADMIN),
   followUpController.triggerFollowUpNotifications
 );
 

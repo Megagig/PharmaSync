@@ -11,21 +11,27 @@ export const scheduleFollowUpNotificationsJob = () => {
   cron.schedule('0 1 * * *', async () => {
     try {
       logger.info('Running follow-up notifications job');
-      
+
       // Create care plan follow-up notifications
-      const carePlanNotifications = await notificationService.createFollowUpNotifications();
-      logger.info(`Created ${carePlanNotifications} care plan follow-up notifications`);
-      
+      const carePlanNotifications =
+        await notificationService.createCarePlanFollowUpNotifications();
+      logger.info(
+        `Created ${carePlanNotifications} care plan follow-up notifications`
+      );
+
       // Create SOAP note follow-up notifications
-      const soapNoteNotifications = await notificationService.createSoapNoteFollowUpNotifications();
-      logger.info(`Created ${soapNoteNotifications} SOAP note follow-up notifications`);
-      
+      const soapNoteNotifications =
+        await notificationService.createSoapNoteFollowUpNotifications();
+      logger.info(
+        `Created ${soapNoteNotifications} SOAP note follow-up notifications`
+      );
+
       logger.info('Follow-up notifications job completed successfully');
     } catch (error) {
       logger.error('Error running follow-up notifications job:', error);
     }
   });
-  
+
   logger.info('Follow-up notifications job scheduled');
 };
 
@@ -36,21 +42,27 @@ export const scheduleFollowUpNotificationsJob = () => {
 export const runFollowUpNotificationsJob = async () => {
   try {
     logger.info('Running follow-up notifications job manually');
-    
+
     // Create care plan follow-up notifications
-    const carePlanNotifications = await notificationService.createFollowUpNotifications();
-    logger.info(`Created ${carePlanNotifications} care plan follow-up notifications`);
-    
+    const carePlanNotifications =
+      await notificationService.createCarePlanFollowUpNotifications();
+    logger.info(
+      `Created ${carePlanNotifications} care plan follow-up notifications`
+    );
+
     // Create SOAP note follow-up notifications
-    const soapNoteNotifications = await notificationService.createSoapNoteFollowUpNotifications();
-    logger.info(`Created ${soapNoteNotifications} SOAP note follow-up notifications`);
-    
+    const soapNoteNotifications =
+      await notificationService.createSoapNoteFollowUpNotifications();
+    logger.info(
+      `Created ${soapNoteNotifications} SOAP note follow-up notifications`
+    );
+
     logger.info('Follow-up notifications job completed successfully');
-    
+
     return {
       carePlanNotifications,
       soapNoteNotifications,
-      total: carePlanNotifications + soapNoteNotifications
+      total: carePlanNotifications + soapNoteNotifications,
     };
   } catch (error) {
     logger.error('Error running follow-up notifications job:', error);

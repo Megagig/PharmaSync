@@ -328,6 +328,29 @@ export const addMedication = async (
   }
 };
 
+export const removeMedication = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const patientId = req.params.id;
+    const medicationId = req.params.medicationId;
+
+    const patient = await patientService.removeMedication(
+      patientId,
+      medicationId
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: patient,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Medication History Controllers
 export const addMedicationHistory = async (
   req: Request,

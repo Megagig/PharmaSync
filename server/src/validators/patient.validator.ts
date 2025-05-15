@@ -7,6 +7,7 @@ import {
   DrugTherapyProblemType,
 } from '../interfaces/patient.interface';
 
+// Define all schemas at the top of the file
 const allergySchema = z.object({
   allergen: z.string().min(1, 'Allergen is required'),
   reaction: z.string().min(1, 'Reaction is required'),
@@ -19,6 +20,74 @@ const medicalConditionSchema = z.object({
   diagnosisDate: z.string(),
   status: z.enum(['active', 'resolved', 'in_remission']),
   notes: z.string().optional(),
+});
+
+const medicationHistorySchema = z.object({
+  medication: z.string().min(1, 'Medication name is required'),
+  purpose: z.string().min(1, 'Purpose is required'),
+  dosage: z.string().min(1, 'Dosage is required'),
+  frequency: z.string().min(1, 'Frequency is required'),
+  duration: z.string().min(1, 'Duration is required'),
+  startDate: z.string(),
+  endDate: z.string().optional(),
+  isCurrent: z.boolean(),
+});
+
+const clinicalAssessmentSchema = z.object({
+  date: z.string(),
+  bloodPressure: z.string().min(1, 'Blood pressure is required'),
+  respiratoryRate: z.string().min(1, 'Respiratory rate is required'),
+  temperature: z.string().min(1, 'Temperature is required'),
+  heartSounds: z.string().min(1, 'Heart sounds description is required'),
+  palor: z.boolean(),
+  dehydration: z.boolean(),
+  notes: z.string().optional(),
+});
+
+const laboratoryFindingSchema = z.object({
+  date: z.string(),
+  pcv: z.string().optional(),
+  mcms: z.string().optional(),
+  euCr: z.string().optional(),
+  fbc: z.string().optional(),
+  fbs: z.string().optional(),
+  hbA1c: z.string().optional(),
+  other: z.record(z.string()).optional(),
+  notes: z.string().optional(),
+});
+
+const drugTherapyProblemSchema = z.object({
+  date: z.string(),
+  type: z.enum([
+    DrugTherapyProblemType.UNNECESSARY_DRUG_THERAPY,
+    DrugTherapyProblemType.WRONG_DRUG,
+    DrugTherapyProblemType.DOSAGE_TOO_LOW,
+    DrugTherapyProblemType.DOSAGE_TOO_HIGH,
+    DrugTherapyProblemType.ADVERSE_DRUG_REACTION,
+    DrugTherapyProblemType.INAPPROPRIATE_ADHERENCE,
+    DrugTherapyProblemType.NEEDS_ADDITIONAL_DRUG_THERAPY,
+  ]),
+  description: z.string().min(1, 'Description is required'),
+  resolution: z.string().optional(),
+  isResolved: z.boolean(),
+});
+
+const carePlanSchema = z.object({
+  date: z.string(),
+  goals: z.array(z.string()).min(1, 'At least one goal is required'),
+  objectives: z.array(z.string()).min(1, 'At least one objective is required'),
+  followUpDate: z.string(),
+  drugTherapyProblemResolved: z.boolean(),
+  needsReview: z.boolean(),
+  notes: z.string().optional(),
+});
+
+const soapNoteSchema = z.object({
+  date: z.string(),
+  subjective: z.string().min(1, 'Subjective information is required'),
+  objective: z.string().min(1, 'Objective information is required'),
+  assessment: z.string().min(1, 'Assessment is required'),
+  plan: z.string().min(1, 'Plan is required'),
 });
 
 export const createPatientSchema = z.object({
@@ -169,17 +238,6 @@ export const updateMedicalConditionSchema = z.object({
 });
 
 // Medication History Schemas
-const medicationHistorySchema = z.object({
-  medication: z.string().min(1, 'Medication name is required'),
-  purpose: z.string().min(1, 'Purpose is required'),
-  dosage: z.string().min(1, 'Dosage is required'),
-  frequency: z.string().min(1, 'Frequency is required'),
-  duration: z.string().min(1, 'Duration is required'),
-  startDate: z.string(),
-  endDate: z.string().optional(),
-  isCurrent: z.boolean(),
-});
-
 export const addMedicationHistorySchema = z.object({
   body: medicationHistorySchema,
   params: z.object({
@@ -196,17 +254,6 @@ export const updateMedicationHistorySchema = z.object({
 });
 
 // Clinical Assessment Schemas
-const clinicalAssessmentSchema = z.object({
-  date: z.string(),
-  bloodPressure: z.string().min(1, 'Blood pressure is required'),
-  respiratoryRate: z.string().min(1, 'Respiratory rate is required'),
-  temperature: z.string().min(1, 'Temperature is required'),
-  heartSounds: z.string().min(1, 'Heart sounds description is required'),
-  palor: z.boolean(),
-  dehydration: z.boolean(),
-  notes: z.string().optional(),
-});
-
 export const addClinicalAssessmentSchema = z.object({
   body: clinicalAssessmentSchema,
   params: z.object({
@@ -223,18 +270,6 @@ export const updateClinicalAssessmentSchema = z.object({
 });
 
 // Laboratory Finding Schemas
-const laboratoryFindingSchema = z.object({
-  date: z.string(),
-  pcv: z.string().optional(),
-  mcms: z.string().optional(),
-  euCr: z.string().optional(),
-  fbc: z.string().optional(),
-  fbs: z.string().optional(),
-  hbA1c: z.string().optional(),
-  other: z.record(z.string()).optional(),
-  notes: z.string().optional(),
-});
-
 export const addLaboratoryFindingSchema = z.object({
   body: laboratoryFindingSchema,
   params: z.object({
@@ -251,22 +286,6 @@ export const updateLaboratoryFindingSchema = z.object({
 });
 
 // Drug Therapy Problem Schemas
-const drugTherapyProblemSchema = z.object({
-  date: z.string(),
-  type: z.enum([
-    DrugTherapyProblemType.UNNECESSARY_DRUG_THERAPY,
-    DrugTherapyProblemType.WRONG_DRUG,
-    DrugTherapyProblemType.DOSAGE_TOO_LOW,
-    DrugTherapyProblemType.DOSAGE_TOO_HIGH,
-    DrugTherapyProblemType.ADVERSE_DRUG_REACTION,
-    DrugTherapyProblemType.INAPPROPRIATE_ADHERENCE,
-    DrugTherapyProblemType.NEEDS_ADDITIONAL_DRUG_THERAPY,
-  ]),
-  description: z.string().min(1, 'Description is required'),
-  resolution: z.string().optional(),
-  isResolved: z.boolean(),
-});
-
 export const addDrugTherapyProblemSchema = z.object({
   body: drugTherapyProblemSchema,
   params: z.object({
@@ -283,16 +302,6 @@ export const updateDrugTherapyProblemSchema = z.object({
 });
 
 // Care Plan Schemas
-const carePlanSchema = z.object({
-  date: z.string(),
-  goals: z.array(z.string()).min(1, 'At least one goal is required'),
-  objectives: z.array(z.string()).min(1, 'At least one objective is required'),
-  followUpDate: z.string(),
-  drugTherapyProblemResolved: z.boolean(),
-  needsReview: z.boolean(),
-  notes: z.string().optional(),
-});
-
 export const addCarePlanSchema = z.object({
   body: carePlanSchema,
   params: z.object({
@@ -309,14 +318,6 @@ export const updateCarePlanSchema = z.object({
 });
 
 // SOAP Note Schemas
-const soapNoteSchema = z.object({
-  date: z.string(),
-  subjective: z.string().min(1, 'Subjective information is required'),
-  objective: z.string().min(1, 'Objective information is required'),
-  assessment: z.string().min(1, 'Assessment is required'),
-  plan: z.string().min(1, 'Plan is required'),
-});
-
 export const addSoapNoteSchema = z.object({
   body: soapNoteSchema,
   params: z.object({

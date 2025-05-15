@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as appointmentService from '../services/appointment.service';
-import { AppError } from '../utils/error.utils';
+import { AppError } from '../utils/error';
 
 /**
  * @desc    Get all appointments
@@ -14,7 +14,7 @@ export const getAllAppointments = async (
 ) => {
   try {
     const appointments = await appointmentService.getAllAppointments();
-    
+
     res.status(200).json({
       status: 'success',
       data: appointments,
@@ -35,12 +35,14 @@ export const getAppointmentById = async (
   next: NextFunction
 ) => {
   try {
-    const appointment = await appointmentService.getAppointmentById(req.params.id);
-    
+    const appointment = await appointmentService.getAppointmentById(
+      req.params.id
+    );
+
     if (!appointment) {
       return next(new AppError('Appointment not found', 404));
     }
-    
+
     res.status(200).json({
       status: 'success',
       data: appointment,
@@ -66,9 +68,11 @@ export const createAppointment = async (
       ...req.body,
       createdBy: req.user?._id,
     };
-    
-    const appointment = await appointmentService.createAppointment(appointmentData);
-    
+
+    const appointment = await appointmentService.createAppointment(
+      appointmentData
+    );
+
     res.status(201).json({
       status: 'success',
       data: appointment,
@@ -93,11 +97,11 @@ export const updateAppointment = async (
       req.params.id,
       req.body
     );
-    
+
     if (!appointment) {
       return next(new AppError('Appointment not found', 404));
     }
-    
+
     res.status(200).json({
       status: 'success',
       data: appointment,
@@ -118,12 +122,14 @@ export const deleteAppointment = async (
   next: NextFunction
 ) => {
   try {
-    const appointment = await appointmentService.deleteAppointment(req.params.id);
-    
+    const appointment = await appointmentService.deleteAppointment(
+      req.params.id
+    );
+
     if (!appointment) {
       return next(new AppError('Appointment not found', 404));
     }
-    
+
     res.status(200).json({
       status: 'success',
       data: null,
@@ -147,7 +153,7 @@ export const getAppointmentsByPatientId = async (
     const appointments = await appointmentService.getAppointmentsByPatientId(
       req.params.patientId
     );
-    
+
     res.status(200).json({
       status: 'success',
       data: appointments,
@@ -169,16 +175,16 @@ export const getAppointmentsByDateRange = async (
 ) => {
   try {
     const { startDate, endDate } = req.query;
-    
+
     if (!startDate || !endDate) {
       return next(new AppError('Start date and end date are required', 400));
     }
-    
+
     const appointments = await appointmentService.getAppointmentsByDateRange(
       new Date(startDate as string),
       new Date(endDate as string)
     );
-    
+
     res.status(200).json({
       status: 'success',
       data: appointments,

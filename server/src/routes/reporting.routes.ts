@@ -1,7 +1,7 @@
 import express from 'express';
 import * as reportingController from '../controllers/reporting.controller';
-import { authenticate } from '../middleware/auth.middleware';
-import { authorize } from '../middleware/authorization.middleware';
+import { authenticate, authorize } from '../middleware/auth.middleware';
+import { UserRole } from '../interfaces/user.interface';
 
 const router = express.Router();
 
@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(authenticate);
 
 // Apply authorization middleware to restrict access to admin and pharmacist roles
-router.use(authorize(['admin', 'pharmacist']));
+router.use(authorize(UserRole.ADMIN, UserRole.PHARMACIST));
 
 // Get patient demographics report
 router.get('/demographics', reportingController.getPatientDemographicsReport);
@@ -18,7 +18,10 @@ router.get('/demographics', reportingController.getPatientDemographicsReport);
 router.get('/medication-usage', reportingController.getMedicationUsageReport);
 
 // Get drug therapy problem report
-router.get('/drug-therapy-problems', reportingController.getDrugTherapyProblemReport);
+router.get(
+  '/drug-therapy-problems',
+  reportingController.getDrugTherapyProblemReport
+);
 
 // Get patient outcomes report
 router.get('/patient-outcomes', reportingController.getPatientOutcomesReport);

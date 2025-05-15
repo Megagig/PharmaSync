@@ -248,6 +248,9 @@ const soapNoteSchema = new Schema(
       type: String,
       required: true,
     },
+    followUpDate: {
+      type: Date,
+    },
   },
   { _id: true }
 );

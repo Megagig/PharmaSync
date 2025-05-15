@@ -34,36 +34,44 @@ class IntegrationManagerService {
     try {
       // Import patient from EHR
       const patient = await ehrIntegrationService.importPatient(ehrPatientId);
-      
+
       // If drug database integration is enabled, try to import medications
       if (drugDatabaseIntegrationService.isIntegrationEnabled()) {
         try {
           // Get patient medications from EHR
-          const ehrMedications = await ehrIntegrationService.getPatientMedications(ehrPatientId);
-          
+          const ehrMedications =
+            await ehrIntegrationService.getPatientMedications(ehrPatientId);
+
           // Import each medication from drug database
           const medications = [];
           for (const ehrMed of ehrMedications) {
             if (ehrMed.externalId) {
               try {
-                const medication = await drugDatabaseIntegrationService.importMedication(ehrMed.externalId);
+                const medication =
+                  await drugDatabaseIntegrationService.importMedication(
+                    ehrMed.externalId
+                  );
                 medications.push(medication);
               } catch (error) {
-                logger.error(`Failed to import medication ${ehrMed.externalId}: ${error}`);
+                logger.error(
+                  `Failed to import medication ${ehrMed.externalId}: ${error}`
+                );
               }
             }
           }
-          
+
           return {
             patient,
             medications,
           };
         } catch (error) {
-          logger.error(`Failed to import medications for patient ${ehrPatientId}: ${error}`);
+          logger.error(
+            `Failed to import medications for patient ${ehrPatientId}: ${error}`
+          );
           return { patient };
         }
       }
-      
+
       return { patient };
     } catch (error) {
       logger.error(`Failed to import patient with related data: ${error}`);
@@ -81,19 +89,22 @@ class IntegrationManagerService {
       if (!drugDatabaseIntegrationService.isIntegrationEnabled()) {
         return prescriptionData;
       }
-      
+
       // Extract medication IDs from prescription
       const medicationIds = prescriptionData.medications
         .map((med: any) => med.medication?.externalId)
         .filter((id: string) => id);
-      
+
       if (medicationIds.length === 0) {
         return prescriptionData;
       }
-      
+
       // Check for interactions
-      const interactions = await drugDatabaseIntegrationService.checkDrugInteractions(medicationIds);
-      
+      const interactions =
+        await drugDatabaseIntegrationService.checkDrugInteractions(
+          medicationIds
+        );
+
       // Add interaction warnings to prescription
       return {
         ...prescriptionData,
@@ -115,10 +126,12 @@ class IntegrationManagerService {
       if (!pharmacySystemIntegrationService.isIntegrationEnabled()) {
         return prescriptionData;
       }
-      
+
       // Send prescription to pharmacy system
-      const result = await pharmacySystemIntegrationService.sendPrescription(prescriptionData);
-      
+      const result = await pharmacySystemIntegrationService.sendPrescription(
+        prescriptionData
+      );
+
       // Update prescription with external reference
       return {
         ...prescriptionData,
@@ -126,12 +139,12 @@ class IntegrationManagerService {
         sentToPharmacy: true,
         pharmacyStatus: result.status,
       };
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Failed to send prescription to pharmacy: ${error}`);
       return {
         ...prescriptionData,
         sentToPharmacy: false,
-        pharmacyError: error.message,
+        pharmacyError: error.message || 'Unknown error',
       };
     }
   }
@@ -145,9 +158,9 @@ class IntegrationManagerService {
       if (!pharmacySystemIntegrationService.isIntegrationEnabled()) {
         return [];
       }
-      
+
       return await pharmacySystemIntegrationService.syncInventory();
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Failed to sync inventory: ${error}`);
       throw error;
     }
@@ -159,30 +172,38 @@ class IntegrationManagerService {
    * @param externalMedicationId External medication ID
    * @returns Medication details with additional information
    */
-  async getMedicationWithAdditionalInfo(medicationId: string, externalMedicationId: string): Promise<any> {
+  async getMedicationWithAdditionalInfo(
+    medicationId: string,
+    externalMedicationId: string
+  ): Promise<any> {
     try {
       if (!drugDatabaseIntegrationService.isIntegrationEnabled()) {
         return null;
       }
-      
+
       // Update medication from drug database
-      const medication = await drugDatabaseIntegrationService.updateMedicationFromDrugDatabase(
-        medicationId,
-        externalMedicationId
-      );
-      
+      const medication =
+        await drugDatabaseIntegrationService.updateMedicationFromDrugDatabase(
+          medicationId,
+          externalMedicationId
+        );
+
       // Get additional information
       const [contraindications, sideEffects] = await Promise.all([
-        drugDatabaseIntegrationService.getMedicationContraindications(externalMedicationId),
-        drugDatabaseIntegrationService.getMedicationSideEffects(externalMedicationId),
+        drugDatabaseIntegrationService.getMedicationContraindications(
+          externalMedicationId
+        ),
+        drugDatabaseIntegrationService.getMedicationSideEffects(
+          externalMedicationId
+        ),
       ]);
-      
+
       return {
         ...medication.toObject(),
         contraindications,
         sideEffects,
       };
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`Failed to get medication with additional info: ${error}`);
       throw error;
     }
