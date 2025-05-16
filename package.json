@@ -30,6 +30,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/json2csv": "^5.0.7",
+    "@types/pdfkit": "^0.13.9",
     "concurrently": "^8.2.0",
     "husky": "^8.0.3"
   },

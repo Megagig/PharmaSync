@@ -81,20 +81,16 @@ export const getTaxConfigurationById = asyncHandler(
  */
 export const createTaxConfiguration = asyncHandler(
   async (req: Request, res: Response) => {
-    const {
-      name,
-      type,
-      rate,
-      description,
-      isActive,
-      isDefault,
-      accountId,
-    } = req.body;
+    const { name, type, rate, description, isActive, isDefault, accountId } =
+      req.body;
 
     // Check if tax configuration with the same name already exists
     const existingTaxConfig = await TaxConfiguration.findOne({ name });
     if (existingTaxConfig) {
-      throw new AppError('Tax configuration with this name already exists', 400);
+      throw new AppError(
+        'Tax configuration with this name already exists',
+        400
+      );
     }
 
     // Verify account exists if specified
@@ -139,15 +135,8 @@ export const createTaxConfiguration = asyncHandler(
  */
 export const updateTaxConfiguration = asyncHandler(
   async (req: Request, res: Response) => {
-    const {
-      name,
-      type,
-      rate,
-      description,
-      isActive,
-      isDefault,
-      accountId,
-    } = req.body;
+    const { name, type, rate, description, isActive, isDefault, accountId } =
+      req.body;
 
     const taxConfiguration = await TaxConfiguration.findById(req.params.id);
 
@@ -159,7 +148,10 @@ export const updateTaxConfiguration = asyncHandler(
     if (name && name !== taxConfiguration.name) {
       const existingTaxConfig = await TaxConfiguration.findOne({ name });
       if (existingTaxConfig) {
-        throw new AppError('Tax configuration with this name already exists', 400);
+        throw new AppError(
+          'Tax configuration with this name already exists',
+          400
+        );
       }
     }
 
@@ -186,7 +178,8 @@ export const updateTaxConfiguration = asyncHandler(
     if (description !== undefined) taxConfiguration.description = description;
     if (isActive !== undefined) taxConfiguration.isActive = isActive;
     if (isDefault !== undefined) taxConfiguration.isDefault = isDefault;
-    if (accountId !== undefined) taxConfiguration.accountId = accountId || undefined;
+    if (accountId !== undefined)
+      taxConfiguration.accountId = accountId || undefined;
 
     await taxConfiguration.save();
 
@@ -211,7 +204,7 @@ export const deleteTaxConfiguration = asyncHandler(
     }
 
     // Delete tax configuration
-    await taxConfiguration.remove();
+    await taxConfiguration.deleteOne();
 
     res.status(200).json({
       status: 'success',

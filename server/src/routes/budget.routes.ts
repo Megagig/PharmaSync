@@ -10,8 +10,12 @@ import {
   updateBudgetActuals,
 } from '../controllers/budget.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
-import { validateRequest } from '../middleware/validation.middleware';
-import { budgetSchema, budgetUpdateSchema } from '../validations/budget.validation';
+import { validate as validateRequest } from '../middleware/validation.middleware';
+import {
+  budgetSchema,
+  budgetUpdateSchema,
+} from '../validations/budget.validation';
+import { RoleType } from '../interfaces/role.interface';
 
 const router = Router();
 
@@ -31,13 +35,21 @@ router.post('/', validateRequest(budgetSchema), createBudget);
 router.patch('/:id', validateRequest(budgetUpdateSchema), updateBudget);
 
 // Delete budget (Admin only)
-router.delete('/:id', restrictTo('ADMIN'), deleteBudget);
+router.delete('/:id', restrictTo([RoleType.ADMIN]), deleteBudget);
 
-// Activate budget (Admin/Manager only)
-router.patch('/:id/activate', restrictTo('ADMIN', 'MANAGER'), activateBudget);
+// Activate budget (Admin/Inventory Manager only)
+router.patch(
+  '/:id/activate',
+  restrictTo([RoleType.ADMIN, RoleType.INVENTORY_MANAGER]),
+  activateBudget
+);
 
-// Close budget (Admin/Manager only)
-router.patch('/:id/close', restrictTo('ADMIN', 'MANAGER'), closeBudget);
+// Close budget (Admin/Inventory Manager only)
+router.patch(
+  '/:id/close',
+  restrictTo([RoleType.ADMIN, RoleType.INVENTORY_MANAGER]),
+  closeBudget
+);
 
 // Update budget actuals
 router.patch('/:id/actuals', updateBudgetActuals);

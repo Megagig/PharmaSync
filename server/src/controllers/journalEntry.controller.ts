@@ -133,8 +133,14 @@ export const createJournalEntry = asyncHandler(
     }
 
     // Validate debits and credits balance
-    const totalDebit = items.reduce((sum, item) => sum + (item.debit || 0), 0);
-    const totalCredit = items.reduce((sum, item) => sum + (item.credit || 0), 0);
+    const totalDebit = items.reduce(
+      (sum: number, item: any) => sum + (item.debit || 0),
+      0
+    );
+    const totalCredit = items.reduce(
+      (sum: number, item: any) => sum + (item.credit || 0),
+      0
+    );
 
     if (totalDebit !== totalCredit) {
       throw new AppError('Debits and credits must balance', 400);
@@ -203,8 +209,14 @@ export const updateJournalEntry = asyncHandler(
       }
 
       // Validate debits and credits balance
-      const totalDebit = items.reduce((sum, item) => sum + (item.debit || 0), 0);
-      const totalCredit = items.reduce((sum, item) => sum + (item.credit || 0), 0);
+      const totalDebit = items.reduce(
+        (sum: number, item: any) => sum + (item.debit || 0),
+        0
+      );
+      const totalCredit = items.reduce(
+        (sum: number, item: any) => sum + (item.credit || 0),
+        0
+      );
 
       if (totalDebit !== totalCredit) {
         throw new AppError('Debits and credits must balance', 400);
@@ -218,7 +230,8 @@ export const updateJournalEntry = asyncHandler(
     if (items) journalEntry.items = items;
     if (isRecurring !== undefined) journalEntry.isRecurring = isRecurring;
     if (recurringInterval) journalEntry.recurringInterval = recurringInterval;
-    if (recurringEndDate) journalEntry.recurringEndDate = new Date(recurringEndDate);
+    if (recurringEndDate)
+      journalEntry.recurringEndDate = new Date(recurringEndDate);
     if (notes !== undefined) journalEntry.notes = notes;
 
     await journalEntry.save();
@@ -249,7 +262,7 @@ export const deleteJournalEntry = asyncHandler(
     }
 
     // Delete journal entry
-    await journalEntry.remove();
+    await journalEntry.deleteOne();
 
     res.status(200).json({
       status: 'success',
@@ -286,7 +299,7 @@ export const postJournalEntry = asyncHandler(
     // Create general ledger entries
     for (const item of journalEntry.items) {
       const account = await Account.findById(item.account);
-      
+
       if (!account) {
         throw new AppError(`Account with ID ${item.account} not found`, 404);
       }
@@ -340,14 +353,14 @@ export const reverseJournalEntry = asyncHandler(
     journalEntry.status = JournalEntryStatus.REVERSED;
     journalEntry.reversedBy = req.user.id; // From auth middleware
     journalEntry.reversedAt = new Date();
-    journalEntry.notes = journalEntry.notes 
-      ? `${journalEntry.notes}\n\nReversed: ${reason}` 
+    journalEntry.notes = journalEntry.notes
+      ? `${journalEntry.notes}\n\nReversed: ${reason}`
       : `Reversed: ${reason}`;
 
     await journalEntry.save();
 
     // Create reversing journal entry
-    const reversingItems = journalEntry.items.map(item => ({
+    const reversingItems = journalEntry.items.map((item) => ({
       account: item.account,
       description: item.description,
       debit: item.credit || 0,
@@ -373,7 +386,7 @@ export const reverseJournalEntry = asyncHandler(
     // Update account balances and create general ledger entries
     for (const item of reversingEntry.items) {
       const account = await Account.findById(item.account);
-      
+
       if (!account) {
         throw new AppError(`Account with ID ${item.account} not found`, 404);
       }

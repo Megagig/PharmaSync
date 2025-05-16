@@ -107,13 +107,15 @@ export const generatePatientComprehensiveReport = async (
 
   const prescriptionsByPatient: { [key: string]: any } = {};
   prescriptions.forEach((prescription) => {
-    const patientId = prescription.patient._id.toString();
+    // Type assertion for populated patient field
+    const patient = prescription.patient as any;
+    const patientId = patient._id.toString();
     if (!prescriptionsByPatient[patientId]) {
       prescriptionsByPatient[patientId] = {
         patientId,
-        patientName: `${prescription.patient.firstName} ${prescription.patient.lastName}`,
-        age: calculateAge(prescription.patient.dateOfBirth),
-        gender: prescription.patient.gender,
+        patientName: `${patient.firstName} ${patient.lastName}`,
+        age: calculateAge(patient.dateOfBirth),
+        gender: patient.gender,
         prescriptionCount: 0,
       };
     }
@@ -432,7 +434,39 @@ export const generateInventoryComprehensiveReport = async (
   });
 
   // Compile the report data
-  const reportData = {
+  interface InventoryReportData {
+    summary: {
+      totalMedications: number;
+      totalStock: number;
+      totalValue: number;
+      lowStockCount: number;
+    };
+    stockByCategory: any[];
+    expiryBreakdown: {
+      expiryPeriod: string;
+      count: number;
+      totalStock: number;
+      totalValue: number;
+    }[];
+    lowStockItems: {
+      medicationId: any;
+      medicationName: string;
+      currentStock: number;
+      minimumLevel: number;
+      reorderQuantity: number;
+    }[];
+    movementAnalysis?: {
+      purchases: number;
+      sales: number;
+      transfers: number;
+      adjustments: number;
+      returns: number;
+      other: number;
+    };
+    recentMovements?: any[];
+  }
+
+  const reportData: InventoryReportData = {
     summary: {
       totalMedications,
       totalStock,
@@ -468,8 +502,8 @@ export const generateInventoryComprehensiveReport = async (
       ).length,
     };
 
-    reportData['movementAnalysis'] = movementAnalysis;
-    reportData['recentMovements'] = movements
+    reportData.movementAnalysis = movementAnalysis;
+    reportData.recentMovements = movements
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 20);
   }
@@ -555,8 +589,14 @@ export const generateSalesComprehensiveReport = async (
   const salesByPeriod = [];
   const allTransactions = [...sales, ...posTransactions];
 
+  interface SalesByPeriod {
+    period: string;
+    sales: number;
+    count: number;
+  }
+
   if (groupBy === 'day') {
-    const dailySales = {};
+    const dailySales: Record<string, SalesByPeriod> = {};
     allTransactions.forEach((transaction) => {
       const date = new Date(transaction.saleDate || transaction.createdAt);
       const day = date.toISOString().split('T')[0];
@@ -569,7 +609,7 @@ export const generateSalesComprehensiveReport = async (
 
     salesByPeriod.push(...Object.values(dailySales));
   } else if (groupBy === 'month') {
-    const monthlySales = {};
+    const monthlySales: Record<string, SalesByPeriod> = {};
     allTransactions.forEach((transaction) => {
       const date = new Date(transaction.saleDate || transaction.createdAt);
       const month = `${date.getFullYear()}-${String(
@@ -586,11 +626,24 @@ export const generateSalesComprehensiveReport = async (
   }
 
   // Get top products
-  const productSales = {};
+  interface ProductSale {
+    productId: string;
+    productName: string;
+    quantity: number;
+    totalSales: number;
+  }
+
+  interface CategorySale {
+    category: string;
+    value: number;
+  }
+
+  const productSales: Record<string, ProductSale> = {};
   allTransactions.forEach((transaction) => {
     transaction.items.forEach((item) => {
-      const productId = item.product._id.toString();
-      const productName = item.product.name;
+      const product = item.product as any;
+      const productId = product._id.toString();
+      const productName = product.name;
       if (!productSales[productId]) {
         productSales[productId] = {
           productId,
@@ -605,14 +658,15 @@ export const generateSalesComprehensiveReport = async (
   });
 
   const topProducts = Object.values(productSales)
-    .sort((a: any, b: any) => b.totalSales - a.totalSales)
+    .sort((a, b) => b.totalSales - a.totalSales)
     .slice(0, 10);
 
   // Get sales by category
-  const salesByCategory = {};
+  const salesByCategory: Record<string, CategorySale> = {};
   allTransactions.forEach((transaction) => {
     transaction.items.forEach((item) => {
-      const category = item.product.category || 'Uncategorized';
+      const product = item.product as any;
+      const category = product.category || 'Uncategorized';
       if (!salesByCategory[category]) {
         salesByCategory[category] = { category, value: 0 };
       }
@@ -628,7 +682,7 @@ export const generateSalesComprehensiveReport = async (
       averageSale,
       returnRate,
     },
-    salesByPeriod: salesByPeriod.sort((a, b) =>
+    salesByPeriod: salesByPeriod.sort((a: SalesByPeriod, b: SalesByPeriod) =>
       a.period.localeCompare(b.period)
     ),
     topProducts,
@@ -752,9 +806,9 @@ export const generateAdministrativeComprehensiveReport = async (
     .lean();
 
   // Calculate user statistics
-  const userRoles = {};
+  const userRoles: Record<string, number> = {};
   users.forEach((user) => {
-    const role = user.role;
+    const role = user.role as string;
     userRoles[role] = (userRoles[role] || 0) + 1;
   });
 
@@ -764,9 +818,11 @@ export const generateAdministrativeComprehensiveReport = async (
   }));
 
   // Calculate activity statistics
-  const activityByType = {};
+  const activityByType: Record<string, number> = {};
   activityLogs.forEach((log) => {
-    const actionType = log.action.split(':')[0]; // e.g., "create:patient" -> "create"
+    // Type assertion for activity log
+    const logData = log as any;
+    const actionType = logData.type ? logData.type.split(':')[0] : 'unknown'; // e.g., "create:patient" -> "create"
     activityByType[actionType] = (activityByType[actionType] || 0) + 1;
   });
 
@@ -774,8 +830,14 @@ export const generateAdministrativeComprehensiveReport = async (
     ([name, value]) => ({ name, value })
   );
 
+  interface DailyActivity {
+    day: string;
+    logins: number;
+    actions: number;
+  }
+
   // Calculate daily activity
-  const dailyActivity = {};
+  const dailyActivity: Record<string, DailyActivity> = {};
   const now = new Date();
   for (let i = 6; i >= 0; i--) {
     const date = new Date(now);
@@ -787,28 +849,43 @@ export const generateAdministrativeComprehensiveReport = async (
   activityLogs.forEach((log) => {
     const day = new Date(log.createdAt).toISOString().split('T')[0];
     if (dailyActivity[day]) {
-      if (log.action === 'login') {
+      // Type assertion for activity log
+      const logData = log as any;
+      if (logData.type === 'login') {
         dailyActivity[day].logins++;
       }
       dailyActivity[day].actions++;
     }
   });
 
+  interface UserActivity {
+    userId: string;
+    userName: string;
+    role: string;
+    logins: number;
+    actions: number;
+    lastActive: Date;
+  }
+
   // Get top active users
-  const userActivity = {};
+  const userActivity: Record<string, UserActivity> = {};
   activityLogs.forEach((log) => {
-    const userId = log.user._id.toString();
+    // Type assertion for populated user field
+    const user = log.user as any;
+    const userId = user._id.toString();
     if (!userActivity[userId]) {
       userActivity[userId] = {
         userId,
-        userName: `${log.user.firstName} ${log.user.lastName}`,
-        role: log.user.role,
+        userName: `${user.firstName} ${user.lastName}`,
+        role: user.role,
         logins: 0,
         actions: 0,
         lastActive: log.createdAt,
       };
     }
-    if (log.action === 'login') {
+    // Type assertion for activity log
+    const logData = log as any;
+    if (logData.type === 'login') {
       userActivity[userId].logins++;
     }
     userActivity[userId].actions++;
@@ -818,7 +895,7 @@ export const generateAdministrativeComprehensiveReport = async (
   });
 
   const topActiveUsers = Object.values(userActivity)
-    .sort((a: any, b: any) => b.actions - a.actions)
+    .sort((a: UserActivity, b: UserActivity) => b.actions - a.actions)
     .slice(0, 10);
 
   // Compile the report data

@@ -10,8 +10,12 @@ import {
   markExpenseAsPaid,
 } from '../controllers/expense.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
-import { validateRequest } from '../middleware/validation.middleware';
-import { expenseSchema, expenseUpdateSchema } from '../validations/expense.validation';
+import { validate as validateRequest } from '../middleware/validation.middleware';
+import {
+  expenseSchema,
+  expenseUpdateSchema,
+} from '../validations/expense.validation';
+import { RoleType } from '../interfaces/role.interface';
 
 const router = Router();
 
@@ -31,15 +35,27 @@ router.post('/', validateRequest(expenseSchema), createExpense);
 router.patch('/:id', validateRequest(expenseUpdateSchema), updateExpense);
 
 // Delete expense (Admin only)
-router.delete('/:id', restrictTo('ADMIN'), deleteExpense);
+router.delete('/:id', restrictTo([RoleType.ADMIN]), deleteExpense);
 
-// Approve expense (Admin/Manager only)
-router.patch('/:id/approve', restrictTo('ADMIN', 'MANAGER'), approveExpense);
+// Approve expense (Admin/Inventory Manager only)
+router.patch(
+  '/:id/approve',
+  restrictTo([RoleType.ADMIN, RoleType.INVENTORY_MANAGER]),
+  approveExpense
+);
 
-// Reject expense (Admin/Manager only)
-router.patch('/:id/reject', restrictTo('ADMIN', 'MANAGER'), rejectExpense);
+// Reject expense (Admin/Inventory Manager only)
+router.patch(
+  '/:id/reject',
+  restrictTo([RoleType.ADMIN, RoleType.INVENTORY_MANAGER]),
+  rejectExpense
+);
 
-// Mark expense as paid (Admin/Manager only)
-router.patch('/:id/pay', restrictTo('ADMIN', 'MANAGER'), markExpenseAsPaid);
+// Mark expense as paid (Admin/Inventory Manager only)
+router.patch(
+  '/:id/pay',
+  restrictTo([RoleType.ADMIN, RoleType.INVENTORY_MANAGER]),
+  markExpenseAsPaid
+);
 
 export default router;

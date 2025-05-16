@@ -177,6 +177,7 @@ import TaxConfigurationDetail from '@/pages/Accounting/Taxes/TaxConfigurationDet
 import FinancialPeriodsList from '@/pages/Accounting/FinancialPeriods/FinancialPeriodsList';
 import FinancialPeriodForm from '@/pages/Accounting/FinancialPeriods/FinancialPeriodForm';
 import FinancialPeriodDetail from '@/pages/Accounting/FinancialPeriods/FinancialPeriodDetail';
+import AccountingSettings from '@/pages/Accounting/Settings/AccountingSettings';
 
 const NotFound = () => <div>404 - Page Not Found</div>;
 
@@ -489,6 +490,7 @@ const AppRoutes = () => {
             path="/accounting/financial-periods/:id/edit"
             element={<FinancialPeriodForm />}
           />
+          <Route path="/accounting/settings" element={<AccountingSettings />} />
         </Route>
       </Route>
 

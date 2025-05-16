@@ -81,13 +81,7 @@ export const getFinancialPeriodById = asyncHandler(
  */
 export const createFinancialPeriod = asyncHandler(
   async (req: Request, res: Response) => {
-    const {
-      name,
-      startDate,
-      endDate,
-      isFiscalYear,
-      notes,
-    } = req.body;
+    const { name, startDate, endDate, isFiscalYear, notes } = req.body;
 
     // Validate dates
     const start = new Date(startDate);
@@ -107,7 +101,10 @@ export const createFinancialPeriod = asyncHandler(
     });
 
     if (overlappingPeriod) {
-      throw new AppError('Financial period overlaps with an existing period', 400);
+      throw new AppError(
+        'Financial period overlaps with an existing period',
+        400
+      );
     }
 
     // Create financial period
@@ -135,14 +132,7 @@ export const createFinancialPeriod = asyncHandler(
  */
 export const updateFinancialPeriod = asyncHandler(
   async (req: Request, res: Response) => {
-    const {
-      name,
-      startDate,
-      endDate,
-      status,
-      isFiscalYear,
-      notes,
-    } = req.body;
+    const { name, startDate, endDate, status, isFiscalYear, notes } = req.body;
 
     const financialPeriod = await FinancialPeriod.findById(req.params.id);
 
@@ -155,7 +145,10 @@ export const updateFinancialPeriod = asyncHandler(
       financialPeriod.status === FinancialPeriodStatus.CLOSED ||
       financialPeriod.status === FinancialPeriodStatus.LOCKED
     ) {
-      throw new AppError('Closed or locked financial periods cannot be modified', 400);
+      throw new AppError(
+        'Closed or locked financial periods cannot be modified',
+        400
+      );
     }
 
     // Validate dates if being updated
@@ -178,7 +171,10 @@ export const updateFinancialPeriod = asyncHandler(
       });
 
       if (overlappingPeriod) {
-        throw new AppError('Financial period overlaps with an existing period', 400);
+        throw new AppError(
+          'Financial period overlaps with an existing period',
+          400
+        );
       }
     }
 
@@ -280,7 +276,7 @@ export const deleteFinancialPeriod = asyncHandler(
     }
 
     // Delete financial period
-    await financialPeriod.remove();
+    await financialPeriod.deleteOne();
 
     res.status(200).json({
       status: 'success',

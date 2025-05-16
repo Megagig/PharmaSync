@@ -20,11 +20,11 @@ interface AccountingState {
   // Chart of Accounts
   accounts: Account[];
   currentAccount: Account | null;
-  
+
   // Journal Entries
   journalEntries: JournalEntry[];
   currentJournalEntry: JournalEntry | null;
-  
+
   // General Ledger
   generalLedgerEntries: GeneralLedgerEntry[];
   accountStatement: {
@@ -35,25 +35,29 @@ interface AccountingState {
   };
   trialBalance: {
     asOfDate: string;
-    trialBalance: { account: Partial<Account>; debit: number; credit: number }[];
+    trialBalance: {
+      account: Partial<Account>;
+      debit: number;
+      credit: number;
+    }[];
     totalDebit: number;
     totalCredit: number;
     isBalanced: boolean;
   } | null;
-  
+
   // Financial Periods
   financialPeriods: FinancialPeriod[];
   currentFinancialPeriod: FinancialPeriod | null;
-  
+
   // Tax Configurations
   taxConfigurations: TaxConfiguration[];
   currentTaxConfiguration: TaxConfiguration | null;
-  
+
   // Financial Reports
   balanceSheet: any | null;
   incomeStatement: any | null;
   cashFlowStatement: any | null;
-  
+
   // UI State
   isLoading: boolean;
   error: string | null;
@@ -69,11 +73,11 @@ const initialState: AccountingState = {
   // Chart of Accounts
   accounts: [],
   currentAccount: null,
-  
+
   // Journal Entries
   journalEntries: [],
   currentJournalEntry: null,
-  
+
   // General Ledger
   generalLedgerEntries: [],
   accountStatement: {
@@ -83,20 +87,20 @@ const initialState: AccountingState = {
     transactions: [],
   },
   trialBalance: null,
-  
+
   // Financial Periods
   financialPeriods: [],
   currentFinancialPeriod: null,
-  
+
   // Tax Configurations
   taxConfigurations: [],
   currentTaxConfiguration: null,
-  
+
   // Financial Reports
   balanceSheet: null,
   incomeStatement: null,
   cashFlowStatement: null,
-  
+
   // UI State
   isLoading: false,
   error: null,
@@ -111,7 +115,15 @@ const initialState: AccountingState = {
 // Chart of Accounts Thunks
 export const fetchAccounts = createAsyncThunk(
   'accounting/fetchAccounts',
-  async ({ page = 1, limit = 10, filters = {} }: { page?: number; limit?: number; filters?: Record<string, any> }) => {
+  async ({
+    page = 1,
+    limit = 10,
+    filters = {},
+  }: {
+    page?: number;
+    limit?: number;
+    filters?: Record<string, any>;
+  }) => {
     return await accountingService.getAccounts(page, limit, filters);
   }
 );
@@ -148,7 +160,15 @@ export const deleteAccount = createAsyncThunk(
 // Journal Entries Thunks
 export const fetchJournalEntries = createAsyncThunk(
   'accounting/fetchJournalEntries',
-  async ({ page = 1, limit = 10, filters = {} }: { page?: number; limit?: number; filters?: Record<string, any> }) => {
+  async ({
+    page = 1,
+    limit = 10,
+    filters = {},
+  }: {
+    page?: number;
+    limit?: number;
+    filters?: Record<string, any>;
+  }) => {
     return await accountingService.getJournalEntries(page, limit, filters);
   }
 );
@@ -169,7 +189,13 @@ export const createJournalEntry = createAsyncThunk(
 
 export const updateJournalEntry = createAsyncThunk(
   'accounting/updateJournalEntry',
-  async ({ id, updateData }: { id: string; updateData: JournalEntryUpdateData }) => {
+  async ({
+    id,
+    updateData,
+  }: {
+    id: string;
+    updateData: JournalEntryUpdateData;
+  }) => {
     return await accountingService.updateJournalEntry(id, updateData);
   }
 );
@@ -199,15 +225,39 @@ export const reverseJournalEntry = createAsyncThunk(
 // General Ledger Thunks
 export const fetchGeneralLedgerEntries = createAsyncThunk(
   'accounting/fetchGeneralLedgerEntries',
-  async ({ page = 1, limit = 10, filters = {} }: { page?: number; limit?: number; filters?: Record<string, any> }) => {
-    return await accountingService.getGeneralLedgerEntries(page, limit, filters);
+  async ({
+    page = 1,
+    limit = 10,
+    filters = {},
+  }: {
+    page?: number;
+    limit?: number;
+    filters?: Record<string, any>;
+  }) => {
+    return await accountingService.getGeneralLedgerEntries(
+      page,
+      limit,
+      filters
+    );
   }
 );
 
 export const fetchAccountStatement = createAsyncThunk(
   'accounting/fetchAccountStatement',
-  async ({ accountId, startDate, endDate }: { accountId: string; startDate?: string; endDate?: string }) => {
-    return await accountingService.getAccountStatement(accountId, startDate, endDate);
+  async ({
+    accountId,
+    startDate,
+    endDate,
+  }: {
+    accountId: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    return await accountingService.getAccountStatement(
+      accountId,
+      startDate,
+      endDate
+    );
   }
 );
 
@@ -221,7 +271,15 @@ export const fetchTrialBalance = createAsyncThunk(
 // Financial Periods Thunks
 export const fetchFinancialPeriods = createAsyncThunk(
   'accounting/fetchFinancialPeriods',
-  async ({ page = 1, limit = 10, filters = {} }: { page?: number; limit?: number; filters?: Record<string, any> }) => {
+  async ({
+    page = 1,
+    limit = 10,
+    filters = {},
+  }: {
+    page?: number;
+    limit?: number;
+    filters?: Record<string, any>;
+  }) => {
     return await accountingService.getFinancialPeriods(page, limit, filters);
   }
 );
@@ -242,7 +300,13 @@ export const createFinancialPeriod = createAsyncThunk(
 
 export const updateFinancialPeriod = createAsyncThunk(
   'accounting/updateFinancialPeriod',
-  async ({ id, updateData }: { id: string; updateData: FinancialPeriodUpdateData }) => {
+  async ({
+    id,
+    updateData,
+  }: {
+    id: string;
+    updateData: FinancialPeriodUpdateData;
+  }) => {
     return await accountingService.updateFinancialPeriod(id, updateData);
   }
 );
@@ -272,7 +336,15 @@ export const lockFinancialPeriod = createAsyncThunk(
 // Tax Configurations Thunks
 export const fetchTaxConfigurations = createAsyncThunk(
   'accounting/fetchTaxConfigurations',
-  async ({ page = 1, limit = 10, filters = {} }: { page?: number; limit?: number; filters?: Record<string, any> }) => {
+  async ({
+    page = 1,
+    limit = 10,
+    filters = {},
+  }: {
+    page?: number;
+    limit?: number;
+    filters?: Record<string, any>;
+  }) => {
     return await accountingService.getTaxConfigurations(page, limit, filters);
   }
 );
@@ -293,7 +365,13 @@ export const createTaxConfiguration = createAsyncThunk(
 
 export const updateTaxConfiguration = createAsyncThunk(
   'accounting/updateTaxConfiguration',
-  async ({ id, updateData }: { id: string; updateData: TaxConfigurationUpdateData }) => {
+  async ({
+    id,
+    updateData,
+  }: {
+    id: string;
+    updateData: TaxConfigurationUpdateData;
+  }) => {
     return await accountingService.updateTaxConfiguration(id, updateData);
   }
 );
@@ -340,22 +418,6 @@ const accountingSlice = createSlice({
   extraReducers: (builder) => {
     // Handle all async thunks
     builder
-      // Generic loading and error handling for all thunks
-      .addMatcher(
-        (action) => action.type.startsWith('accounting/') && action.type.endsWith('/pending'),
-        (state) => {
-          state.isLoading = true;
-          state.error = null;
-        }
-      )
-      .addMatcher(
-        (action) => action.type.startsWith('accounting/') && action.type.endsWith('/rejected'),
-        (state, action) => {
-          state.isLoading = false;
-          state.error = action.error.message || 'An error occurred';
-        }
-      )
-      
       // Chart of Accounts
       .addCase(fetchAccounts.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -372,22 +434,32 @@ const accountingSlice = createSlice({
       })
       .addCase(updateAccount.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.accounts.findIndex(account => account._id === action.payload._id);
+        const index = state.accounts.findIndex(
+          (account) => account._id === action.payload._id
+        );
         if (index !== -1) {
           state.accounts[index] = action.payload;
         }
-        if (state.currentAccount && state.currentAccount._id === action.payload._id) {
+        if (
+          state.currentAccount &&
+          state.currentAccount._id === action.payload._id
+        ) {
           state.currentAccount = action.payload;
         }
       })
       .addCase(deleteAccount.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.accounts = state.accounts.filter(account => account._id !== action.payload);
-        if (state.currentAccount && state.currentAccount._id === action.payload) {
+        state.accounts = state.accounts.filter(
+          (account) => account._id !== action.payload
+        );
+        if (
+          state.currentAccount &&
+          state.currentAccount._id === action.payload
+        ) {
           state.currentAccount = null;
         }
       })
-      
+
       // Journal Entries
       .addCase(fetchJournalEntries.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -404,46 +476,66 @@ const accountingSlice = createSlice({
       })
       .addCase(updateJournalEntry.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.journalEntries.findIndex(entry => entry._id === action.payload._id);
+        const index = state.journalEntries.findIndex(
+          (entry) => entry._id === action.payload._id
+        );
         if (index !== -1) {
           state.journalEntries[index] = action.payload;
         }
-        if (state.currentJournalEntry && state.currentJournalEntry._id === action.payload._id) {
+        if (
+          state.currentJournalEntry &&
+          state.currentJournalEntry._id === action.payload._id
+        ) {
           state.currentJournalEntry = action.payload;
         }
       })
       .addCase(deleteJournalEntry.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.journalEntries = state.journalEntries.filter(entry => entry._id !== action.payload);
-        if (state.currentJournalEntry && state.currentJournalEntry._id === action.payload) {
+        state.journalEntries = state.journalEntries.filter(
+          (entry) => entry._id !== action.payload
+        );
+        if (
+          state.currentJournalEntry &&
+          state.currentJournalEntry._id === action.payload
+        ) {
           state.currentJournalEntry = null;
         }
       })
       .addCase(postJournalEntry.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.journalEntries.findIndex(entry => entry._id === action.payload._id);
+        const index = state.journalEntries.findIndex(
+          (entry) => entry._id === action.payload._id
+        );
         if (index !== -1) {
           state.journalEntries[index] = action.payload;
         }
-        if (state.currentJournalEntry && state.currentJournalEntry._id === action.payload._id) {
+        if (
+          state.currentJournalEntry &&
+          state.currentJournalEntry._id === action.payload._id
+        ) {
           state.currentJournalEntry = action.payload;
         }
       })
       .addCase(reverseJournalEntry.fulfilled, (state, action) => {
         state.isLoading = false;
         // Update original entry
-        const originalIndex = state.journalEntries.findIndex(entry => entry._id === action.payload.originalEntry._id);
+        const originalIndex = state.journalEntries.findIndex(
+          (entry) => entry._id === action.payload.originalEntry._id
+        );
         if (originalIndex !== -1) {
           state.journalEntries[originalIndex] = action.payload.originalEntry;
         }
         // Add reversing entry
         state.journalEntries.push(action.payload.reversingEntry);
         // Update current entry if needed
-        if (state.currentJournalEntry && state.currentJournalEntry._id === action.payload.originalEntry._id) {
+        if (
+          state.currentJournalEntry &&
+          state.currentJournalEntry._id === action.payload.originalEntry._id
+        ) {
           state.currentJournalEntry = action.payload.originalEntry;
         }
       })
-      
+
       // General Ledger
       .addCase(fetchGeneralLedgerEntries.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -458,7 +550,7 @@ const accountingSlice = createSlice({
         state.isLoading = false;
         state.trialBalance = action.payload;
       })
-      
+
       // Financial Periods
       .addCase(fetchFinancialPeriods.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -475,42 +567,62 @@ const accountingSlice = createSlice({
       })
       .addCase(updateFinancialPeriod.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.financialPeriods.findIndex(period => period._id === action.payload._id);
+        const index = state.financialPeriods.findIndex(
+          (period) => period._id === action.payload._id
+        );
         if (index !== -1) {
           state.financialPeriods[index] = action.payload;
         }
-        if (state.currentFinancialPeriod && state.currentFinancialPeriod._id === action.payload._id) {
+        if (
+          state.currentFinancialPeriod &&
+          state.currentFinancialPeriod._id === action.payload._id
+        ) {
           state.currentFinancialPeriod = action.payload;
         }
       })
       .addCase(deleteFinancialPeriod.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.financialPeriods = state.financialPeriods.filter(period => period._id !== action.payload);
-        if (state.currentFinancialPeriod && state.currentFinancialPeriod._id === action.payload) {
+        state.financialPeriods = state.financialPeriods.filter(
+          (period) => period._id !== action.payload
+        );
+        if (
+          state.currentFinancialPeriod &&
+          state.currentFinancialPeriod._id === action.payload
+        ) {
           state.currentFinancialPeriod = null;
         }
       })
       .addCase(closeFinancialPeriod.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.financialPeriods.findIndex(period => period._id === action.payload._id);
+        const index = state.financialPeriods.findIndex(
+          (period) => period._id === action.payload._id
+        );
         if (index !== -1) {
           state.financialPeriods[index] = action.payload;
         }
-        if (state.currentFinancialPeriod && state.currentFinancialPeriod._id === action.payload._id) {
+        if (
+          state.currentFinancialPeriod &&
+          state.currentFinancialPeriod._id === action.payload._id
+        ) {
           state.currentFinancialPeriod = action.payload;
         }
       })
       .addCase(lockFinancialPeriod.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.financialPeriods.findIndex(period => period._id === action.payload._id);
+        const index = state.financialPeriods.findIndex(
+          (period) => period._id === action.payload._id
+        );
         if (index !== -1) {
           state.financialPeriods[index] = action.payload;
         }
-        if (state.currentFinancialPeriod && state.currentFinancialPeriod._id === action.payload._id) {
+        if (
+          state.currentFinancialPeriod &&
+          state.currentFinancialPeriod._id === action.payload._id
+        ) {
           state.currentFinancialPeriod = action.payload;
         }
       })
-      
+
       // Tax Configurations
       .addCase(fetchTaxConfigurations.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -527,22 +639,32 @@ const accountingSlice = createSlice({
       })
       .addCase(updateTaxConfiguration.fulfilled, (state, action) => {
         state.isLoading = false;
-        const index = state.taxConfigurations.findIndex(tax => tax._id === action.payload._id);
+        const index = state.taxConfigurations.findIndex(
+          (tax) => tax._id === action.payload._id
+        );
         if (index !== -1) {
           state.taxConfigurations[index] = action.payload;
         }
-        if (state.currentTaxConfiguration && state.currentTaxConfiguration._id === action.payload._id) {
+        if (
+          state.currentTaxConfiguration &&
+          state.currentTaxConfiguration._id === action.payload._id
+        ) {
           state.currentTaxConfiguration = action.payload;
         }
       })
       .addCase(deleteTaxConfiguration.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.taxConfigurations = state.taxConfigurations.filter(tax => tax._id !== action.payload);
-        if (state.currentTaxConfiguration && state.currentTaxConfiguration._id === action.payload) {
+        state.taxConfigurations = state.taxConfigurations.filter(
+          (tax) => tax._id !== action.payload
+        );
+        if (
+          state.currentTaxConfiguration &&
+          state.currentTaxConfiguration._id === action.payload
+        ) {
           state.currentTaxConfiguration = null;
         }
       })
-      
+
       // Financial Reports
       .addCase(fetchBalanceSheet.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -555,10 +677,31 @@ const accountingSlice = createSlice({
       .addCase(fetchCashFlowStatement.fulfilled, (state, action) => {
         state.isLoading = false;
         state.cashFlowStatement = action.payload;
-      });
+      })
+
+      // Generic loading and error handling for all thunks
+      .addMatcher(
+        (action) =>
+          action.type.startsWith('accounting/') &&
+          action.type.endsWith('/pending'),
+        (state) => {
+          state.isLoading = true;
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        (action) =>
+          action.type.startsWith('accounting/') &&
+          action.type.endsWith('/rejected'),
+        (state, action) => {
+          state.isLoading = false;
+          state.error = action.error.message || 'An error occurred';
+        }
+      );
   },
 });
 
-export const { clearAccountingErrors, resetAccountingState } = accountingSlice.actions;
+export const { clearAccountingErrors, resetAccountingState } =
+  accountingSlice.actions;
 
 export default accountingSlice.reducer;

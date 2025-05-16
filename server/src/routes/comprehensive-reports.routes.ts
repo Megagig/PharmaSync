@@ -22,17 +22,17 @@ router.get(
   comprehensiveReportsController.getMedicationComprehensiveReport
 );
 
-// Inventory reports - accessible to admin, pharmacist, and manager
+// Inventory reports - accessible to admin, pharmacist, and staff
 router.get(
   '/inventory',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.MANAGER),
+  authorize(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.STAFF),
   comprehensiveReportsController.getInventoryComprehensiveReport
 );
 
-// Sales reports - accessible to admin, pharmacist, and manager
+// Sales reports - accessible to admin, pharmacist, and staff
 router.get(
   '/sales',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.MANAGER),
+  authorize(UserRole.ADMIN, UserRole.PHARMACIST, UserRole.STAFF),
   comprehensiveReportsController.getSalesComprehensiveReport
 );
 
