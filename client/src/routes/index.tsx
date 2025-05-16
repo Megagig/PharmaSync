@@ -72,9 +72,9 @@ const EditSoapNote = lazy(() => import('@/pages/patients/EditSoapNote'));
 const DeleteSoapNote = lazy(() => import('@/pages/patients/DeleteSoapNote'));
 
 // Medication Pages
-const MedicationList = lazy(() => import('@/pages/medications/MedicationList'));
+const MedicationList = lazy(() => import('@/pages/Medications/MedicationList'));
 const MedicationDetail = lazy(
-  () => import('@/pages/medications/MedicationDetail')
+  () => import('@/pages/Medications/MedicationDetail')
 );
 const MedicationDatabase = lazy(
   () => import('@/pages/Medications/MedicationDatabase')

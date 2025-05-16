@@ -1,20 +1,23 @@
-import { useEffect } from 'react'
-import { AuthProvider } from './context/AuthContext'
-import { ThemeProvider } from './context/ThemeContext'
-import AppRoutes from './routes/AppRoutes'
+import { useEffect } from 'react';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { HelmetProvider } from 'react-helmet-async';
+import AppRoutes from './routes/AppRoutes';
 
 function App() {
   useEffect(() => {
-    document.title = 'PharmaSync - Pharmaceutical Care App'
-  }, [])
+    document.title = 'PharmaSync - Pharmaceutical Care App';
+  }, []);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </ThemeProvider>
-  )
+    <HelmetProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
+    </HelmetProvider>
+  );
 }
 
-export default App
+export default App;

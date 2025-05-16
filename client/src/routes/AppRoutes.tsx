@@ -38,6 +38,7 @@ import MedicationDetail from '@/pages/Medications/MedicationDetail';
 import CreateMedication from '@/pages/Medications/CreateMedication';
 import EditMedication from '@/pages/Medications/EditMedication';
 import AddInventoryItem from '@/pages/Medications/AddInventoryItem';
+import MedicationDatabase from '@/pages/Medications/MedicationDatabase';
 
 // Prescription pages
 import PrescriptionList from '@/pages/Prescriptions/PrescriptionList';
@@ -150,7 +151,7 @@ import InventoryReports from '@/pages/Reports/InventoryReports';
 import SalesReports from '@/pages/Reports/SalesReports';
 import FinancialReports from '@/pages/Reports/FinancialReports';
 import AdministrativeReports from '@/pages/Reports/AdministrativeReports';
-import Settings from '@/pages/Settings/Settings';
+import Settings from '@/pages/settings/Settings';
 
 // POS pages
 import PosSessionsList from '@/pages/POS/Sessions/PosSessionsList';
@@ -254,6 +255,10 @@ const AppRoutes = () => {
           {/* Medications */}
           <Route path="/medications" element={<MedicationList />} />
           <Route path="/medications/new" element={<CreateMedication />} />
+          <Route
+            path="/medications/database"
+            element={<MedicationDatabase />}
+          />
           <Route path="/medications/:id" element={<MedicationDetail />} />
           <Route path="/medications/:id/edit" element={<EditMedication />} />
           <Route path="/medications/edit/:id" element={<EditMedication />} />
