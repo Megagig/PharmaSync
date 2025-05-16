@@ -16,12 +16,22 @@ import {
   CartesianGrid,
 } from 'recharts';
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658'];
+const COLORS = [
+  '#0088FE',
+  '#00C49F',
+  '#FFBB28',
+  '#FF8042',
+  '#8884d8',
+  '#82ca9d',
+  '#ffc658',
+];
 
 const DemographicsReport: React.FC = () => {
-  const { demographics, isLoading } = useSelector((state: RootState) => state.reporting);
+  const { patientReport, isLoading } = useSelector(
+    (state: RootState) => state.comprehensiveReports
+  );
 
-  if (isLoading || !demographics) {
+  if (isLoading || !patientReport) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
@@ -31,54 +41,41 @@ const DemographicsReport: React.FC = () => {
 
   // Format gender data for chart
   const genderData = [
-    { name: 'Male', value: demographics.genderDistribution.male },
-    { name: 'Female', value: demographics.genderDistribution.female },
-    { name: 'Other', value: demographics.genderDistribution.other },
-  ].filter(item => item.value > 0);
+    { name: 'Male', value: patientReport.summary.maleCount },
+    { name: 'Female', value: patientReport.summary.femaleCount },
+    { name: 'Other', value: patientReport.summary.otherGenderCount },
+  ].filter((item) => item.value > 0);
 
   // Format age data for chart
-  const ageData = [
-    { name: '0-18', value: demographics.ageDistribution.children },
-    { name: '19-35', value: demographics.ageDistribution.youngAdults },
-    { name: '36-50', value: demographics.ageDistribution.middleAged },
-    { name: '51-65', value: demographics.ageDistribution.seniors },
-    { name: '65+', value: demographics.ageDistribution.elderly },
-  ].filter(item => item.value > 0);
-
-  // Format blood group data for chart
-  const bloodGroupData = Object.entries(demographics.bloodGroupDistribution || {})
-    .map(([name, value]) => ({ name, value }))
-    .filter(item => item.value > 0);
-
-  // Format genotype data for chart
-  const genotypeData = Object.entries(demographics.genotypeDistribution || {})
-    .map(([name, value]) => ({ name, value }))
-    .filter(item => item.value > 0);
-
-  // Format marital status data for chart
-  const maritalStatusData = Object.entries(demographics.maritalStatusDistribution || {})
-    .map(([name, value]) => ({ name, value: value as number }))
-    .filter(item => item.value > 0);
+  const ageData = patientReport.patientsByAgeGroup || [];
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900">Patient Demographics</h2>
-      
+      <h2 className="text-xl font-semibold text-gray-900">
+        Patient Demographics
+      </h2>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Total Patients</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                Total Patients
+              </h3>
             </div>
             <div className="flex justify-center items-center h-32">
-              <div className="text-5xl font-bold text-primary-600">{demographics.totalPatients}</div>
+              <div className="text-5xl font-bold text-primary-600">
+                {demographics.totalPatients}
+              </div>
             </div>
           </div>
         </Card>
-        
+
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Gender Distribution</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Gender Distribution
+            </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -90,10 +87,15 @@ const DemographicsReport: React.FC = () => {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {genderData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -103,10 +105,12 @@ const DemographicsReport: React.FC = () => {
             </div>
           </div>
         </Card>
-        
+
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Age Distribution</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Age Distribution
+            </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -130,11 +134,13 @@ const DemographicsReport: React.FC = () => {
           </div>
         </Card>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Blood Group Distribution</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Blood Group Distribution
+            </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -146,10 +152,15 @@ const DemographicsReport: React.FC = () => {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {bloodGroupData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -159,10 +170,12 @@ const DemographicsReport: React.FC = () => {
             </div>
           </div>
         </Card>
-        
+
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Genotype Distribution</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Genotype Distribution
+            </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -174,10 +187,15 @@ const DemographicsReport: React.FC = () => {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {genotypeData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -187,10 +205,12 @@ const DemographicsReport: React.FC = () => {
             </div>
           </div>
         </Card>
-        
+
         <Card>
           <div className="p-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Marital Status</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Marital Status
+            </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -202,10 +222,15 @@ const DemographicsReport: React.FC = () => {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) =>
+                      `${name}: ${(percent * 100).toFixed(0)}%`
+                    }
                   >
                     {maritalStatusData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS[index % COLORS.length]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />

@@ -10,6 +10,7 @@ import inventoryReducer from './slices/inventorySlice';
 import reportsReducer from './slices/reportsSlice';
 import reportReducer from './slices/reportSlice';
 import reportingReducer from './slices/reportingSlice';
+import comprehensiveReportsReducer from './slices/comprehensiveReportsSlice';
 import userReducer from './slices/userSlice';
 import roleReducer from './slices/roleSlice';
 import activityLogReducer from './slices/activityLogSlice';
@@ -42,6 +43,7 @@ export const store = configureStore({
     inventory: inventoryReducer,
     reports: reportsReducer,
     report: reportReducer,
+    comprehensiveReports: comprehensiveReportsReducer,
     users: userReducer,
     roles: roleReducer,
     activityLogs: activityLogReducer,

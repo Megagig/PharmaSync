@@ -142,6 +142,13 @@ import ConversationDetail from '@/pages/Messages/ConversationDetail';
 import ReportDashboard from '@/pages/Reports/ReportDashboard';
 import ReportGenerator from '@/pages/Reports/ReportGenerator';
 import ReportConfigurations from '@/pages/Reports/ReportConfigurations';
+import ReportsModule from '@/pages/Reports/ReportsModule';
+import PatientReports from '@/pages/Reports/PatientReports';
+import MedicationReports from '@/pages/Reports/MedicationReports';
+import InventoryReports from '@/pages/Reports/InventoryReports';
+import SalesReports from '@/pages/Reports/SalesReports';
+import FinancialReports from '@/pages/Reports/FinancialReports';
+import AdministrativeReports from '@/pages/Reports/AdministrativeReports';
 import Settings from '@/pages/Settings/Settings';
 
 // POS pages
@@ -326,14 +333,26 @@ const AppRoutes = () => {
           <Route path="/inventory/reports" element={<InventoryReportsList />} />
 
           {/* Reports */}
-          <Route path="/reports" element={<ReportsDashboard />} />
-          <Route path="/reports/sales" element={<SalesReport />} />
-          <Route path="/reports/inventory" element={<InventoryReport />} />
+          <Route path="/reports" element={<ReportsModule />} />
+          <Route path="/reports/patient" element={<PatientReports />} />
+          <Route path="/reports/medication" element={<MedicationReports />} />
+          <Route path="/reports/inventory" element={<InventoryReports />} />
+          <Route path="/reports/sales" element={<SalesReports />} />
+          <Route path="/reports/financial" element={<FinancialReports />} />
           <Route
-            path="/reports/prescriptions"
+            path="/reports/administrative"
+            element={<AdministrativeReports />}
+          />
+
+          {/* Legacy Reports - Keeping for backward compatibility */}
+          <Route path="/reports-old" element={<ReportsDashboard />} />
+          <Route path="/reports-old/sales" element={<SalesReport />} />
+          <Route path="/reports-old/inventory" element={<InventoryReport />} />
+          <Route
+            path="/reports-old/prescriptions"
             element={<PrescriptionReport />}
           />
-          <Route path="/reports/patients" element={<PatientReport />} />
+          <Route path="/reports-old/patients" element={<PatientReport />} />
           <Route path="/reporting" element={<ReportingDashboard />} />
 
           {/* User Management */}
