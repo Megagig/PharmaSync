@@ -14,12 +14,16 @@ import Modal from '@/components/common/Modal/Modal';
 
 const UserProfile = () => {
   const dispatch = useDispatch();
-  const { currentUser, isLoading: userLoading, error: userError } = useSelector(
-    (state: RootState) => state.users
-  );
-  const { activityLogs, isLoading: logsLoading, error: logsError } = useSelector(
-    (state: RootState) => state.activityLogs
-  );
+  const {
+    currentUser,
+    isLoading: userLoading,
+    error: userError,
+  } = useSelector((state: RootState) => state.users);
+  const {
+    activityLogs,
+    isLoading: logsLoading,
+    error: logsError,
+  } = useSelector((state: RootState) => state.activityLogs);
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<UserProfileUpdateData>({
@@ -76,9 +80,11 @@ const UserProfile = () => {
     }
   }, [currentUser]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
-    
+
     if (name.includes('.')) {
       const [parent, child] = name.split('.');
       setFormData((prev) => ({
@@ -141,7 +147,7 @@ const UserProfile = () => {
         newPassword: '',
       });
       setConfirmPassword('');
-      
+
       // Close modal after a delay
       setTimeout(() => {
         setShowPasswordModal(false);
@@ -149,7 +155,9 @@ const UserProfile = () => {
       }, 2000);
     } catch (error) {
       console.error('Error changing password:', error);
-      setPasswordError('Failed to change password. Please check your current password.');
+      setPasswordError(
+        'Failed to change password. Please check your current password.'
+      );
     }
   };
 
@@ -163,11 +171,13 @@ const UserProfile = () => {
     return new Date(dateString).toLocaleString();
   };
 
-  const getActivityTypeColor = (type: string) => {
+  const getActivityTypeColor = (type?: string) => {
+    if (!type) return 'text-gray-600';
     if (type.includes('create')) return 'text-green-600';
     if (type.includes('update')) return 'text-blue-600';
     if (type.includes('delete')) return 'text-red-600';
-    if (type.includes('login') || type.includes('logout')) return 'text-purple-600';
+    if (type.includes('login') || type.includes('logout'))
+      return 'text-purple-600';
     return 'text-gray-600';
   };
 
@@ -205,13 +215,20 @@ const UserProfile = () => {
               <Button variant="outline" onClick={() => setIsEditing(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" onClick={handleSubmit} isLoading={userLoading}>
+              <Button
+                variant="primary"
+                onClick={handleSubmit}
+                isLoading={userLoading}
+              >
                 Save Changes
               </Button>
             </>
           ) : (
             <>
-              <Button variant="outline" onClick={() => setShowPasswordModal(true)}>
+              <Button
+                variant="outline"
+                onClick={() => setShowPasswordModal(true)}
+              >
                 Change Password
               </Button>
               <Button variant="primary" onClick={() => setIsEditing(true)}>
@@ -245,22 +262,27 @@ const UserProfile = () => {
                 {currentUser.firstName} {currentUser.lastName}
               </h2>
               <p className="text-sm text-gray-500 mb-2">{currentUser.email}</p>
-              <span
-                className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800"
-              >
-                {currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)}
+              <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                {currentUser.role.charAt(0).toUpperCase() +
+                  currentUser.role.slice(1)}
               </span>
 
               <div className="mt-4 w-full text-left">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Account Information</h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">
+                  Account Information
+                </h3>
                 <div className="text-sm">
                   <div className="flex justify-between py-2 border-b border-gray-200">
                     <span className="text-gray-500">Last Login</span>
-                    <span className="text-gray-900">{formatDateTime(currentUser.lastLogin)}</span>
+                    <span className="text-gray-900">
+                      {formatDateTime(currentUser.lastLogin)}
+                    </span>
                   </div>
                   <div className="flex justify-between py-2 border-b border-gray-200">
                     <span className="text-gray-500">Account Created</span>
-                    <span className="text-gray-900">{formatDate(currentUser.createdAt)}</span>
+                    <span className="text-gray-900">
+                      {formatDate(currentUser.createdAt)}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -279,7 +301,10 @@ const UserProfile = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
                   <div className="sm:col-span-3">
-                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="firstName"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       First Name
                     </label>
                     <div className="mt-1">
@@ -296,7 +321,10 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="lastName"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Last Name
                     </label>
                     <div className="mt-1">
@@ -313,7 +341,10 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-6">
-                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="phoneNumber"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Phone Number
                     </label>
                     <div className="mt-1">
@@ -329,11 +360,16 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-6">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Address</h3>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Address
+                    </h3>
                   </div>
 
                   <div className="sm:col-span-6">
-                    <label htmlFor="address.street" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="address.street"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Street
                     </label>
                     <div className="mt-1">
@@ -349,7 +385,10 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label htmlFor="address.city" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="address.city"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       City
                     </label>
                     <div className="mt-1">
@@ -365,7 +404,10 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label htmlFor="address.state" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="address.state"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       State
                     </label>
                     <div className="mt-1">
@@ -381,7 +423,10 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label htmlFor="address.postalCode" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="address.postalCode"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Postal Code
                     </label>
                     <div className="mt-1">
@@ -397,7 +442,10 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label htmlFor="address.country" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="address.country"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Country
                     </label>
                     <div className="mt-1">
@@ -413,11 +461,16 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-6">
-                    <h3 className="text-sm font-medium text-gray-700 mb-2">Emergency Contact</h3>
+                    <h3 className="text-sm font-medium text-gray-700 mb-2">
+                      Emergency Contact
+                    </h3>
                   </div>
 
                   <div className="sm:col-span-6">
-                    <label htmlFor="emergencyContact.name" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="emergencyContact.name"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Name
                     </label>
                     <div className="mt-1">
@@ -433,7 +486,10 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label htmlFor="emergencyContact.relationship" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="emergencyContact.relationship"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Relationship
                     </label>
                     <div className="mt-1">
@@ -449,7 +505,10 @@ const UserProfile = () => {
                   </div>
 
                   <div className="sm:col-span-3">
-                    <label htmlFor="emergencyContact.phoneNumber" className="block text-sm font-medium text-gray-700">
+                    <label
+                      htmlFor="emergencyContact.phoneNumber"
+                      className="block text-sm font-medium text-gray-700"
+                    >
                       Phone Number
                     </label>
                     <div className="mt-1">
@@ -469,33 +528,44 @@ const UserProfile = () => {
               <div className="border-t border-gray-200">
                 <dl>
                   <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Full name</dt>
+                    <dt className="text-sm font-medium text-gray-500">
+                      Full name
+                    </dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {currentUser.firstName} {currentUser.lastName}
                     </dd>
                   </div>
                   <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Email address</dt>
+                    <dt className="text-sm font-medium text-gray-500">
+                      Email address
+                    </dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {currentUser.email}
                     </dd>
                   </div>
                   <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Phone number</dt>
+                    <dt className="text-sm font-medium text-gray-500">
+                      Phone number
+                    </dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {currentUser.phoneNumber || 'Not set'}
                     </dd>
                   </div>
                   <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Address</dt>
+                    <dt className="text-sm font-medium text-gray-500">
+                      Address
+                    </dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {currentUser.address?.street ? (
                         <>
                           {currentUser.address.street}
                           <br />
-                          {currentUser.address.city && `${currentUser.address.city}, `}
-                          {currentUser.address.state && `${currentUser.address.state} `}
-                          {currentUser.address.postalCode && `${currentUser.address.postalCode}`}
+                          {currentUser.address.city &&
+                            `${currentUser.address.city}, `}
+                          {currentUser.address.state &&
+                            `${currentUser.address.state} `}
+                          {currentUser.address.postalCode &&
+                            `${currentUser.address.postalCode}`}
                           <br />
                           {currentUser.address.country}
                         </>
@@ -505,12 +575,15 @@ const UserProfile = () => {
                     </dd>
                   </div>
                   <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                    <dt className="text-sm font-medium text-gray-500">Emergency contact</dt>
+                    <dt className="text-sm font-medium text-gray-500">
+                      Emergency contact
+                    </dt>
                     <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                       {currentUser.emergencyContact?.name ? (
                         <>
                           {currentUser.emergencyContact.name}
-                          {currentUser.emergencyContact.relationship && ` (${currentUser.emergencyContact.relationship})`}
+                          {currentUser.emergencyContact.relationship &&
+                            ` (${currentUser.emergencyContact.relationship})`}
                           <br />
                           {currentUser.emergencyContact.phoneNumber}
                         </>
@@ -529,7 +602,9 @@ const UserProfile = () => {
         <Card className="lg:col-span-3">
           <div className="p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
+              <h2 className="text-lg font-medium text-gray-900">
+                Recent Activity
+              </h2>
               <Button
                 variant="outline"
                 onClick={() => navigate('/activity-logs/me')}
@@ -569,8 +644,21 @@ const UserProfile = () => {
                     {activityLogs.map((log) => (
                       <tr key={log.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-sm font-medium ${getActivityTypeColor(log.activityType)}`}>
-                            {log.activityType.split('_').map(word => word.charAt(0) + word.slice(1).toLowerCase()).join(' ')}
+                          <span
+                            className={`text-sm font-medium ${getActivityTypeColor(
+                              log.activityType
+                            )}`}
+                          >
+                            {log.activityType
+                              ? log.activityType
+                                  .split('_')
+                                  .map(
+                                    (word) =>
+                                      word.charAt(0) +
+                                      word.slice(1).toLowerCase()
+                                  )
+                                  .join(' ')
+                              : 'Unknown Activity'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -614,7 +702,10 @@ const UserProfile = () => {
 
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div>
-              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="currentPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Current Password
               </label>
               <input
@@ -629,7 +720,10 @@ const UserProfile = () => {
             </div>
 
             <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="newPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
                 New Password
               </label>
               <input
@@ -645,7 +739,10 @@ const UserProfile = () => {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Confirm Password
               </label>
               <input
@@ -661,7 +758,11 @@ const UserProfile = () => {
             </div>
 
             <div className="mt-6 flex justify-end space-x-3">
-              <Button variant="outline" type="button" onClick={() => setShowPasswordModal(false)}>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => setShowPasswordModal(false)}
+              >
                 Cancel
               </Button>
               <Button variant="primary" type="submit" isLoading={userLoading}>
