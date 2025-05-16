@@ -27,6 +27,9 @@ router.get('/low-stock', medicationController.getLowStockMedications);
 // Get expiring medications
 router.get('/expiring', medicationController.getExpiringMedications);
 
+// Medication database endpoint
+router.get('/database', medicationController.getMedicationDatabase);
+
 // Create medication (only admin and pharmacist)
 router.post(
   '/',

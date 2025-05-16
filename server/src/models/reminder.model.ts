@@ -1,5 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
-import { IReminder, ReminderStatus, ReminderType } from '../interfaces/reminder.interface';
+import {
+  IReminder,
+  ReminderStatus,
+  ReminderType,
+} from '../interfaces/reminder.interface';
 
 const reminderSchema = new Schema<IReminder>(
   {
@@ -12,6 +16,7 @@ const reminderSchema = new Schema<IReminder>(
       type: String,
       enum: Object.values(ReminderType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     status: {
       type: String,

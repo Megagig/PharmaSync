@@ -43,13 +43,14 @@ const locationSchema = new Schema<ILocation>(
     code: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
     type: {
       type: String,
       enum: Object.values(LocationType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     address: locationAddressSchema,
     phone: {

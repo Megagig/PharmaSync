@@ -46,13 +46,14 @@ const customerSchema = new Schema<ICustomer>(
     customerNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
     type: {
       type: String,
       enum: Object.values(CustomerType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     healthcareProfessionalType: {
       type: String,

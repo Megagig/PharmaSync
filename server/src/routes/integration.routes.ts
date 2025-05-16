@@ -26,6 +26,11 @@ router.get(
   integrationController.searchDrugDatabaseMedications
 );
 
+router.get(
+  '/drug-database/medications/:id',
+  integrationController.getMedicationDetails
+);
+
 router.post(
   '/drug-database/medications/import',
   integrationController.importDrugDatabaseMedication

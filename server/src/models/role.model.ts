@@ -61,7 +61,7 @@ const roleSchema = new Schema<IRole>(
 
 // Create indexes for faster queries
 roleSchema.index({ name: 1 });
-roleSchema.index({ type: 1 });
+// roleSchema.index({ type: 1 }); // Removed to avoid duplicate index
 roleSchema.index({ isActive: 1 });
 roleSchema.index({ isDefault: 1 });
 roleSchema.index({ parentRole: 1 });

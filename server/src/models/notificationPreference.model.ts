@@ -10,7 +10,7 @@ const notificationPreferenceSchema = new Schema<INotificationPreference>(
       type: String,
       ref: 'User',
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
     },
     email: {
       enabled: {

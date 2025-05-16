@@ -37,7 +37,7 @@ const journalEntrySchema = new Schema<IJournalEntry>(
     entryNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
     date: {
@@ -144,7 +144,10 @@ journalEntrySchema.index({ entryNumber: 1 }, { unique: true });
 journalEntrySchema.index({ date: 1 });
 journalEntrySchema.index({ status: 1 });
 journalEntrySchema.index({ type: 1 });
-journalEntrySchema.index({ 'relatedEntity.entityType': 1, 'relatedEntity.entityId': 1 });
+journalEntrySchema.index({
+  'relatedEntity.entityType': 1,
+  'relatedEntity.entityId': 1,
+});
 journalEntrySchema.index({ createdBy: 1 });
 
 // Generate entry number before saving
@@ -165,6 +168,9 @@ journalEntrySchema.pre('save', function (next) {
   next();
 });
 
-const JournalEntry = mongoose.model<IJournalEntry>('JournalEntry', journalEntrySchema);
+const JournalEntry = mongoose.model<IJournalEntry>(
+  'JournalEntry',
+  journalEntrySchema
+);
 
 export default JournalEntry;

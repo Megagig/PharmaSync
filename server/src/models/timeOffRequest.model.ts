@@ -42,7 +42,7 @@ const timeOffRequestSchema = new Schema<ITimeOffRequest>(
 );
 
 // Create indexes for faster queries
-timeOffRequestSchema.index({ user: 1 });
+// timeOffRequestSchema.index({ user: 1 }); // Removed to avoid duplicate index
 timeOffRequestSchema.index({ startDate: 1, endDate: 1 });
 timeOffRequestSchema.index({ status: 1 });
 

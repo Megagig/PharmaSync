@@ -33,7 +33,7 @@ const userRoleSchema = new Schema<IUserRoleDocument>(
 userRoleSchema.index({ user: 1, role: 1 }, { unique: true });
 
 // Create indexes for faster queries
-userRoleSchema.index({ user: 1 });
+// userRoleSchema.index({ user: 1 }); // Removed to avoid duplicate index
 userRoleSchema.index({ role: 1 });
 userRoleSchema.index({ assignedBy: 1 });
 userRoleSchema.index({ assignedAt: -1 });

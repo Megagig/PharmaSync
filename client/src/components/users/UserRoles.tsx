@@ -10,32 +10,43 @@ import {
   removeRoleFromUserByIds,
   fetchUserPermissions,
 } from '@/store/slices/roleSlice';
-import { IRole, IUserRole, PermissionResource, PermissionAction } from '@/types/role.types';
+import {
+  IRole,
+  IUserRole,
+  PermissionResource,
+  PermissionAction,
+} from '@/types/role.types';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import Table from '@/components/common/Table/Table';
 import Modal from '@/components/common/Modal/Modal';
-import Alert from '@/components/common/Alert/Alert';
+import Alert from '@/components/common/Alert';
 import Badge from '@/components/common/Badge/Badge';
 import Avatar from '@/components/common/Avatar/Avatar';
-import { FiPlus, FiTrash2, FiArrowLeft, FiRefreshCw, FiShield } from 'react-icons/fi';
+import {
+  FiPlus,
+  FiTrash2,
+  FiArrowLeft,
+  FiRefreshCw,
+  FiShield,
+} from 'react-icons/fi';
 
 const UserRoles: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+
   const { currentUser } = useSelector((state: RootState) => state.users);
   const { roles, userRoles, userPermissions, isLoading, error } = useSelector(
     (state: RootState) => state.roles
   );
-  
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [showPermissions, setShowPermissions] = useState(false);
-  
+
   useEffect(() => {
     if (id) {
       dispatch(fetchUserById(id));
@@ -44,15 +55,15 @@ const UserRoles: React.FC = () => {
       dispatch(fetchUserPermissions(id));
     }
   }, [dispatch, id]);
-  
+
   const handleAddRole = async () => {
     if (!id || !selectedRoleId) return;
-    
+
     try {
       await dispatch(
         assignRoleToUserByIds({ userId: id, roleId: selectedRoleId })
       ).unwrap();
-      
+
       setShowAddModal(false);
       setSelectedRoleId(null);
       dispatch(fetchUserRolesByUserId(id));
@@ -62,15 +73,15 @@ const UserRoles: React.FC = () => {
       console.error('Failed to assign role:', error);
     }
   };
-  
+
   const handleRemoveRole = async () => {
     if (!id || !selectedRoleId) return;
-    
+
     try {
       await dispatch(
         removeRoleFromUserByIds({ userId: id, roleId: selectedRoleId })
       ).unwrap();
-      
+
       setShowRemoveModal(false);
       setSelectedRoleId(null);
       dispatch(fetchUserRolesByUserId(id));
@@ -80,18 +91,18 @@ const UserRoles: React.FC = () => {
       console.error('Failed to remove role:', error);
     }
   };
-  
+
   const confirmRemoveRole = (roleId: string) => {
     setSelectedRoleId(roleId);
     setShowRemoveModal(true);
   };
-  
+
   const refreshPermissions = () => {
     if (id) {
       dispatch(fetchUserPermissions(id));
     }
   };
-  
+
   const roleColumns = [
     {
       header: 'Role',
@@ -110,7 +121,8 @@ const UserRoles: React.FC = () => {
       header: 'Assigned By',
       accessor: 'assignedBy',
       cell: (userRole: IUserRole) => {
-        const assignedBy = typeof userRole.assignedBy === 'object' ? userRole.assignedBy : null;
+        const assignedBy =
+          typeof userRole.assignedBy === 'object' ? userRole.assignedBy : null;
         return assignedBy ? (
           <div className="flex items-center">
             <Avatar
@@ -158,36 +170,38 @@ const UserRoles: React.FC = () => {
       },
     },
   ];
-  
+
   const availableRoles = roles.filter(
-    (role) => !userRoles.some((userRole) => {
-      const userRoleObj = typeof userRole.role === 'object' ? userRole.role : null;
-      return userRoleObj?.id === role.id;
-    })
+    (role) =>
+      !userRoles.some((userRole) => {
+        const userRoleObj =
+          typeof userRole.role === 'object' ? userRole.role : null;
+        return userRoleObj?.id === role.id;
+      })
   );
-  
+
   const groupPermissionsByResource = () => {
     if (!userPermissions) return {};
-    
+
     const grouped: Record<string, string[]> = {};
-    
+
     userPermissions.forEach((permission) => {
       if (!grouped[permission.resource]) {
         grouped[permission.resource] = [];
       }
-      
+
       permission.actions.forEach((action) => {
         if (!grouped[permission.resource].includes(action)) {
           grouped[permission.resource].push(action);
         }
       });
     });
-    
+
     return grouped;
   };
-  
+
   const groupedPermissions = groupPermissionsByResource();
-  
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -200,10 +214,12 @@ const UserRoles: React.FC = () => {
             <FiArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-2xl font-semibold text-gray-900">
-            {currentUser ? `Roles for ${currentUser.firstName} ${currentUser.lastName}` : 'User Roles'}
+            {currentUser
+              ? `Roles for ${currentUser.firstName} ${currentUser.lastName}`
+              : 'User Roles'}
           </h1>
         </div>
-        
+
         <div className="flex space-x-3">
           <Button
             variant="outline"
@@ -222,10 +238,10 @@ const UserRoles: React.FC = () => {
           </Button>
         </div>
       </div>
-      
+
       {error && <Alert type="error" message={error} />}
       {successMessage && <Alert type="success" message={successMessage} />}
-      
+
       {currentUser && (
         <Card>
           <div className="p-6 flex flex-col md:flex-row items-center md:items-start gap-6">
@@ -242,12 +258,14 @@ const UserRoles: React.FC = () => {
               <div className="mt-2 space-y-1">
                 {currentUser.position && (
                   <div className="text-sm text-gray-600">
-                    <span className="font-medium">Position:</span> {currentUser.position}
+                    <span className="font-medium">Position:</span>{' '}
+                    {currentUser.position}
                   </div>
                 )}
                 {currentUser.department && (
                   <div className="text-sm text-gray-600">
-                    <span className="font-medium">Department:</span> {currentUser.department}
+                    <span className="font-medium">Department:</span>{' '}
+                    {currentUser.department}
                   </div>
                 )}
                 <div className="text-sm text-gray-600">
@@ -259,7 +277,7 @@ const UserRoles: React.FC = () => {
           </div>
         </Card>
       )}
-      
+
       <Card>
         <div className="p-4 border-b flex justify-between items-center">
           <h2 className="text-lg font-medium text-gray-900">Assigned Roles</h2>
@@ -272,7 +290,7 @@ const UserRoles: React.FC = () => {
             <FiRefreshCw className="h-4 w-4" />
           </Button>
         </div>
-        
+
         <div>
           {isLoading && userRoles.length === 0 ? (
             <div className="flex items-center justify-center h-64">
@@ -288,8 +306,12 @@ const UserRoles: React.FC = () => {
           ) : userRoles.length === 0 ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-center">
-                <p className="text-xl font-semibold text-gray-500">No roles assigned</p>
-                <p className="text-gray-500">Assign roles to this user to grant permissions</p>
+                <p className="text-xl font-semibold text-gray-500">
+                  No roles assigned
+                </p>
+                <p className="text-gray-500">
+                  Assign roles to this user to grant permissions
+                </p>
                 <Button
                   variant="primary"
                   className="mt-4"
@@ -304,11 +326,13 @@ const UserRoles: React.FC = () => {
           )}
         </div>
       </Card>
-      
+
       {showPermissions && (
         <Card>
           <div className="p-4 border-b flex justify-between items-center">
-            <h2 className="text-lg font-medium text-gray-900">Effective Permissions</h2>
+            <h2 className="text-lg font-medium text-gray-900">
+              Effective Permissions
+            </h2>
             <Button
               variant="outline"
               onClick={refreshPermissions}
@@ -318,39 +342,49 @@ const UserRoles: React.FC = () => {
               <FiRefreshCw className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <div className="p-6">
             {isLoading && !userPermissions ? (
               <div className="flex items-center justify-center h-32">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
               </div>
-            ) : !userPermissions || Object.keys(groupedPermissions).length === 0 ? (
+            ) : !userPermissions ||
+              Object.keys(groupedPermissions).length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-gray-500">No permissions found for this user</p>
-                <p className="text-sm text-gray-400">Assign roles to grant permissions</p>
+                <p className="text-gray-500">
+                  No permissions found for this user
+                </p>
+                <p className="text-sm text-gray-400">
+                  Assign roles to grant permissions
+                </p>
               </div>
             ) : (
               <div className="space-y-6">
-                {Object.entries(groupedPermissions).map(([resource, actions]) => (
-                  <div key={resource} className="border-b pb-4 last:border-b-0 last:pb-0">
-                    <h3 className="text-md font-medium text-gray-700 mb-2">
-                      {resource.replace('_', ' ')}
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {actions.map((action) => (
-                        <Badge key={action} color="blue">
-                          {action.replace('_', ' ')}
-                        </Badge>
-                      ))}
+                {Object.entries(groupedPermissions).map(
+                  ([resource, actions]) => (
+                    <div
+                      key={resource}
+                      className="border-b pb-4 last:border-b-0 last:pb-0"
+                    >
+                      <h3 className="text-md font-medium text-gray-700 mb-2">
+                        {resource.replace('_', ' ')}
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {actions.map((action) => (
+                          <Badge key={action} color="blue">
+                            {action.replace('_', ' ')}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
             )}
           </div>
         </Card>
       )}
-      
+
       {/* Add Role Modal */}
       <Modal
         isOpen={showAddModal}
@@ -377,10 +411,14 @@ const UserRoles: React.FC = () => {
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-medium text-gray-900">{role.name}</div>
+                        <div className="font-medium text-gray-900">
+                          {role.name}
+                        </div>
                         <div className="text-sm text-gray-500">{role.type}</div>
                         {role.description && (
-                          <div className="text-xs text-gray-500 mt-1">{role.description}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {role.description}
+                          </div>
                         )}
                       </div>
                       <Badge color={role.isActive ? 'green' : 'red'}>
@@ -392,7 +430,7 @@ const UserRoles: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           <div className="mt-6 flex justify-end space-x-3">
             <Button variant="outline" onClick={() => setShowAddModal(false)}>
               Cancel
@@ -408,7 +446,7 @@ const UserRoles: React.FC = () => {
           </div>
         </div>
       </Modal>
-      
+
       {/* Remove Role Modal */}
       <Modal
         isOpen={showRemoveModal}
@@ -417,7 +455,8 @@ const UserRoles: React.FC = () => {
       >
         <div className="p-6">
           <p className="mb-4">
-            Are you sure you want to remove this role from the user? This may affect the user's permissions and access to certain features.
+            Are you sure you want to remove this role from the user? This may
+            affect the user's permissions and access to certain features.
           </p>
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={() => setShowRemoveModal(false)}>

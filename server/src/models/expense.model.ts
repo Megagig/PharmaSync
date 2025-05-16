@@ -43,7 +43,7 @@ const expenseSchema = new Schema<IExpense>(
     expenseNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
     title: {
@@ -170,7 +170,9 @@ expenseSchema.pre('save', function (next) {
     // Format: EXP-YYYYMMDD-XXXXX (where XXXXX is a random alphanumeric string)
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    this.expenseNumber = `EXP-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+    this.expenseNumber = `EXP-${dateStr}-${generateRandomString(
+      5
+    ).toUpperCase()}`;
   }
 
   next();

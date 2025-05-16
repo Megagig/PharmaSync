@@ -47,13 +47,14 @@ const inventoryMovementSchema = new Schema<IInventoryMovement>(
     referenceNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
     type: {
       type: String,
       enum: Object.values(MovementType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     date: {
       type: Date,
@@ -113,7 +114,9 @@ inventoryMovementSchema.pre('save', function (next) {
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
     const typePrefix = this.type.substring(0, 1).toUpperCase();
-    this.referenceNumber = `${typePrefix}MV-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+    this.referenceNumber = `${typePrefix}MV-${dateStr}-${generateRandomString(
+      5
+    ).toUpperCase()}`;
   }
   next();
 });

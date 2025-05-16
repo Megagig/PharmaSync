@@ -319,43 +319,49 @@ const MedicationDetail = () => {
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 Standard Dosage
               </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">
-                    Amount
-                  </span>
-                  <span className="text-sm text-gray-900">
-                    {currentMedication.standardDosage.amount}{' '}
-                    {currentMedication.standardDosage.unit}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">
-                    Frequency
-                  </span>
-                  <span className="text-sm text-gray-900">
-                    {currentMedication.standardDosage.frequency}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium text-gray-500">
-                    Route
-                  </span>
-                  <span className="text-sm text-gray-900">
-                    {currentMedication.standardDosage.route}
-                  </span>
-                </div>
-                {currentMedication.standardDosage.instructions && (
+              {currentMedication.standardDosage ? (
+                <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-sm font-medium text-gray-500">
-                      Instructions
+                      Amount
                     </span>
                     <span className="text-sm text-gray-900">
-                      {currentMedication.standardDosage.instructions}
+                      {currentMedication.standardDosage.amount}{' '}
+                      {currentMedication.standardDosage.unit}
                     </span>
                   </div>
-                )}
-              </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium text-gray-500">
+                      Frequency
+                    </span>
+                    <span className="text-sm text-gray-900">
+                      {currentMedication.standardDosage.frequency}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm font-medium text-gray-500">
+                      Route
+                    </span>
+                    <span className="text-sm text-gray-900">
+                      {currentMedication.standardDosage.route}
+                    </span>
+                  </div>
+                  {currentMedication.standardDosage.instructions && (
+                    <div className="flex justify-between">
+                      <span className="text-sm font-medium text-gray-500">
+                        Instructions
+                      </span>
+                      <span className="text-sm text-gray-900">
+                        {currentMedication.standardDosage.instructions}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500">
+                  No standard dosage information available.
+                </p>
+              )}
 
               <h3 className="text-lg font-medium text-gray-900 mt-6 mb-4">
                 Inventory Status
@@ -407,18 +413,19 @@ const MedicationDetail = () => {
               </p>
             </div>
           )}
-          {currentMedication.contraindications.length > 0 && (
-            <div className="mt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Contraindications
-              </h3>
-              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                {currentMedication.contraindications.map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {currentMedication.contraindications &&
+            currentMedication.contraindications.length > 0 && (
+              <div className="mt-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Contraindications
+                </h3>
+                <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                  {currentMedication.contraindications.map((item, index) => (
+                    <li key={index}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
         </Card>
       )}
 
@@ -448,7 +455,8 @@ const MedicationDetail = () => {
               Add Inventory
             </Button>
           </div>
-          {currentMedication.inventory.length === 0 ? (
+          {!currentMedication.inventory ||
+          currentMedication.inventory.length === 0 ? (
             <p className="text-sm text-gray-500">
               No inventory items recorded.
             </p>
@@ -592,7 +600,8 @@ const MedicationDetail = () => {
               Add Side Effect
             </Button>
           </div>
-          {currentMedication.sideEffects.length === 0 ? (
+          {!currentMedication.sideEffects ||
+          currentMedication.sideEffects.length === 0 ? (
             <p className="text-sm text-gray-500">No side effects recorded.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -694,7 +703,8 @@ const MedicationDetail = () => {
               Add Interaction
             </Button>
           </div>
-          {currentMedication.interactions.length === 0 ? (
+          {!currentMedication.interactions ||
+          currentMedication.interactions.length === 0 ? (
             <p className="text-sm text-gray-500">No interactions recorded.</p>
           ) : (
             <div className="overflow-x-auto">

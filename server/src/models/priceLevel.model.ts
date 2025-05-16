@@ -7,13 +7,13 @@ const priceLevelSchema = new Schema<IPriceLevel>(
       type: String,
       required: true,
       trim: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
     },
     code: {
       type: String,
       required: true,
       trim: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
     },
     description: {
       type: String,

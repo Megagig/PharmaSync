@@ -67,7 +67,7 @@ const budgetSchema = new Schema<IBudget>(
     budgetNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
     title: {
@@ -165,7 +165,9 @@ budgetSchema.pre('save', function (next) {
     // Format: BUD-YYYYMMDD-XXXXX (where XXXXX is a random alphanumeric string)
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    this.budgetNumber = `BUD-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+    this.budgetNumber = `BUD-${dateStr}-${generateRandomString(
+      5
+    ).toUpperCase()}`;
   }
 
   // Calculate total budget

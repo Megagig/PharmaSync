@@ -118,14 +118,44 @@ export const searchDrugDatabaseMedications = async (
       return next(new AppError('Search query is required', 400));
     }
 
-    const medications = await drugDatabaseIntegrationService.searchMedications(
-      query as string
-    );
+    try {
+      const medications =
+        await drugDatabaseIntegrationService.searchMedications(query as string);
 
-    res.status(200).json({
-      status: 'success',
-      data: medications,
-    });
+      res.status(200).json({
+        status: 'success',
+        data: medications,
+      });
+    } catch (error: any) {
+      // If there's an error with MongoDB, we can still search RxNav directly
+      if (error.message && error.message.includes('MongoDB')) {
+        try {
+          // Search medications directly from RxNav
+          const rxnavService =
+            require('../services/integration/rxnav.service').default;
+          const medications = await rxnavService.searchMedicationsByName(
+            query as string
+          );
+
+          // Transform the results to match our expected format
+          const transformedMedications = medications.map((med: any) => ({
+            id: med.rxcui,
+            name: med.name,
+            type: med.tty,
+            externalId: med.rxcui,
+          }));
+
+          res.status(200).json({
+            status: 'success',
+            data: transformedMedications,
+          });
+        } catch (rxnavError) {
+          next(rxnavError);
+        }
+      } else {
+        next(error);
+      }
+    }
   } catch (error) {
     next(error);
   }
@@ -168,6 +198,92 @@ export const importDrugDatabaseMedication = async (
 };
 
 /**
+ * @desc    Get medication details from drug database
+ * @route   GET /api/integrations/drug-database/medications/:id
+ * @access  Private
+ */
+export const getMedicationDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    if (!drugDatabaseIntegrationService.isIntegrationEnabled()) {
+      return next(
+        new AppError('Drug database integration is not enabled', 400)
+      );
+    }
+
+    const { id } = req.params;
+
+    if (!id) {
+      return next(new AppError('Medication ID is required', 400));
+    }
+
+    try {
+      const medication =
+        await drugDatabaseIntegrationService.getMedicationDetails(id);
+
+      res.status(200).json({
+        status: 'success',
+        data: medication,
+      });
+    } catch (error: any) {
+      // If there's an error with MongoDB, we can still return the RxNav data directly
+      if (error.message && error.message.includes('MongoDB')) {
+        try {
+          // Get medication details directly from RxNav
+          const rxnavService =
+            require('../services/integration/rxnav.service').default;
+
+          // Get basic medication info
+          const medicationInfo = await rxnavService.getMedicationByRxcui(id);
+
+          // Get medication properties
+          const properties = await rxnavService.getMedicationProperties(id);
+
+          // Get drug class information
+          const drugClass = await rxnavService.getDrugClass(id);
+
+          // Get side effects
+          const sideEffects = await rxnavService.getMedicationSideEffects(id);
+
+          // Get contraindications
+          const contraindications =
+            await rxnavService.getMedicationContraindications(id);
+
+          // Get dosage information
+          const dosage = await rxnavService.getMedicationDosage(id);
+
+          // Combine all the information
+          const medication = {
+            id,
+            name: medicationInfo.name,
+            rxcui: id,
+            properties,
+            drugClass,
+            sideEffects,
+            contraindications,
+            dosage,
+          };
+
+          res.status(200).json({
+            status: 'success',
+            data: medication,
+          });
+        } catch (rxnavError) {
+          next(rxnavError);
+        }
+      } else {
+        next(error);
+      }
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * @desc    Check drug interactions
  * @route   POST /api/integrations/drug-database/interactions/check
  * @access  Private
@@ -184,25 +300,89 @@ export const checkDrugInteractions = async (
       );
     }
 
-    const { medicationIds } = req.body;
+    const { medications } = req.body;
 
     if (
-      !medicationIds ||
-      !Array.isArray(medicationIds) ||
-      medicationIds.length === 0
+      !medications ||
+      !Array.isArray(medications) ||
+      medications.length === 0
     ) {
       return next(new AppError('Medication IDs are required', 400));
     }
 
-    const interactions =
-      await drugDatabaseIntegrationService.checkDrugInteractions(medicationIds);
+    try {
+      const interactions =
+        await drugDatabaseIntegrationService.checkDrugInteractions(medications);
 
-    res.status(200).json({
-      status: 'success',
-      data: interactions,
-    });
+      res.status(200).json({
+        status: 'success',
+        data: interactions,
+      });
+    } catch (error: any) {
+      // If there's an error with MongoDB, we can still check interactions directly with RxNav
+      if (error.message && error.message.includes('MongoDB')) {
+        try {
+          // Check interactions directly from RxNav
+          const rxnavService =
+            require('../services/integration/rxnav.service').default;
+          const interactions = await rxnavService.getDrugInteractions(
+            medications
+          );
+
+          // Transform the interactions to a more usable format
+          const transformedInteractions = interactions.map(
+            (interaction: any) => {
+              const interactionPair = interaction.interactionPair[0];
+              return {
+                drug1: {
+                  rxcui:
+                    interactionPair.interactionConcept[0].minConceptItem.rxcui,
+                  name: interactionPair.interactionConcept[0].minConceptItem
+                    .name,
+                },
+                drug2: {
+                  rxcui:
+                    interactionPair.interactionConcept[1].minConceptItem.rxcui,
+                  name: interactionPair.interactionConcept[1].minConceptItem
+                    .name,
+                },
+                description: interactionPair.description,
+                severity: mapInteractionSeverity(interactionPair.severity),
+              };
+            }
+          );
+
+          res.status(200).json({
+            status: 'success',
+            data: transformedInteractions,
+          });
+        } catch (rxnavError) {
+          next(rxnavError);
+        }
+      } else {
+        next(error);
+      }
+    }
   } catch (error) {
     next(error);
+  }
+};
+
+// Helper function to map RxNav interaction severity to our system's severity levels
+const mapInteractionSeverity = (
+  rxnavSeverity: string
+): 'minor' | 'moderate' | 'major' | 'contraindicated' => {
+  // RxNav uses different severity levels, so we need to map them
+  switch (rxnavSeverity?.toLowerCase()) {
+    case 'high':
+      return 'major';
+    case 'n/a':
+    case 'low':
+      return 'minor';
+    case 'medium':
+      return 'moderate';
+    default:
+      return 'moderate';
   }
 };
 

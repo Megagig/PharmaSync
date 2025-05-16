@@ -76,6 +76,9 @@ const MedicationList = lazy(() => import('@/pages/medications/MedicationList'));
 const MedicationDetail = lazy(
   () => import('@/pages/medications/MedicationDetail')
 );
+const MedicationDatabase = lazy(
+  () => import('@/pages/Medications/MedicationDatabase')
+);
 
 // Prescription Pages
 const PrescriptionList = lazy(
@@ -298,8 +301,12 @@ const AppRoutes: React.FC = () => {
             />
 
             {/* Medication Routes */}
-            <Route path="/medications" element={<MedicationList />} />
+            <Route
+              path="/medications/database"
+              element={<MedicationDatabase />}
+            />
             <Route path="/medications/:id" element={<MedicationDetail />} />
+            <Route path="/medications" element={<MedicationList />} />
 
             {/* Prescription Routes */}
             <Route path="/prescriptions" element={<PrescriptionList />} />

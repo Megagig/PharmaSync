@@ -75,6 +75,7 @@ const invoiceSchema = new Schema<IInvoice>(
       type: String,
       enum: Object.values(InvoiceType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     status: {
       type: String,
@@ -159,7 +160,9 @@ invoiceSchema.pre('save', function (next) {
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
     const prefix = this.type === InvoiceType.SALES ? 'INV' : 'PINV';
-    this.invoiceNumber = `${prefix}-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+    this.invoiceNumber = `${prefix}-${dateStr}-${generateRandomString(
+      5
+    ).toUpperCase()}`;
   }
 
   // Calculate totals

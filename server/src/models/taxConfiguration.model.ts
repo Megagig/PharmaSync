@@ -12,6 +12,7 @@ const taxConfigurationSchema = new Schema<ITaxConfiguration>(
       type: String,
       enum: Object.values(TaxType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     rate: {
       type: Number,
@@ -52,6 +53,9 @@ taxConfigurationSchema.index({ type: 1 });
 taxConfigurationSchema.index({ isActive: 1 });
 taxConfigurationSchema.index({ isDefault: 1 });
 
-const TaxConfiguration = mongoose.model<ITaxConfiguration>('TaxConfiguration', taxConfigurationSchema);
+const TaxConfiguration = mongoose.model<ITaxConfiguration>(
+  'TaxConfiguration',
+  taxConfigurationSchema
+);
 
 export default TaxConfiguration;

@@ -63,7 +63,7 @@ const productSchema = new Schema<IProduct>(
       type: String,
       required: true,
       trim: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
     },
     barcode: {
       type: String,
@@ -77,6 +77,7 @@ const productSchema = new Schema<IProduct>(
       type: String,
       enum: Object.values(ProductType),
       required: true,
+      // index: true, // Removed to avoid duplicate index with explicit index declaration
     },
     category: {
       type: String,

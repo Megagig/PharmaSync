@@ -1,8 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types/auth.types';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
 import { useState, useEffect } from 'react';
 
 interface SidebarProps {
@@ -12,7 +10,6 @@ interface SidebarProps {
 
 const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
   const { user } = useAuth();
-  const { currentUser } = useSelector((state: RootState) => state.auth);
   const location = useLocation();
 
   // State to track which menus are expanded
@@ -51,8 +48,22 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
     }));
   };
 
+  // Define types for navigation items
+  interface NavItem {
+    name: string;
+    path?: string;
+    icon: string;
+    children?: NavChild[];
+  }
+
+  interface NavChild {
+    name: string;
+    path: string;
+    icon: string;
+  }
+
   // Check if a menu item or any of its children is active
-  const isMenuActive = (item: any): boolean => {
+  const isMenuActive = (item: NavItem): boolean => {
     if (
       item.path &&
       (location.pathname === item.path ||
@@ -63,7 +74,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
 
     if (item.children) {
       return item.children.some(
-        (child: any) =>
+        (child: NavChild) =>
           location.pathname === child.path ||
           location.pathname.startsWith(child.path + '/')
       );
@@ -96,6 +107,11 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
           name: 'Medications',
           path: '/medications',
           icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10',
+        },
+        {
+          name: 'Medication Database',
+          path: '/medications/database',
+          icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
         },
         {
           name: 'Prescriptions',

@@ -11,7 +11,7 @@ const accountSchema = new Schema<IAccount>(
     accountNumber: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true, // Removed to avoid duplicate index with explicit index declaration
       trim: true,
     },
     name: {

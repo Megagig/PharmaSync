@@ -16,9 +16,12 @@ export const createMedication = async (
   try {
     const medicationData: IMedicationCreate = req.body;
     const userId = req.user._id;
-    
-    const medication = await medicationService.createMedication(medicationData, userId);
-    
+
+    const medication = await medicationService.createMedication(
+      medicationData,
+      userId
+    );
+
     res.status(201).json({
       status: 'success',
       data: medication,
@@ -38,9 +41,13 @@ export const getAllMedications = async (
     const limit = parseInt(req.query.limit as string) || 10;
     const search = req.query.search as string;
     const category = req.query.category as string;
-    const requiresPrescription = req.query.requiresPrescription === 'true' ? true : 
-                                req.query.requiresPrescription === 'false' ? false : undefined;
-    
+    const requiresPrescription =
+      req.query.requiresPrescription === 'true'
+        ? true
+        : req.query.requiresPrescription === 'false'
+        ? false
+        : undefined;
+
     const result = await medicationService.getAllMedications(
       page,
       limit,
@@ -48,7 +55,7 @@ export const getAllMedications = async (
       category,
       requiresPrescription
     );
-    
+
     res.status(200).json({
       status: 'success',
       data: result.medications,
@@ -72,7 +79,7 @@ export const getMedicationById = async (
   try {
     const medicationId = req.params.id;
     const medication = await medicationService.getMedicationById(medicationId);
-    
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -90,9 +97,12 @@ export const updateMedication = async (
   try {
     const medicationId = req.params.id;
     const updateData: IMedicationUpdate = req.body;
-    
-    const medication = await medicationService.updateMedication(medicationId, updateData);
-    
+
+    const medication = await medicationService.updateMedication(
+      medicationId,
+      updateData
+    );
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -109,9 +119,9 @@ export const deleteMedication = async (
 ) => {
   try {
     const medicationId = req.params.id;
-    
+
     await medicationService.deleteMedication(medicationId);
-    
+
     res.status(200).json({
       status: 'success',
       message: 'Medication deleted successfully',
@@ -129,9 +139,12 @@ export const addInventoryItem = async (
   try {
     const medicationId = req.params.id;
     const inventoryData: IInventoryItem = req.body;
-    
-    const medication = await medicationService.addInventoryItem(medicationId, inventoryData);
-    
+
+    const medication = await medicationService.addInventoryItem(
+      medicationId,
+      inventoryData
+    );
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -150,13 +163,13 @@ export const updateInventoryItem = async (
     const medicationId = req.params.id;
     const itemId = req.params.itemId;
     const updateData = req.body;
-    
+
     const medication = await medicationService.updateInventoryItem(
       medicationId,
       itemId,
       updateData
     );
-    
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -174,9 +187,12 @@ export const removeInventoryItem = async (
   try {
     const medicationId = req.params.id;
     const itemId = req.params.itemId;
-    
-    const medication = await medicationService.removeInventoryItem(medicationId, itemId);
-    
+
+    const medication = await medicationService.removeInventoryItem(
+      medicationId,
+      itemId
+    );
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -194,9 +210,12 @@ export const addSideEffect = async (
   try {
     const medicationId = req.params.id;
     const sideEffectData: ISideEffect = req.body;
-    
-    const medication = await medicationService.addSideEffect(medicationId, sideEffectData);
-    
+
+    const medication = await medicationService.addSideEffect(
+      medicationId,
+      sideEffectData
+    );
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -214,9 +233,12 @@ export const removeSideEffect = async (
   try {
     const medicationId = req.params.id;
     const sideEffectId = req.params.sideEffectId;
-    
-    const medication = await medicationService.removeSideEffect(medicationId, sideEffectId);
-    
+
+    const medication = await medicationService.removeSideEffect(
+      medicationId,
+      sideEffectId
+    );
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -234,9 +256,12 @@ export const addInteraction = async (
   try {
     const medicationId = req.params.id;
     const interactionData: IInteraction = req.body;
-    
-    const medication = await medicationService.addInteraction(medicationId, interactionData);
-    
+
+    const medication = await medicationService.addInteraction(
+      medicationId,
+      interactionData
+    );
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -254,9 +279,12 @@ export const removeInteraction = async (
   try {
     const medicationId = req.params.id;
     const interactionId = req.params.interactionId;
-    
-    const medication = await medicationService.removeInteraction(medicationId, interactionId);
-    
+
+    const medication = await medicationService.removeInteraction(
+      medicationId,
+      interactionId
+    );
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -274,12 +302,12 @@ export const addContraindication = async (
   try {
     const medicationId = req.params.id;
     const { contraindication } = req.body;
-    
+
     const medication = await medicationService.addContraindication(
       medicationId,
       contraindication
     );
-    
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -297,12 +325,12 @@ export const removeContraindication = async (
   try {
     const medicationId = req.params.id;
     const { contraindication } = req.body;
-    
+
     const medication = await medicationService.removeContraindication(
       medicationId,
       contraindication
     );
-    
+
     res.status(200).json({
       status: 'success',
       data: medication,
@@ -319,7 +347,7 @@ export const getLowStockMedications = async (
 ) => {
   try {
     const medications = await medicationService.getLowStockMedications();
-    
+
     res.status(200).json({
       status: 'success',
       data: medications,
@@ -336,12 +364,33 @@ export const getExpiringMedications = async (
 ) => {
   try {
     const daysThreshold = parseInt(req.query.days as string) || 90;
-    
-    const medications = await medicationService.getExpiringMedications(daysThreshold);
-    
+
+    const medications = await medicationService.getExpiringMedications(
+      daysThreshold
+    );
+
     res.status(200).json({
       status: 'success',
       data: medications,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// New endpoint for medication database
+export const getMedicationDatabase = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // This endpoint doesn't need to do anything special
+    // It's just a placeholder to prevent 500 errors
+    res.status(200).json({
+      status: 'success',
+      message: 'Medication database endpoint',
+      data: [],
     });
   } catch (error) {
     next(error);

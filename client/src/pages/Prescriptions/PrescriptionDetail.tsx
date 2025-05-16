@@ -12,6 +12,7 @@ import { PrescriptionStatus } from '@/types/prescription.types';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import Tabs from '@/components/common/Tabs/Tabs';
+import PrescriptionMedicationInfo from '@/components/domain/Prescriptions/PrescriptionMedicationInfo';
 
 const PrescriptionDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -105,7 +106,8 @@ const PrescriptionDetail = () => {
             Prescription: {currentPrescription.prescriptionNumber}
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Created on {new Date(currentPrescription.createdAt).toLocaleDateString()}
+            Created on{' '}
+            {new Date(currentPrescription.createdAt).toLocaleDateString()}
           </p>
         </div>
         <div className="flex space-x-3">
@@ -174,7 +176,9 @@ const PrescriptionDetail = () => {
                 Prescription Date
               </h3>
               <p className="mt-1 text-sm text-gray-900">
-                {new Date(currentPrescription.prescriptionDate).toLocaleDateString()}
+                {new Date(
+                  currentPrescription.prescriptionDate
+                ).toLocaleDateString()}
               </p>
             </div>
             <div>
@@ -192,7 +196,9 @@ const PrescriptionDetail = () => {
               <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Notes
               </h3>
-              <p className="mt-1 text-sm text-gray-900">{currentPrescription.notes}</p>
+              <p className="mt-1 text-sm text-gray-900">
+                {currentPrescription.notes}
+              </p>
             </div>
           )}
         </div>
@@ -201,6 +207,7 @@ const PrescriptionDetail = () => {
       <Tabs
         tabs={[
           { id: 'overview', label: 'Medications' },
+          { id: 'medication-info', label: 'Medication Information' },
           { id: 'dispensing', label: 'Dispensing History' },
         ]}
         activeTab={activeTab}
@@ -242,8 +249,8 @@ const PrescriptionDetail = () => {
                         : item.medication}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.dosage.amount} {item.dosage.unit}, {item.dosage.frequency} (
-                      {item.dosage.route})
+                      {item.dosage.amount} {item.dosage.unit},{' '}
+                      {item.dosage.frequency} ({item.dosage.route})
                       {item.dosage.instructions && (
                         <p className="text-xs text-gray-500 mt-1">
                           {item.dosage.instructions}
@@ -260,7 +267,9 @@ const PrescriptionDetail = () => {
                       {new Date(item.startDate).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.endDate ? new Date(item.endDate).toLocaleDateString() : '-'}
+                      {item.endDate
+                        ? new Date(item.endDate).toLocaleDateString()
+                        : '-'}
                     </td>
                   </tr>
                 ))}
@@ -268,6 +277,10 @@ const PrescriptionDetail = () => {
             </table>
           </div>
         </Card>
+      )}
+
+      {activeTab === 'medication-info' && (
+        <PrescriptionMedicationInfo prescription={currentPrescription} />
       )}
 
       {activeTab === 'dispensing' && (
@@ -331,7 +344,10 @@ const PrescriptionDetail = () => {
       {showCancelModal && (
         <div className="fixed inset-0 z-10 overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+            <div
+              className="fixed inset-0 transition-opacity"
+              aria-hidden="true"
+            >
               <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
             </div>
             <span
@@ -366,8 +382,8 @@ const PrescriptionDetail = () => {
                     </h3>
                     <div className="mt-2">
                       <p className="text-sm text-gray-500">
-                        Are you sure you want to cancel this prescription? This action cannot be
-                        undone.
+                        Are you sure you want to cancel this prescription? This
+                        action cannot be undone.
                       </p>
                     </div>
                   </div>
