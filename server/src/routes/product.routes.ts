@@ -12,6 +12,7 @@ import {
   updatePriceLevel,
   removePriceLevel,
   getProductHistory,
+  getProductBatches,
 } from '../controllers/product.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
@@ -53,6 +54,9 @@ router
 
 // Get product history
 router.route('/:id/history').get(getProductHistory);
+
+// Get product batches
+router.route('/:id/batches').get(getProductBatches);
 
 // Inventory management
 router

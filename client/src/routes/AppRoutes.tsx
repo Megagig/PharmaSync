@@ -62,6 +62,7 @@ import StockLevelsList from '@/pages/Inventory/StockLevels/StockLevelsList';
 import PriceManagementList from '@/pages/Inventory/PriceManagement/PriceManagementList';
 import ExpiryTrackingList from '@/pages/Inventory/ExpiryTracking/ExpiryTrackingList';
 import PurchasesList from '@/pages/Inventory/Purchases/PurchasesList';
+import CreatePurchase from '@/pages/Inventory/Purchases/CreatePurchase';
 import CustomersList from '@/pages/Inventory/Customers/CustomersList';
 import SuppliersList from '@/pages/Inventory/Suppliers/SuppliersList';
 import LocationList from '@/pages/Inventory/Locations/LocationList';
@@ -142,6 +143,16 @@ import ReportDashboard from '@/pages/Reports/ReportDashboard';
 import ReportGenerator from '@/pages/Reports/ReportGenerator';
 import ReportConfigurations from '@/pages/Reports/ReportConfigurations';
 import Settings from '@/pages/Settings/Settings';
+
+// POS pages
+import PosSessionsList from '@/pages/POS/Sessions/PosSessionsList';
+import CreatePosSession from '@/pages/POS/Sessions/CreatePosSession';
+import PosSessionDetail from '@/pages/POS/Sessions/PosSessionDetail';
+import PosTerminal from '@/pages/POS/Terminal/PosTerminal';
+import PosTransactionsList from '@/pages/POS/Transactions/PosTransactionsList';
+import PosTransactionDetail from '@/pages/POS/Transactions/PosTransactionDetail';
+import PosTransactionReceipt from '@/pages/POS/Transactions/PosTransactionReceipt';
+
 const NotFound = () => <div>404 - Page Not Found</div>;
 
 const AppRoutes = () => {
@@ -283,6 +294,10 @@ const AppRoutes = () => {
             element={<ExpiryTrackingList />}
           />
           <Route path="/inventory/purchases" element={<PurchasesList />} />
+          <Route
+            path="/inventory/purchases/create"
+            element={<CreatePurchase />}
+          />
           <Route path="/inventory/customers" element={<CustomersList />} />
           <Route path="/inventory/suppliers" element={<SuppliersList />} />
           <Route
@@ -355,6 +370,21 @@ const AppRoutes = () => {
 
           {/* Settings */}
           <Route path="/settings" element={<Settings />} />
+
+          {/* POS Module */}
+          <Route path="/pos/sessions" element={<PosSessionsList />} />
+          <Route path="/pos/sessions/new" element={<CreatePosSession />} />
+          <Route path="/pos/sessions/:id" element={<PosSessionDetail />} />
+          <Route path="/pos/terminal" element={<PosTerminal />} />
+          <Route path="/pos/transactions" element={<PosTransactionsList />} />
+          <Route
+            path="/pos/transactions/:id"
+            element={<PosTransactionDetail />}
+          />
+          <Route
+            path="/pos/transactions/:id/receipt"
+            element={<PosTransactionReceipt />}
+          />
         </Route>
       </Route>
 

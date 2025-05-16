@@ -113,13 +113,20 @@ const LocationList = () => {
     setIsLoading(true);
     try {
       const response = await api.get('/locations');
-      setLocations(response.data.data.locations);
 
-      // Set parent locations (all active locations)
-      const activeLocations = response.data.data.locations.filter(
-        (loc: Location) => loc.isActive
-      );
-      setParentLocations(activeLocations);
+      // Check if the response has the expected structure
+      if (response.data.data && Array.isArray(response.data.data.locations)) {
+        setLocations(response.data.data.locations);
+
+        // Set parent locations (all active locations)
+        const activeLocations = response.data.data.locations.filter(
+          (loc: Location) => loc.isActive
+        );
+        setParentLocations(activeLocations);
+      } else {
+        console.error('Unexpected API response format:', response.data);
+        showToast('Error processing location data', 'error');
+      }
     } catch (error) {
       console.error('Error fetching locations:', error);
       showToast('Error fetching locations', 'error');

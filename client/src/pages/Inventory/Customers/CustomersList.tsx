@@ -24,10 +24,14 @@ interface CustomerAddress {
 
 interface Customer {
   _id: string;
-  name: string;
-  code: string;
+  customerNumber: string;
+  firstName: string;
+  lastName: string;
+  name: string; // For backward compatibility
+  code: string; // For backward compatibility
   type: string;
-  address?: CustomerAddress;
+  addresses: CustomerAddress[];
+  address?: CustomerAddress; // For backward compatibility
   phone?: string;
   email?: string;
   contactPerson?: string;
@@ -42,12 +46,11 @@ interface Customer {
 }
 
 enum CustomerType {
-  INDIVIDUAL = 'individual',
-  HOSPITAL = 'hospital',
-  CLINIC = 'clinic',
-  PHARMACY = 'pharmacy',
+  RETAIL = 'retail',
+  WHOLESALE = 'wholesale',
+  PATIENT = 'patient',
+  HEALTHCARE_PROFESSIONAL = 'healthcare_professional',
   CORPORATE = 'corporate',
-  INSURANCE = 'insurance',
   OTHER = 'other',
 }
 
@@ -57,22 +60,30 @@ interface PriceLevel {
   code: string;
 }
 
+const addressSchema = z.object({
+  street: z.string().min(1, 'Street is required'),
+  city: z.string().min(1, 'City is required'),
+  state: z.string().min(1, 'State is required'),
+  postalCode: z.string().min(1, 'Postal code is required'),
+  country: z.string().default('Nigeria'),
+  isDefault: z.boolean().optional(),
+});
+
 const customerSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  code: z.string().optional(),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
+  code: z.string().optional(), // Used for customerNumber if provided
+  customerNumber: z.string().optional(), // Will be generated if not provided
   type: z.nativeEnum(CustomerType),
-  address: z.object({
-    street: z.string().min(1, 'Street is required'),
-    city: z.string().min(1, 'City is required'),
-    state: z.string().min(1, 'State is required'),
-    postalCode: z.string().min(1, 'Postal code is required'),
-    country: z.string().default('Nigeria'),
-  }).optional(),
-  phone: z.string().optional(),
+  address: addressSchema.optional(), // For form handling
+  phone: z.string().min(1, 'Phone number is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   contactPerson: z.string().optional(),
-  priceLevel: z.string().optional(),
-  creditLimit: z.number().nonnegative('Credit limit must be non-negative').optional(),
+  priceLevel: z.string().min(1, 'Price level is required').default('retail'),
+  creditLimit: z
+    .number()
+    .nonnegative('Credit limit must be non-negative')
+    .optional(),
   taxId: z.string().optional(),
   notes: z.string().optional(),
   isActive: z.boolean().default(true),
@@ -90,19 +101,25 @@ const CustomersList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
-  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(null);
+  const [editingCustomerId, setEditingCustomerId] = useState<string | null>(
+    null
+  );
 
   const {
     control,
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
-      name: '',
-      type: CustomerType.INDIVIDUAL,
+      firstName: '',
+      lastName: '',
+      type: CustomerType.RETAIL, // Updated to match server-side enum
+      priceLevel: '', // Will be set after price levels are loaded
+      phone: '',
       isActive: true,
       isVIP: false,
     },
@@ -124,7 +141,22 @@ const CustomersList = () => {
   const fetchPriceLevels = async () => {
     try {
       const response = await api.get('/price-levels');
-      setPriceLevels(response.data.data.priceLevels);
+      console.log('Price levels response:', response.data);
+
+      // Handle different response formats
+      if (response.data.data && response.data.data.priceLevels) {
+        setPriceLevels(response.data.data.priceLevels);
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        setPriceLevels(response.data.data);
+      } else if (Array.isArray(response.data)) {
+        setPriceLevels(response.data);
+      } else {
+        console.error(
+          'Unexpected price levels response format:',
+          response.data
+        );
+        setPriceLevels([]);
+      }
     } catch (error) {
       console.error('Error fetching price levels:', error);
       showToast('Error fetching price levels', 'error');
@@ -136,24 +168,102 @@ const CustomersList = () => {
     fetchPriceLevels();
   }, []);
 
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = searchTerm === '' || 
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (customer.code && customer.code.toLowerCase().includes(searchTerm.toLowerCase())) ||
+  // Set default price level when price levels are loaded
+  useEffect(() => {
+    if (priceLevels.length > 0 && !editingCustomerId) {
+      // Find the default price level or use the first one
+      const defaultPriceLevel =
+        priceLevels.find((level) => level.isDefault) || priceLevels[0];
+      console.log('Setting default price level:', defaultPriceLevel);
+
+      // Update the form with the default price level
+      setValue('priceLevel', defaultPriceLevel._id);
+    }
+  }, [priceLevels, setValue, editingCustomerId]);
+
+  const filteredCustomers = customers.filter((customer) => {
+    // Get the full name from firstName and lastName or use the name field
+    const fullName =
+      customer.firstName && customer.lastName
+        ? `${customer.firstName} ${customer.lastName}`
+        : customer.name;
+
+    const customerCode = customer.customerNumber || customer.code;
+
+    const matchesSearch =
+      searchTerm === '' ||
+      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (customerCode &&
+        customerCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (customer.phone && customer.phone.includes(searchTerm));
-    
+
     const matchesType = typeFilter === '' || customer.type === typeFilter;
-    
+
     return matchesSearch && matchesType;
   });
 
   const onSubmit = async (data: CustomerFormData) => {
     try {
+      // Get the default price level ID if none is selected
+      const defaultPriceLevelId =
+        priceLevels.length > 0
+          ? (priceLevels.find((level) => level.isDefault) || priceLevels[0])._id
+          : 'retail';
+
+      // Make sure priceLevel is set
+      if (!data.priceLevel) {
+        data.priceLevel = defaultPriceLevelId;
+      }
+
+      // Generate a customer number if not provided
+      const generateCustomerNumber = () => {
+        // Format: CT-XXXXX (where CT is customer type prefix and XXXXX is a random number)
+        const typePrefix = (data.type || CustomerType.RETAIL)
+          .substring(0, 2)
+          .toUpperCase();
+        const randomNum = Math.floor(10000 + Math.random() * 90000);
+        return `${typePrefix}-${randomNum}`;
+      };
+
+      // Prepare the data for API submission
+      const customerData = {
+        ...data,
+        // Ensure required fields are present
+        customerNumber: data.code || generateCustomerNumber(), // Use code as customerNumber or generate one
+        type: data.type || CustomerType.RETAIL, // Updated to match server-side enum
+        priceLevel: data.priceLevel, // Already ensured above
+        // If address is provided, ensure it has all required fields
+        addresses: data.address
+          ? [data.address]
+          : [
+              // If no address provided, create a default one to satisfy validation
+              {
+                street: 'Default Street',
+                city: 'Default City',
+                state: 'Default State',
+                postalCode: '00000',
+                country: 'Nigeria',
+                isDefault: true,
+              },
+            ],
+      };
+
+      // Log the data being sent to the API for debugging
+      console.log('Submitting customer data:', customerData);
+
       if (editingCustomerId) {
-        await api.patch(`/customers/${editingCustomerId}`, data);
+        // For updates, we don't need to include the customerNumber as it's already set
+        const updateData = { ...customerData };
+        if (!updateData.customerNumber) {
+          delete updateData.customerNumber; // Remove if not explicitly set to avoid validation issues
+        }
+
+        await api.patch(`/customers/${editingCustomerId}`, updateData);
         showToast('Customer updated successfully', 'success');
       } else {
-        await api.post('/customers', data);
+        // For new customers, ensure customerNumber is included
+        const response = await api.post('/customers', customerData);
+        console.log('API response:', response.data);
         showToast('Customer created successfully', 'success');
       }
       fetchCustomers();
@@ -166,15 +276,34 @@ const CustomersList = () => {
 
   const handleEditCustomer = (customer: Customer) => {
     setEditingCustomerId(customer._id);
+
+    // Use firstName and lastName if available, otherwise split the name
+    let firstName = customer.firstName;
+    let lastName = customer.lastName;
+
+    if (!firstName || !lastName) {
+      const nameParts = customer.name.split(' ');
+      firstName = nameParts[0] || '';
+      lastName = nameParts.slice(1).join(' ') || '';
+    }
+
+    // Get the first address if available
+    const address =
+      customer.addresses && customer.addresses.length > 0
+        ? customer.addresses[0]
+        : customer.address;
+
     reset({
-      name: customer.name,
-      code: customer.code,
+      firstName,
+      lastName,
+      code: customer.code || '', // Keep original code if available
+      customerNumber: customer.customerNumber || customer.code || '', // Set customerNumber from either field
       type: customer.type as CustomerType,
-      address: customer.address,
+      address: address,
       phone: customer.phone,
       email: customer.email,
       contactPerson: customer.contactPerson,
-      priceLevel: customer.priceLevel,
+      priceLevel: customer.priceLevel || 'retail',
       creditLimit: customer.creditLimit,
       taxId: customer.taxId,
       notes: customer.notes,
@@ -211,16 +340,33 @@ const CustomersList = () => {
   const cancelAddEdit = () => {
     setIsAddingCustomer(false);
     setEditingCustomerId(null);
-    reset();
+
+    // Get the default price level ID
+    const defaultPriceLevelId =
+      priceLevels.length > 0
+        ? (priceLevels.find((level) => level.isDefault) || priceLevels[0])._id
+        : 'retail';
+
+    reset({
+      firstName: '',
+      lastName: '',
+      code: '',
+      customerNumber: '',
+      type: CustomerType.RETAIL, // Updated to match server-side enum
+      priceLevel: defaultPriceLevelId, // Use the default price level
+      phone: '',
+      isActive: true,
+      isVIP: false,
+    });
   };
 
   const getCustomerTypeLabel = (type: string) => {
-    return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   const getPriceLevelName = (id?: string) => {
     if (!id) return 'Default';
-    const priceLevel = priceLevels.find(level => level._id === id);
+    const priceLevel = priceLevels.find((level) => level._id === id);
     return priceLevel ? priceLevel.name : 'Unknown';
   };
 
@@ -232,12 +378,20 @@ const CustomersList = () => {
         <h1 className="text-2xl font-semibold text-gray-900">Customers</h1>
         <div className="flex space-x-3">
           {!isAddingCustomer && (
-            <Button
-              variant="primary"
-              onClick={() => setIsAddingCustomer(true)}
-            >
-              Add New Customer
-            </Button>
+            <>
+              <Button variant="outline" onClick={() => navigate('/sales')}>
+                View Sales
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/invoices')}>
+                View Invoices
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => setIsAddingCustomer(true)}
+              >
+                Add New Customer
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -252,13 +406,28 @@ const CustomersList = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Controller
-                    name="name"
+                    name="firstName"
                     control={control}
                     render={({ field }) => (
                       <Input
-                        label="Customer Name"
-                        placeholder="Enter customer name"
-                        error={errors.name?.message}
+                        label="First Name"
+                        placeholder="Enter first name"
+                        error={errors.firstName?.message}
+                        required
+                        {...field}
+                      />
+                    )}
+                  />
+                </div>
+                <div>
+                  <Controller
+                    name="lastName"
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        label="Last Name"
+                        placeholder="Enter last name"
+                        error={errors.lastName?.message}
                         required
                         {...field}
                       />
@@ -271,7 +440,7 @@ const CustomersList = () => {
                     control={control}
                     render={({ field }) => (
                       <Input
-                        label="Code"
+                        label="Customer Code"
                         placeholder="Enter customer code (leave blank for auto-generation)"
                         error={errors.code?.message}
                         {...field}
@@ -279,6 +448,12 @@ const CustomersList = () => {
                     )}
                   />
                 </div>
+                {/* Hidden field for customerNumber */}
+                <Controller
+                  name="customerNumber"
+                  control={control}
+                  render={({ field }) => <input type="hidden" {...field} />}
+                />
                 <div>
                   <Controller
                     name="type"
@@ -286,7 +461,7 @@ const CustomersList = () => {
                     render={({ field }) => (
                       <Select
                         label="Customer Type"
-                        options={Object.values(CustomerType).map(type => ({
+                        options={Object.values(CustomerType).map((type) => ({
                           value: type,
                           label: getCustomerTypeLabel(type),
                         }))}
@@ -306,6 +481,7 @@ const CustomersList = () => {
                         label="Phone"
                         placeholder="Enter phone number"
                         error={errors.phone?.message}
+                        required
                         {...field}
                       />
                     )}
@@ -346,15 +522,31 @@ const CustomersList = () => {
                     render={({ field }) => (
                       <Select
                         label="Price Level"
-                        options={[
-                          { value: '', label: 'Default' },
-                          ...priceLevels.map(level => ({
-                            value: level._id,
-                            label: level.name,
-                          })),
-                        ]}
+                        options={
+                          priceLevels.length > 0
+                            ? priceLevels.map((level) => ({
+                                value: level._id,
+                                label: level.name,
+                              }))
+                            : [{ value: 'retail', label: 'Retail' }]
+                        }
                         error={errors.priceLevel?.message}
-                        {...field}
+                        required
+                        value={
+                          field.value ||
+                          (priceLevels.length > 0
+                            ? priceLevels[0]._id
+                            : 'retail')
+                        }
+                        onChange={(e) => {
+                          console.log('Selected price level:', e.target.value);
+                          field.onChange(
+                            e.target.value ||
+                              (priceLevels.length > 0
+                                ? priceLevels[0]._id
+                                : 'retail')
+                          );
+                        }}
                       />
                     )}
                   />
@@ -372,7 +564,13 @@ const CustomersList = () => {
                         placeholder="Enter credit limit"
                         error={errors.creditLimit?.message}
                         {...field}
-                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value
+                              ? parseFloat(e.target.value)
+                              : undefined
+                          )
+                        }
                       />
                     )}
                   />
@@ -577,7 +775,7 @@ const CustomersList = () => {
                 onChange={(e) => setTypeFilter(e.target.value)}
                 options={[
                   { value: '', label: 'All Types' },
-                  ...Object.values(CustomerType).map(type => ({
+                  ...Object.values(CustomerType).map((type) => ({
                     value: type,
                     label: getCustomerTypeLabel(type),
                   })),
@@ -595,49 +793,86 @@ const CustomersList = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Customer
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Type
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Contact
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Price Level
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Status
                     </th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th
+                      scope="col"
+                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
                       Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredCustomers.map((customer) => (
-                    <tr key={customer._id} className={!customer.isActive ? 'bg-gray-50' : ''}>
+                    <tr
+                      key={customer._id}
+                      className={!customer.isActive ? 'bg-gray-50' : ''}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="text-sm font-medium text-gray-900">{customer.name}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {customer.firstName && customer.lastName
+                              ? `${customer.firstName} ${customer.lastName}`
+                              : customer.name}
+                          </div>
                           {customer.isVIP && (
-                            <Badge color="purple" className="ml-2">VIP</Badge>
+                            <Badge color="purple" className="ml-2">
+                              VIP
+                            </Badge>
                           )}
                         </div>
-                        {customer.code && (
-                          <div className="text-sm text-gray-500">{customer.code}</div>
+                        {(customer.customerNumber || customer.code) && (
+                          <div className="text-sm text-gray-500">
+                            {customer.customerNumber || customer.code}
+                          </div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{getCustomerTypeLabel(customer.type)}</div>
+                        <div className="text-sm text-gray-900">
+                          {getCustomerTypeLabel(customer.type)}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{customer.phone || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">{customer.email || 'N/A'}</div>
+                        <div className="text-sm text-gray-900">
+                          {customer.phone || 'N/A'}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {customer.email || 'N/A'}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{getPriceLevelName(customer.priceLevel)}</div>
+                        <div className="text-sm text-gray-900">
+                          {getPriceLevelName(customer.priceLevel)}
+                        </div>
                         {customer.creditLimit && (
                           <div className="text-sm text-gray-500">
                             Credit: ₦{customer.creditLimit.toLocaleString()}
@@ -683,9 +918,13 @@ const CustomersList = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <h3 className="text-lg font-medium text-gray-900">No customers found</h3>
+              <h3 className="text-lg font-medium text-gray-900">
+                No customers found
+              </h3>
               <p className="mt-2 text-sm text-gray-500">
-                {searchTerm || typeFilter ? 'Try adjusting your search criteria.' : 'Add your first customer to get started.'}
+                {searchTerm || typeFilter
+                  ? 'Try adjusting your search criteria.'
+                  : 'Add your first customer to get started.'}
               </p>
             </div>
           )}

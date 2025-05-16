@@ -32,6 +32,7 @@ import invoiceRoutes from './invoice.routes';
 import paymentRoutes from './payment.routes';
 import returnRoutes from './return.routes';
 import reminderRoutes from './reminder.routes';
+import posRoutes from './pos.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -78,5 +79,6 @@ router.use('/dashboard', dashboardRoutes);
 router.use('/follow-ups', followUpRoutes);
 router.use('/appointments', appointmentRoutes);
 router.use('/integrations', integrationRoutes);
+router.use('/pos', posRoutes);
 
 export default router;

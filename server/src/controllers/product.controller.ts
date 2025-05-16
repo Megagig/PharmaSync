@@ -481,6 +481,32 @@ export const removePriceLevel = asyncHandler(
  * @route   GET /api/products/:id/history
  * @access  Private
  */
+/**
+ * @desc    Get product batches
+ * @route   GET /api/products/:id/batches
+ * @access  Private
+ */
+export const getProductBatches = asyncHandler(
+  async (req: Request, res: Response) => {
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      throw new AppError('Product not found', 404);
+    }
+
+    // Return the inventory items (batches) for this product
+    res.status(200).json({
+      status: 'success',
+      data: product.inventory || [],
+    });
+  }
+);
+
+/**
+ * @desc    Get product history
+ * @route   GET /api/products/:id/history
+ * @access  Private
+ */
 export const getProductHistory = asyncHandler(
   async (req: Request, res: Response) => {
     const product = await Product.findById(req.params.id);

@@ -342,3 +342,95 @@ export const updateInvoice = asyncHandler(
     });
   }
 );
+
+/**
+ * @desc    Process purchase invoice and update inventory
+ * @route   POST /api/invoices/:id/process
+ * @access  Private
+ */
+export const processInvoice = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { batchNumbers, expiryDates, location } = req.body;
+
+    const invoice = await Invoice.findById(req.params.id);
+
+    if (!invoice) {
+      throw new AppError('Invoice not found', 404);
+    }
+
+    // Only purchase invoices can be processed to update inventory
+    if (invoice.type !== InvoiceType.PURCHASE) {
+      throw new AppError('Only purchase invoices can be processed', 400);
+    }
+
+    // Check if invoice is already processed
+    if (invoice.status === InvoiceStatus.PAID) {
+      throw new AppError('Invoice is already processed', 400);
+    }
+
+    // Validate batch numbers and expiry dates
+    if (!batchNumbers || !expiryDates || !location) {
+      throw new AppError(
+        'Batch numbers, expiry dates, and location are required',
+        400
+      );
+    }
+
+    if (
+      !Array.isArray(batchNumbers) ||
+      !Array.isArray(expiryDates) ||
+      batchNumbers.length !== invoice.items.length ||
+      expiryDates.length !== invoice.items.length
+    ) {
+      throw new AppError(
+        'Batch numbers and expiry dates must be provided for each item',
+        400
+      );
+    }
+
+    // Process each item and update inventory
+    for (let i = 0; i < invoice.items.length; i++) {
+      const item = invoice.items[i];
+      const batchNumber = batchNumbers[i];
+      const expiryDate = new Date(expiryDates[i]);
+
+      // Get product
+      const product = await Product.findById(item.product);
+      if (!product) {
+        throw new AppError(`Product with ID ${item.product} not found`, 404);
+      }
+
+      // Check if batch already exists
+      const existingBatchIndex = product.inventory.findIndex(
+        (inv) => inv.batchNumber === batchNumber && inv.location === location
+      );
+
+      if (existingBatchIndex >= 0) {
+        // Update existing batch
+        product.inventory[existingBatchIndex].quantity += item.quantity;
+      } else {
+        // Add new batch
+        product.inventory.push({
+          batchNumber,
+          expiryDate,
+          quantity: item.quantity,
+          location,
+          costPrice: item.unitPrice,
+        });
+      }
+
+      await product.save();
+    }
+
+    // Update invoice status
+    invoice.status = InvoiceStatus.PAID;
+    invoice.amountPaid = invoice.total;
+    invoice.balance = 0;
+    await invoice.save();
+
+    res.status(200).json({
+      status: 'success',
+      data: invoice,
+    });
+  }
+);

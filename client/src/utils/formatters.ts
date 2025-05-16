@@ -44,6 +44,15 @@ export const formatDate = (
 };
 
 /**
+ * Format a date string or Date object to a readable format including time
+ * @param date - Date string or Date object
+ * @returns Formatted date and time string
+ */
+export const formatDateTime = (date: string | Date): string => {
+  return formatDate(date, true);
+};
+
+/**
  * Format a number with commas as thousands separators
  * @param value - The number to format
  * @returns Formatted number string
@@ -58,10 +67,7 @@ export const formatNumber = (value: number): string => {
  * @param decimals - Number of decimal places
  * @returns Formatted percentage string
  */
-export const formatPercentage = (
-  value: number,
-  decimals = 2
-): string => {
+export const formatPercentage = (value: number, decimals = 2): string => {
   return `${value.toFixed(decimals)}%`;
 };
 
@@ -73,7 +79,7 @@ export const formatPercentage = (
 export const formatPhoneNumber = (phoneNumber: string): string => {
   // Remove non-numeric characters
   const cleaned = phoneNumber.replace(/\D/g, '');
-  
+
   // Check if it's a valid Nigerian number
   if (cleaned.length === 11) {
     return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`;
@@ -82,7 +88,7 @@ export const formatPhoneNumber = (phoneNumber: string): string => {
     const local = cleaned.substring(3);
     return `0${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`;
   }
-  
+
   // Return original if not matching expected format
   return phoneNumber;
 };
@@ -93,10 +99,7 @@ export const formatPhoneNumber = (phoneNumber: string): string => {
  * @param maxLength - Maximum length before truncation
  * @returns Truncated text
  */
-export const truncateText = (
-  text: string,
-  maxLength = 50
-): string => {
+export const truncateText = (text: string, maxLength = 50): string => {
   if (!text) return '';
   if (text.length <= maxLength) return text;
   return `${text.substring(0, maxLength)}...`;
@@ -109,10 +112,10 @@ export const truncateText = (
  */
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 Bytes';
-  
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 };

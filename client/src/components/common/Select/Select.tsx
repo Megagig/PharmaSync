@@ -12,6 +12,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   fullWidth?: boolean;
   options?: SelectOption[];
   placeholder?: string;
+  required?: boolean;
 }
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
@@ -43,6 +44,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         {label && (
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {label}
+            {props.required && <span className="text-red-500 ml-1">*</span>}
           </label>
         )}
         <select ref={ref} className={selectClasses} {...props}>
@@ -57,6 +59,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 {option.label}
               </option>
             ))
+          ) : props.children ? (
+            props.children
           ) : (
             <option value="" disabled>
               No options available

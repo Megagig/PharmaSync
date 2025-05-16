@@ -4,6 +4,7 @@ import {
   getInvoiceById,
   createInvoice,
   updateInvoice,
+  processInvoice,
 } from '../controllers/invoice.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
@@ -37,5 +38,12 @@ router
     validate(updateInvoiceSchema),
     updateInvoice
   );
+
+// Process purchase invoice
+router.post(
+  '/:id/process',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  processInvoice
+);
 
 export default router;

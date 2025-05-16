@@ -4,11 +4,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { createInvoice } from '@/store/slices/invoicesSlice';
 import { InvoiceFormData, InvoiceType } from '@/types/invoice.types';
+import { Product } from '@/types/product';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import Input from '@/components/common/Input/Input';
 import Select from '@/components/common/Select/Select';
 import DatePicker from '@/components/common/DatePicker/DatePicker';
+import ProductSearch from '@/components/common/ProductSearch/ProductSearch';
 import { formatCurrency } from '@/utils/formatters';
 import api from '@/services/api';
 
@@ -516,24 +518,19 @@ const CreateInvoice = () => {
             <div className="p-6">
               <h2 className="text-lg font-medium mb-4">Add Items</h2>
               <div className="space-y-4">
-                <Select
-                  label="Product"
-                  value={selectedProduct}
-                  onChange={(e) => setSelectedProduct(e.target.value)}
-                >
-                  <option value="">Select Product</option>
-                  {Array.isArray(products) && products.length > 0 ? (
-                    products.map((product) => (
-                      <option key={product._id} value={product._id}>
-                        {product.name} ({product.sku})
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>
-                      No products available
-                    </option>
-                  )}
-                </Select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Product
+                  </label>
+                  <ProductSearch
+                    onSelect={(product: Product) => {
+                      setSelectedProduct(product._id);
+                      setProductDetails(product);
+                      setProductDescription(product.name);
+                      setUnitPrice(product.defaultPrice);
+                    }}
+                  />
+                </div>
 
                 <Input
                   label="Description"

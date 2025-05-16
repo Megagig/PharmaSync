@@ -17,13 +17,18 @@ import { formatCurrency, formatDate } from '@/utils/formatters';
 const SalesList = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { sales, isLoading, error, meta } = useSelector((state: RootState) => state.sales);
+  const { sales, isLoading, error, meta } = useSelector(
+    (state: RootState) => state.sales
+  );
 
   // Filter states
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('');
-  const [dateRange, setDateRange] = useState<{ startDate: string; endDate: string } | null>(null);
+  const [dateRange, setDateRange] = useState<{
+    startDate: string;
+    endDate: string;
+  } | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -153,9 +158,20 @@ const SalesList = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">Sales</h1>
-        <Button variant="primary" onClick={() => navigate('/sales/new')}>
-          New Sale
-        </Button>
+        <div className="flex space-x-3">
+          <Button variant="outline" onClick={() => navigate('/customers')}>
+            Manage Customers
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/inventory/products')}
+          >
+            Manage Products
+          </Button>
+          <Button variant="primary" onClick={() => navigate('/sales/new')}>
+            New Sale
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -199,13 +215,26 @@ const SalesList = () => {
             />
           </div>
 
-          <div className="flex justify-end space-x-2 mb-6">
-            <Button variant="outline" onClick={handleClearFilters}>
-              Clear Filters
-            </Button>
-            <Button variant="primary" onClick={handleSearch}>
-              Search
-            </Button>
+          <div className="flex justify-between mb-6">
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => navigate('/invoices')}>
+                View Invoices
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/payments')}>
+                View Payments
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/returns')}>
+                View Returns
+              </Button>
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={handleClearFilters}>
+                Clear Filters
+              </Button>
+              <Button variant="primary" onClick={handleSearch}>
+                Search
+              </Button>
+            </div>
           </div>
 
           {error && (

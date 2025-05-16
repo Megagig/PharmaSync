@@ -178,7 +178,7 @@ const PurchasesList = () => {
         <div className="flex space-x-3">
           <Button
             variant="primary"
-            onClick={() => navigate('/inventory/purchases/new')}
+            onClick={() => navigate('/inventory/purchases/create')}
           >
             Create Purchase Order
           </Button>

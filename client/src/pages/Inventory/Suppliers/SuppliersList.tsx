@@ -248,6 +248,7 @@ const SuppliersList = () => {
   };
 
   const getSupplierTypeLabel = (type: string) => {
+    if (!type) return 'Unknown';
     return type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 

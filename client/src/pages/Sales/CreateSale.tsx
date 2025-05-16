@@ -4,17 +4,22 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { createSale } from '@/store/slices/salesSlice';
 import { SaleFormData } from '@/types/sale.types';
+import { Product } from '@/types/product';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import Input from '@/components/common/Input/Input';
 import Select from '@/components/common/Select/Select';
 import DatePicker from '@/components/common/DatePicker/DatePicker';
+import ProductSearch from '@/components/common/ProductSearch/ProductSearch';
+import CustomerSearch from '@/components/common/CustomerSearch/CustomerSearch';
 import { formatCurrency } from '@/utils/formatters';
 import api from '@/services/api';
+import { useToast } from '@/hooks/useToast';
 
 const CreateSale = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { showToast } = useToast();
   const { isLoading, error } = useSelector((state: RootState) => state.sales);
 
   const [customers, setCustomers] = useState<any[]>([]);
@@ -40,7 +45,7 @@ const CreateSale = () => {
   });
 
   useEffect(() => {
-    // Load customers
+    // We'll load customers on-demand with the CustomerSearch component
     const fetchCustomers = async () => {
       try {
         const response = await api.get('/customers?isActive=true');
@@ -154,18 +159,18 @@ const CreateSale = () => {
 
   const handleAddItem = () => {
     if (!selectedProduct || !selectedBatch || quantity <= 0) {
-      alert('Please select a product, batch, and valid quantity');
+      showToast('Please select a product, batch, and valid quantity', 'error');
       return;
     }
 
     const batch = availableBatches.find((b) => b.batchNumber === selectedBatch);
     if (!batch) {
-      alert('Selected batch not found');
+      showToast('Selected batch not found', 'error');
       return;
     }
 
     if (quantity > batch.quantity) {
-      alert(`Insufficient stock. Available: ${batch.quantity}`);
+      showToast(`Insufficient stock. Available: ${batch.quantity}`, 'error');
       return;
     }
 
@@ -215,22 +220,28 @@ const CreateSale = () => {
     e.preventDefault();
 
     if (!formData.customer) {
-      alert('Please select a customer');
+      showToast('Please select a customer', 'error');
       return;
     }
 
     if (formData.items.length === 0) {
-      alert('Please add at least one item');
+      showToast('Please add at least one item', 'error');
       return;
     }
 
     try {
       const resultAction = await dispatch(createSale(formData) as any);
       if (createSale.fulfilled.match(resultAction)) {
+        showToast('Sale created successfully', 'success');
         navigate(`/sales/${resultAction.payload._id}`);
+      } else if (resultAction.error) {
+        const errorMessage =
+          resultAction.error.message || 'Failed to create sale';
+        showToast(errorMessage, 'error');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create sale:', error);
+      showToast(error.message || 'Failed to create sale', 'error');
     }
   };
 
@@ -257,27 +268,41 @@ const CreateSale = () => {
             <div className="p-6">
               <h2 className="text-lg font-medium mb-4">Sale Information</h2>
               <div className="space-y-4">
-                <Select
-                  label="Customer"
-                  name="customer"
-                  value={formData.customer}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="">Select Customer</option>
-                  {Array.isArray(customers) && customers.length > 0 ? (
-                    customers.map((customer) => (
-                      <option key={customer._id} value={customer._id}>
-                        {customer.firstName} {customer.lastName} (
-                        {customer.customerNumber})
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>
-                      No customers available
-                    </option>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Customer <span className="text-red-500">*</span>
+                  </label>
+                  <CustomerSearch
+                    onSelect={(customer) => {
+                      console.log('Customer selected in CreateSale:', customer);
+                      if (customer && customer._id) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          customer: customer._id,
+                        }));
+                        showToast(
+                          `Customer ${customer.firstName} ${customer.lastName} selected`,
+                          'success'
+                        );
+                      } else {
+                        console.error(
+                          'Invalid customer object received:',
+                          customer
+                        );
+                        showToast(
+                          'Error selecting customer. Please try again.',
+                          'error'
+                        );
+                      }
+                    }}
+                    placeholder="Search for a customer or create new"
+                  />
+                  {!formData.customer && (
+                    <p className="mt-1 text-sm text-red-600">
+                      Please select a customer
+                    </p>
                   )}
-                </Select>
+                </div>
 
                 <DatePicker
                   label="Sale Date"
@@ -360,24 +385,35 @@ const CreateSale = () => {
             <div className="p-6">
               <h2 className="text-lg font-medium mb-4">Add Items</h2>
               <div className="space-y-4">
-                <Select
-                  label="Product"
-                  value={selectedProduct}
-                  onChange={(e) => setSelectedProduct(e.target.value)}
-                >
-                  <option value="">Select Product</option>
-                  {Array.isArray(products) && products.length > 0 ? (
-                    products.map((product) => (
-                      <option key={product._id} value={product._id}>
-                        {product.name} ({product.sku})
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>
-                      No products available
-                    </option>
-                  )}
-                </Select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Product
+                  </label>
+                  <ProductSearch
+                    onSelect={(product: Product) => {
+                      setSelectedProduct(product._id);
+                      setProductDetails(product);
+
+                      // Get available batches with stock
+                      const batches = product.inventory
+                        .filter((item: any) => item.quantity > 0)
+                        .map((item: any) => ({
+                          batchNumber: item.batchNumber,
+                          quantity: item.quantity,
+                          expiryDate: item.expiryDate,
+                          costPrice: item.costPrice,
+                        }));
+
+                      setAvailableBatches(batches);
+
+                      // Set default price
+                      setUnitPrice(product.defaultPrice);
+
+                      // Clear selected batch
+                      setSelectedBatch('');
+                    }}
+                  />
+                </div>
 
                 {selectedProduct && (
                   <>
