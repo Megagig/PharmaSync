@@ -35,6 +35,7 @@ import reminderRoutes from './reminder.routes';
 import posRoutes from './pos.routes';
 import expenseRoutes from './expense.routes';
 import budgetRoutes from './budget.routes';
+import accountingRoutes from './accounting.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -84,5 +85,6 @@ router.use('/integrations', integrationRoutes);
 router.use('/pos', posRoutes);
 router.use('/expenses', expenseRoutes);
 router.use('/budgets', budgetRoutes);
+router.use('/accounting', accountingRoutes);
 
 export default router;

@@ -153,6 +153,24 @@ import PosTransactionsList from '@/pages/POS/Transactions/PosTransactionsList';
 import PosTransactionDetail from '@/pages/POS/Transactions/PosTransactionDetail';
 import PosTransactionReceipt from '@/pages/POS/Transactions/PosTransactionReceipt';
 
+// Accounting pages
+import AccountingDashboard from '@/pages/Accounting/AccountingDashboard';
+import AccountsList from '@/pages/Accounting/Accounts/AccountsList';
+import AccountForm from '@/pages/Accounting/Accounts/AccountForm';
+import AccountDetail from '@/pages/Accounting/Accounts/AccountDetail';
+import JournalEntriesList from '@/pages/Accounting/JournalEntries/JournalEntriesList';
+import JournalEntryForm from '@/pages/Accounting/JournalEntries/JournalEntryForm';
+import JournalEntryDetail from '@/pages/Accounting/JournalEntries/JournalEntryDetail';
+import GeneralLedgerList from '@/pages/Accounting/GeneralLedger/GeneralLedgerList';
+import TrialBalance from '@/pages/Accounting/GeneralLedger/TrialBalance';
+import FinancialStatements from '@/pages/Accounting/FinancialStatements/FinancialStatements';
+import TaxConfigurationsList from '@/pages/Accounting/Taxes/TaxConfigurationsList';
+import TaxConfigurationForm from '@/pages/Accounting/Taxes/TaxConfigurationForm';
+import TaxConfigurationDetail from '@/pages/Accounting/Taxes/TaxConfigurationDetail';
+import FinancialPeriodsList from '@/pages/Accounting/FinancialPeriods/FinancialPeriodsList';
+import FinancialPeriodForm from '@/pages/Accounting/FinancialPeriods/FinancialPeriodForm';
+import FinancialPeriodDetail from '@/pages/Accounting/FinancialPeriods/FinancialPeriodDetail';
+
 const NotFound = () => <div>404 - Page Not Found</div>;
 
 const AppRoutes = () => {
@@ -384,6 +402,73 @@ const AppRoutes = () => {
           <Route
             path="/pos/transactions/:id/receipt"
             element={<PosTransactionReceipt />}
+          />
+
+          {/* Accounting Module */}
+          <Route path="/accounting" element={<AccountingDashboard />} />
+          <Route path="/accounting/accounts" element={<AccountsList />} />
+          <Route path="/accounting/accounts/new" element={<AccountForm />} />
+          <Route path="/accounting/accounts/:id" element={<AccountDetail />} />
+          <Route
+            path="/accounting/accounts/:id/edit"
+            element={<AccountForm />}
+          />
+          <Route
+            path="/accounting/journal-entries"
+            element={<JournalEntriesList />}
+          />
+          <Route
+            path="/accounting/journal-entries/new"
+            element={<JournalEntryForm />}
+          />
+          <Route
+            path="/accounting/journal-entries/:id"
+            element={<JournalEntryDetail />}
+          />
+          <Route
+            path="/accounting/journal-entries/:id/edit"
+            element={<JournalEntryForm />}
+          />
+          <Route
+            path="/accounting/general-ledger"
+            element={<GeneralLedgerList />}
+          />
+          <Route
+            path="/accounting/general-ledger/trial-balance"
+            element={<TrialBalance />}
+          />
+          <Route
+            path="/accounting/financial-statements"
+            element={<FinancialStatements />}
+          />
+          <Route path="/accounting/taxes" element={<TaxConfigurationsList />} />
+          <Route
+            path="/accounting/taxes/new"
+            element={<TaxConfigurationForm />}
+          />
+          <Route
+            path="/accounting/taxes/:id"
+            element={<TaxConfigurationDetail />}
+          />
+          <Route
+            path="/accounting/taxes/:id/edit"
+            element={<TaxConfigurationForm />}
+          />
+          <Route
+            path="/accounting/financial-periods"
+            element={<FinancialPeriodsList />}
+          />
+          <Route
+            path="/accounting/financial-periods/new"
+            element={<FinancialPeriodForm />}
+          />
+          <Route
+            path="/accounting/financial-periods/:id"
+            element={<FinancialPeriodDetail />}
+          />
+          <Route
+            path="/accounting/financial-periods/:id/edit"
+            element={<FinancialPeriodForm />}
           />
         </Route>
       </Route>
