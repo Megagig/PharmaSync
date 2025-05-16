@@ -138,6 +138,19 @@ const NotificationList = lazy(
 const MessageList = lazy(() => import('@/pages/messages/MessageList'));
 const MessageDetail = lazy(() => import('@/pages/messages/MessageDetail'));
 
+// Expense Management Pages
+const ExpensesList = lazy(() => import('@/pages/Expenses/ExpensesList'));
+const ExpenseDetail = lazy(() => import('@/pages/Expenses/ExpenseDetail'));
+const CreateExpense = lazy(() => import('@/pages/Expenses/CreateExpense'));
+
+// Budget Management Pages
+const BudgetsList = lazy(() => import('@/pages/Budgets/BudgetsList'));
+const BudgetDetail = lazy(() => import('@/pages/Budgets/BudgetDetail'));
+const CreateBudget = lazy(() => import('@/pages/Budgets/CreateBudget'));
+
+// Finance Dashboard
+const FinanceDashboard = lazy(() => import('@/pages/Finance/FinanceDashboard'));
+
 // Settings Pages
 const Settings = lazy(() => import('@/pages/settings/Settings'));
 
@@ -307,6 +320,19 @@ const AppRoutes: React.FC = () => {
             {/* Message Routes */}
             <Route path="/messages" element={<MessageList />} />
             <Route path="/messages/:id" element={<MessageDetail />} />
+
+            {/* Expense Management Routes */}
+            <Route path="/expenses" element={<ExpensesList />} />
+            <Route path="/expenses/new" element={<CreateExpense />} />
+            <Route path="/expenses/:id" element={<ExpenseDetail />} />
+
+            {/* Budget Management Routes */}
+            <Route path="/budgets" element={<BudgetsList />} />
+            <Route path="/budgets/new" element={<CreateBudget />} />
+            <Route path="/budgets/:id" element={<BudgetDetail />} />
+
+            {/* Finance Dashboard */}
+            <Route path="/finance/reports" element={<FinanceDashboard />} />
 
             {/* Settings Routes */}
             <Route path="/settings" element={<Settings />} />
