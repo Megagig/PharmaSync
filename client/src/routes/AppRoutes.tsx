@@ -15,6 +15,7 @@ import Logout from '@/features/auth/pages/Logout';
 
 // Main pages
 import Dashboard from '@/pages/Dashboard';
+import ComprehensiveDashboard from '@/pages/dashboard/ComprehensiveDashboard';
 
 // Patient pages
 import PatientList from '@/pages/Patients/PatientList';
@@ -178,6 +179,12 @@ import FinancialPeriodsList from '@/pages/Accounting/FinancialPeriods/FinancialP
 import FinancialPeriodForm from '@/pages/Accounting/FinancialPeriods/FinancialPeriodForm';
 import FinancialPeriodDetail from '@/pages/Accounting/FinancialPeriods/FinancialPeriodDetail';
 import AccountingSettings from '@/pages/Accounting/Settings/AccountingSettings';
+import FinanceDashboard from '@/pages/Finance/FinanceDashboard';
+import ExpensesList from '@/pages/Finance/Expenses/ExpensesList';
+import ExpenseForm from '@/pages/Finance/Expenses/ExpenseForm';
+import BudgetsList from '@/pages/Finance/Budgets/BudgetsList';
+import BudgetForm from '@/pages/Finance/Budgets/BudgetForm';
+import FinanceReports from '@/pages/Finance/Reports/FinanceReports';
 
 const NotFound = () => <div>404 - Page Not Found</div>;
 
@@ -200,6 +207,10 @@ const AppRoutes = () => {
       <Route element={<PrivateRoute />}>
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route
+            path="/business-dashboard"
+            element={<ComprehensiveDashboard />}
+          />
 
           {/* Patients */}
           <Route path="/patients" element={<PatientList />} />
@@ -423,6 +434,16 @@ const AppRoutes = () => {
             path="/pos/transactions/:id/receipt"
             element={<PosTransactionReceipt />}
           />
+
+          {/* Finance Module */}
+          <Route path="/finance" element={<FinanceDashboard />} />
+          <Route path="/finance/reports" element={<FinanceReports />} />
+          <Route path="/expenses" element={<ExpensesList />} />
+          <Route path="/expenses/new" element={<ExpenseForm />} />
+          <Route path="/expenses/:id" element={<ExpenseForm />} />
+          <Route path="/budgets" element={<BudgetsList />} />
+          <Route path="/budgets/new" element={<BudgetForm />} />
+          <Route path="/budgets/:id" element={<BudgetForm />} />
 
           {/* Accounting Module */}
           <Route path="/accounting" element={<AccountingDashboard />} />

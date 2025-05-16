@@ -161,7 +161,7 @@ export const createExpense = asyncHandler(
       }
     }
 
-    // Create expense
+    // Create expense with simplified required fields
     const expense = await Expense.create({
       title,
       description,
@@ -169,19 +169,21 @@ export const createExpense = asyncHandler(
       category,
       subcategory,
       date: date || new Date(),
-      dueDate,
+      notes,
+      // Set default values for required backend fields
       status: status || ExpenseStatus.PENDING,
+      createdBy: req.user.id, // From auth middleware
+      // Optional fields
+      dueDate,
       paymentMethod,
       paymentDate,
       paymentReference,
       supplier: supplier || undefined,
       location: location || undefined,
-      notes,
       isRecurring: isRecurring || false,
       recurrenceInterval,
       recurrenceEndDate,
       parentExpense: parentExpense || undefined,
-      createdBy: req.user.id, // From auth middleware
     });
 
     res.status(201).json({

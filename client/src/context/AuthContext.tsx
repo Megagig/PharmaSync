@@ -27,6 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Only run this once
     if (initializedRef.current) return;
+    initializedRef.current = true;
 
     const initializeAuth = async () => {
       const token = localStorage.getItem('token');
@@ -41,12 +42,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           dispatch(clearCredentials());
         }
       }
-
-      initializedRef.current = true;
     };
 
     initializeAuth();
-  }, [dispatch, user]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated, isLoading, error }}>

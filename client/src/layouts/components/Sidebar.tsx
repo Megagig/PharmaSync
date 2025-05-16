@@ -45,6 +45,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         permission: { resource: 'dashboard', action: 'read' },
       },
       {
+        title: 'Business Dashboard',
+        icon: <FiBarChart2 className="h-5 w-5" />,
+        path: '/business-dashboard',
+        permission: { resource: 'dashboard', action: 'read' },
+      },
+      {
         title: 'Patient Management',
         icon: <FiUsers className="h-5 w-5" />,
         path: '/patients',
@@ -85,6 +91,24 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         icon: <FiShoppingCart className="h-5 w-5" />,
         path: '/purchase-orders',
         permission: { resource: 'purchase_orders', action: 'read' },
+      },
+      {
+        title: 'Finance',
+        icon: <FiBarChart2 className="h-5 w-5" />,
+        path: '/finance',
+        permission: { resource: 'finance', action: 'read' },
+      },
+      {
+        title: 'Expenses',
+        icon: <FiBarChart2 className="h-5 w-5" />,
+        path: '/expenses',
+        permission: { resource: 'expenses', action: 'read' },
+      },
+      {
+        title: 'Budgets',
+        icon: <FiBarChart2 className="h-5 w-5" />,
+        path: '/budgets',
+        permission: { resource: 'budgets', action: 'read' },
       },
       {
         title: 'Reports',

@@ -15,6 +15,9 @@ const VerifyEmail = lazy(() => import('@/pages/auth/VerifyEmail'));
 
 // Dashboard Pages
 const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard'));
+const ComprehensiveDashboard = lazy(
+  () => import('@/pages/dashboard/ComprehensiveDashboard')
+);
 
 // Patient Pages
 const PatientList = lazy(() => import('@/pages/patients/PatientList'));
@@ -177,6 +180,10 @@ const AppRoutes: React.FC = () => {
           <Route element={<DashboardLayout />}>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route
+              path="/business-dashboard"
+              element={<ComprehensiveDashboard />}
+            />
 
             {/* Patient Routes */}
             <Route path="/patients" element={<PatientList />} />

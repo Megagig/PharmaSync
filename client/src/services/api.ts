@@ -81,6 +81,8 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.log('API Error:', error);
+
     if (error.response) {
       // Handle 401 Unauthorized errors (token expired or invalid)
       if (error.response.status === 401) {
@@ -88,11 +90,28 @@ api.interceptors.response.use(
         localStorage.removeItem('token');
       }
 
+      // Log the error details
+      console.error('Response error:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers,
+      });
+
       // Return the error response data
       return Promise.reject(error.response.data);
     }
 
+    if (error.request) {
+      // The request was made but no response was received
+      console.error('Request error - no response:', error.request);
+      return Promise.reject({
+        status: 'error',
+        message: 'No response from server. Please check your connection.',
+      });
+    }
+
     // Network errors or other issues
+    console.error('Error message:', error.message);
     return Promise.reject({
       status: 'error',
       message: error.message || 'An unexpected error occurred',

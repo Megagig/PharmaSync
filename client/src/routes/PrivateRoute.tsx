@@ -13,6 +13,7 @@ const PrivateRoute: React.FC = () => {
   // Use refs to track if we've already dispatched the actions
   const profileFetchedRef = useRef(false);
   const permissionsFetchedRef = useRef(false);
+  const redirectedRef = useRef(false);
 
   const { user: currentUser, isLoading: authLoading } = useSelector(
     (state: RootState) => state.auth
@@ -45,7 +46,9 @@ const PrivateRoute: React.FC = () => {
   }
 
   // Check if user is authenticated
-  if (!currentUser) {
+  if (!currentUser && !redirectedRef.current) {
+    // Set redirected flag to prevent infinite redirects
+    redirectedRef.current = true;
     // Redirect to login page with the return url
     return <Navigate to="/login" state={{ from: location }} replace />;
   }

@@ -16,7 +16,7 @@ export enum BudgetStatus {
 
 export interface BudgetItem {
   _id?: string;
-  category: ExpenseCategory;
+  category: string | ExpenseCategory;
   subcategory?: string;
   amount: number;
   notes?: string;
@@ -46,26 +46,34 @@ export interface Budget {
   items: BudgetItem[];
   actuals?: BudgetActual[];
   notes?: string;
-  location?: string | {
-    _id: string;
-    name: string;
-  };
-  createdBy: string | {
-    _id: string;
-    firstName: string;
-    lastName: string;
-  };
-  approvedBy?: string | {
-    _id: string;
-    firstName: string;
-    lastName: string;
-  };
+  location?:
+    | string
+    | {
+        _id: string;
+        name: string;
+      };
+  createdBy:
+    | string
+    | {
+        _id: string;
+        firstName: string;
+        lastName: string;
+      };
+  approvedBy?:
+    | string
+    | {
+        _id: string;
+        firstName: string;
+        lastName: string;
+      };
   approvedAt?: string;
-  closedBy?: string | {
-    _id: string;
-    firstName: string;
-    lastName: string;
-  };
+  closedBy?:
+    | string
+    | {
+        _id: string;
+        firstName: string;
+        lastName: string;
+      };
   closedAt?: string;
   createdAt: string;
   updatedAt: string;
