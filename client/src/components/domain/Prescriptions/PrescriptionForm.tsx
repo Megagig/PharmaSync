@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
-import { PrescriptionFormData, PrescriptionItemFormData } from '@/types/prescription.types';
+import {
+  PrescriptionFormData,
+  PrescriptionItemFormData,
+} from '@/types/prescription.types';
 import { RootState } from '@/store/store';
 import { fetchPatients } from '@/store/slices/patientSlice';
 import Button from '@/components/common/Button/Button';
@@ -10,30 +13,48 @@ import { formatDateToISO } from '@/utils/date.utils';
 
 interface PrescriptionFormProps {
   initialData?: Partial<PrescriptionFormData>;
-  onSubmit: (data: PrescriptionFormData & { items: PrescriptionItemFormData[] }) => void;
+  onSubmit: (
+    data: PrescriptionFormData & { items: PrescriptionItemFormData[] }
+  ) => void;
   isLoading: boolean;
 }
 
-const PrescriptionForm = ({ initialData, onSubmit, isLoading }: PrescriptionFormProps) => {
+const PrescriptionForm = ({
+  initialData,
+  onSubmit,
+  isLoading,
+}: PrescriptionFormProps) => {
   const dispatch = useDispatch();
   const { patients } = useSelector((state: RootState) => state.patients);
   const [items, setItems] = useState<PrescriptionItemFormData[]>([]);
   const [showItemForm, setShowItemForm] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState<string>('');
 
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<PrescriptionFormData>({
     defaultValues: initialData || {
       prescriptionDate: formatDateToISO(new Date()),
-      expiryDate: formatDateToISO(new Date(new Date().setMonth(new Date().getMonth() + 3))),
+      expiryDate: formatDateToISO(
+        new Date(new Date().setMonth(new Date().getMonth() + 3))
+      ),
     },
   });
+
+  // Watch for patient selection changes
+  const patientId = watch('patient');
 
   useEffect(() => {
     dispatch(fetchPatients({ page: 1, limit: 100 }));
   }, [dispatch]);
+
+  // Update selectedPatientId when patient selection changes
+  useEffect(() => {
+    setSelectedPatientId(patientId || '');
+  }, [patientId]);
 
   const handleAddItem = (item: PrescriptionItemFormData) => {
     setItems([...items, item]);
@@ -74,7 +95,9 @@ const PrescriptionForm = ({ initialData, onSubmit, isLoading }: PrescriptionForm
               </option>
             ))}
           </select>
-          {errors.patient && <p className="form-error">{errors.patient.message}</p>}
+          {errors.patient && (
+            <p className="form-error">{errors.patient.message}</p>
+          )}
         </div>
 
         {/* Prescription Date */}
@@ -98,10 +121,14 @@ const PrescriptionForm = ({ initialData, onSubmit, isLoading }: PrescriptionForm
           <input
             type="date"
             id="expiryDate"
-            className={`form-input ${errors.expiryDate ? 'border-red-300' : ''}`}
+            className={`form-input ${
+              errors.expiryDate ? 'border-red-300' : ''
+            }`}
             {...register('expiryDate', { required: 'Expiry date is required' })}
           />
-          {errors.expiryDate && <p className="form-error">{errors.expiryDate.message}</p>}
+          {errors.expiryDate && (
+            <p className="form-error">{errors.expiryDate.message}</p>
+          )}
         </div>
 
         {/* Notes */}
@@ -121,7 +148,9 @@ const PrescriptionForm = ({ initialData, onSubmit, isLoading }: PrescriptionForm
       {/* Prescription Items */}
       <div className="mt-6">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium text-gray-900">Prescription Items</h3>
+          <h3 className="text-lg font-medium text-gray-900">
+            Prescription Items
+          </h3>
           <Button
             variant="outline"
             type="button"
@@ -147,10 +176,13 @@ const PrescriptionForm = ({ initialData, onSubmit, isLoading }: PrescriptionForm
 
         {showItemForm && (
           <div className="mb-6 p-4 border border-gray-200 rounded-md bg-gray-50">
-            <h4 className="text-md font-medium text-gray-900 mb-3">Add Medication</h4>
+            <h4 className="text-md font-medium text-gray-900 mb-3">
+              Add Medication
+            </h4>
             <PrescriptionItemForm
               onSubmit={handleAddItem}
               onCancel={() => setShowItemForm(false)}
+              patientId={selectedPatientId}
             />
           </div>
         )}
@@ -184,7 +216,8 @@ const PrescriptionForm = ({ initialData, onSubmit, isLoading }: PrescriptionForm
                       {item.medication}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {item.dosage.amount} {item.dosage.unit}, {item.dosage.frequency} ({item.dosage.route})
+                      {item.dosage.amount} {item.dosage.unit},{' '}
+                      {item.dosage.frequency} ({item.dosage.route})
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {item.quantity}
@@ -214,7 +247,11 @@ const PrescriptionForm = ({ initialData, onSubmit, isLoading }: PrescriptionForm
       </div>
 
       <div className="flex justify-end space-x-3 mt-6">
-        <Button variant="outline" type="button" onClick={() => window.history.back()}>
+        <Button
+          variant="outline"
+          type="button"
+          onClick={() => window.history.back()}
+        >
           Cancel
         </Button>
         <Button variant="primary" type="submit" isLoading={isLoading}>

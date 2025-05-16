@@ -31,6 +31,12 @@ const EditMedicationHistory = lazy(
 const DeleteMedicationHistory = lazy(
   () => import('@/pages/patients/DeleteMedicationHistory')
 );
+const AddPatientMedication = lazy(
+  () => import('@/pages/patients/AddPatientMedication')
+);
+const DeletePatientMedication = lazy(
+  () => import('@/pages/patients/DeletePatientMedication')
+);
 const AddClinicalAssessment = lazy(
   () => import('@/pages/patients/AddClinicalAssessment')
 );
@@ -205,6 +211,10 @@ const AppRoutes: React.FC = () => {
               element={<AddClinicalAssessment />}
             />
             <Route
+              path="/patients/:id/clinical-assessments/new"
+              element={<AddClinicalAssessment />}
+            />
+            <Route
               path="/patients/:id/clinical-assessments/:assessmentId/edit"
               element={<EditClinicalAssessment />}
             />
@@ -214,6 +224,10 @@ const AppRoutes: React.FC = () => {
             />
             <Route
               path="/patients/:id/laboratory-findings/add"
+              element={<AddLaboratoryFinding />}
+            />
+            <Route
+              path="/patients/:id/laboratory-findings/new"
               element={<AddLaboratoryFinding />}
             />
             <Route
@@ -229,6 +243,10 @@ const AppRoutes: React.FC = () => {
               element={<AddDrugTherapyProblem />}
             />
             <Route
+              path="/patients/:id/drug-therapy-problems/new"
+              element={<AddDrugTherapyProblem />}
+            />
+            <Route
               path="/patients/:id/drug-therapy-problems/:problemId/edit"
               element={<EditDrugTherapyProblem />}
             />
@@ -238,6 +256,10 @@ const AppRoutes: React.FC = () => {
             />
             <Route
               path="/patients/:id/care-plans/add"
+              element={<AddCarePlan />}
+            />
+            <Route
+              path="/patients/:id/care-plans/new"
               element={<AddCarePlan />}
             />
             <Route
@@ -253,12 +275,26 @@ const AppRoutes: React.FC = () => {
               element={<AddSoapNote />}
             />
             <Route
+              path="/patients/:id/soap-notes/new"
+              element={<AddSoapNote />}
+            />
+            <Route
               path="/patients/:id/soap-notes/:noteId/edit"
               element={<EditSoapNote />}
             />
             <Route
               path="/patients/:id/soap-notes/:noteId/delete"
               element={<DeleteSoapNote />}
+            />
+
+            {/* Patient Medication Routes */}
+            <Route
+              path="/patients/:id/medications/add"
+              element={<AddPatientMedication />}
+            />
+            <Route
+              path="/patients/:id/medications/:medicationId/remove"
+              element={<DeletePatientMedication />}
             />
 
             {/* Medication Routes */}

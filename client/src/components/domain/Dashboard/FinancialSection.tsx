@@ -4,12 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store/store';
 import { fetchExpenseSummary } from '@/store/slices/expenseSlice';
 import { fetchBudgetSummary } from '@/store/slices/budgetSlice';
+import { fetchSalesReport } from '@/store/slices/comprehensiveReportsSlice';
+import { fetchJournalEntries } from '@/store/slices/accountingSlice';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import { ChartType } from '@/types/report.types';
 import ChartContainer from '@/components/charts/ChartContainer';
 import { DateRange } from './DateRangeFilter';
-import { formatCurrency, formatPercentage } from '@/utils/formatters';
+import {
+  formatCurrency,
+  formatPercentage,
+  formatDate,
+} from '@/utils/formatters';
 
 interface FinancialSectionProps {
   dateRange: DateRange;
@@ -25,25 +31,45 @@ const FinancialSection: React.FC<FinancialSectionProps> = ({ dateRange }) => {
   const { budgetSummary, isLoading: budgetsLoading } = useSelector(
     (state: RootState) => state.budgets
   );
+  const { salesReport, isLoading: salesLoading } = useSelector(
+    (state: RootState) => state.comprehensiveReports
+  );
+  const { journalEntries, isLoading: transactionsLoading } = useSelector(
+    (state: RootState) => state.accounting
+  );
 
-  const isLoading = expensesLoading || budgetsLoading;
+  const isLoading =
+    expensesLoading || budgetsLoading || salesLoading || transactionsLoading;
 
   useEffect(() => {
-    if (dateRange.startDate && dateRange.endDate) {
+    const startDate = dateRange.startDate
+      ? dateRange.startDate.toISOString().split('T')[0]
+      : undefined;
+    const endDate = dateRange.endDate
+      ? dateRange.endDate.toISOString().split('T')[0]
+      : undefined;
+
+    if (startDate && endDate) {
+      dispatch(fetchExpenseSummary({ startDate, endDate }) as any);
+      dispatch(fetchSalesReport({ startDate, endDate, groupBy: 'day' }) as any);
       dispatch(
-        fetchExpenseSummary({
-          startDate: dateRange.startDate.toISOString().split('T')[0],
-          endDate: dateRange.endDate.toISOString().split('T')[0],
+        fetchJournalEntries({
+          page: 1,
+          limit: 3,
+          filters: { startDate, endDate },
         }) as any
       );
     } else {
       dispatch(fetchExpenseSummary({}) as any);
+      dispatch(fetchSalesReport({ groupBy: 'day' }) as any);
+      dispatch(fetchJournalEntries({ page: 1, limit: 3 }) as any);
     }
+
     dispatch(fetchBudgetSummary() as any);
   }, [dispatch, dateRange]);
 
   // Prepare financial data from API responses
-  const totalRevenue = 1250000; // This would come from sales API
+  const totalRevenue = salesReport?.summary?.totalSales || 0;
   const totalExpenses = expenseSummary?.totalExpenses || 0;
   const profit = totalRevenue - totalExpenses;
   const profitMargin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
@@ -58,39 +84,20 @@ const FinancialSection: React.FC<FinancialSectionProps> = ({ dateRange }) => {
       { name: 'Expenses', value: totalExpenses },
       { name: 'Profit', value: profit },
     ],
-    expenseBreakdown: expenseSummary?.expensesByCategory?.map((item) => ({
-      name: item.category.replace(/_/g, ' ').toUpperCase(),
-      value: item.amount,
-    })) || [
-      { name: 'Inventory', value: 450000 },
-      { name: 'Salaries', value: 180000 },
-      { name: 'Rent', value: 60000 },
-      { name: 'Utilities', value: 35000 },
-      { name: 'Other', value: 25000 },
-    ],
-    recentTransactions: [
-      {
-        id: '1',
-        description: 'Inventory Purchase',
-        date: '2023-11-05',
-        amount: formatCurrency(120000),
-        type: 'Expense',
-      },
-      {
-        id: '2',
-        description: 'Sales Revenue',
-        date: '2023-11-06',
-        amount: formatCurrency(85000),
-        type: 'Income',
-      },
-      {
-        id: '3',
-        description: 'Utility Bill',
-        date: '2023-11-07',
-        amount: formatCurrency(15000),
-        type: 'Expense',
-      },
-    ],
+    expenseBreakdown:
+      expenseSummary?.expensesByCategory?.map((item) => ({
+        name: item.category.replace(/_/g, ' ').toUpperCase(),
+        value: item.amount,
+      })) || [],
+    // Format recent transactions from the API
+    formattedTransactions:
+      journalEntries?.map((entry) => ({
+        id: entry._id,
+        description: entry.description,
+        date: formatDate(entry.date),
+        amount: formatCurrency(entry.totalDebit), // Using debit amount as the transaction amount
+        type: entry.type === 'CREDIT' ? 'Income' : 'Expense',
+      })) || [],
   };
 
   if (isLoading) {
@@ -195,7 +202,7 @@ const FinancialSection: React.FC<FinancialSectionProps> = ({ dateRange }) => {
           <h3 className="text-md font-medium text-gray-700 mb-2">
             Recent Transactions
           </h3>
-          {financialData.recentTransactions.length > 0 ? (
+          {financialData.formattedTransactions.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -215,46 +222,48 @@ const FinancialSection: React.FC<FinancialSectionProps> = ({ dateRange }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {financialData.recentTransactions.map(
-                    (transaction, index) => (
-                      <tr
-                        key={index}
-                        className="cursor-pointer hover:bg-gray-50"
-                        onClick={() => navigate('/accounting/journal-entries')}
-                      >
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                          {transaction.description}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                          {transaction.date}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                          {transaction.amount}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm">
-                          <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              transaction.type === 'Income'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {transaction.type}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  )}
+                  {financialData.formattedTransactions.map((transaction) => (
+                    <tr
+                      key={transaction.id}
+                      className="cursor-pointer hover:bg-gray-50"
+                      onClick={() =>
+                        navigate(
+                          `/accounting/journal-entries/${transaction.id}`
+                        )
+                      }
+                    >
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                        {transaction.description}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                        {transaction.date}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                        {transaction.amount}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap text-sm">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            transaction.type === 'Income'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {transaction.type}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           ) : (
             <p className="text-sm text-gray-500">No recent transactions.</p>
           )}
-          {financialData.recentTransactions.length > 0 && (
+          {financialData.formattedTransactions.length > 0 && (
             <div className="mt-2 text-right">
               <Button
-                variant="text"
+                variant="outline"
                 size="sm"
                 onClick={() => navigate('/accounting/journal-entries')}
               >
