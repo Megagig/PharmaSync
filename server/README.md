@@ -85,6 +85,26 @@ await clearCache('GET:/patients');
 await clearAllCache();
 ```
 
+### Cache Monitoring
+
+The application includes a cache monitoring API that provides insights into the Redis cache:
+
+- GET `/api/cache/stats` - Get cache statistics (hit rate, memory usage, etc.)
+- GET `/api/cache/keys` - Get cache keys by pattern
+- GET `/api/cache/key/:key` - Get details for a specific cache key
+- DELETE `/api/cache/clear` - Clear all cache
+- DELETE `/api/cache/clear/:pattern` - Clear cache by pattern
+
+These endpoints are restricted to admin users only.
+
+### Cache Warming
+
+The application includes a cache warming utility that pre-populates the cache with frequently accessed data:
+
+- The cache warming job runs every 15 minutes in production
+- It warms up critical endpoints like medication lists, inventory alerts, and dashboard statistics
+- This reduces the initial load time for users and improves overall performance
+
 ## API Documentation
 
 API documentation is available at `/api-docs` when the server is running.

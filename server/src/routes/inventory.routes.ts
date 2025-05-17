@@ -8,6 +8,7 @@ import {
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { RoleType } from '../interfaces/role.interface';
 import { validate } from '../middleware/validation.middleware';
+import { cacheMiddleware, clearCache } from '../middleware/cache';
 import { z } from 'zod';
 
 const router = Router();
@@ -16,16 +17,32 @@ const router = Router();
 router.use(protect);
 
 // Get low stock alerts
-router.get('/low-stock', getLowStockAlerts);
+router.get(
+  '/low-stock',
+  cacheMiddleware({ expiration: 300 }), // Cache for 5 minutes
+  getLowStockAlerts
+);
 
 // Get expiring stock alerts
-router.get('/expiring', getExpiringStockAlerts);
+router.get(
+  '/expiring',
+  cacheMiddleware({ expiration: 300 }), // Cache for 5 minutes
+  getExpiringStockAlerts
+);
 
 // Get inventory valuation
-router.get('/valuation', getInventoryValuation);
+router.get(
+  '/valuation',
+  cacheMiddleware({ expiration: 600 }), // Cache for 10 minutes
+  getInventoryValuation
+);
 
 // Get inventory movement history
-router.get('/movement', getInventoryMovement);
+router.get(
+  '/movement',
+  cacheMiddleware({ expiration: 300 }), // Cache for 5 minutes
+  getInventoryMovement
+);
 
 // TODO: Implement these routes when the controllers are ready
 // // Get inventory by location

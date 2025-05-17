@@ -6,6 +6,7 @@ import {
   getPatientReport,
 } from '../controllers/reports.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
+import { cacheMiddleware } from '../middleware/cache';
 import { RoleType } from '../interfaces/role.interface';
 
 const router = Router();
@@ -17,6 +18,10 @@ router.use(protect);
 router.get(
   '/sales',
   restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  cacheMiddleware({
+    expiration: 600, // Cache for 10 minutes
+    keyGenerator: (req) => `cache:reports:sales:${JSON.stringify(req.query)}`,
+  }),
   getSalesReport
 );
 
@@ -24,6 +29,11 @@ router.get(
 router.get(
   '/inventory',
   restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  cacheMiddleware({
+    expiration: 600, // Cache for 10 minutes
+    keyGenerator: (req) =>
+      `cache:reports:inventory:${JSON.stringify(req.query)}`,
+  }),
   getInventoryReport
 );
 
@@ -31,6 +41,11 @@ router.get(
 router.get(
   '/prescriptions',
   restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  cacheMiddleware({
+    expiration: 600, // Cache for 10 minutes
+    keyGenerator: (req) =>
+      `cache:reports:prescriptions:${JSON.stringify(req.query)}`,
+  }),
   getPrescriptionReport
 );
 
@@ -38,6 +53,11 @@ router.get(
 router.get(
   '/patients',
   restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  cacheMiddleware({
+    expiration: 600, // Cache for 10 minutes
+    keyGenerator: (req) =>
+      `cache:reports:patients:${JSON.stringify(req.query)}`,
+  }),
   getPatientReport
 );
 

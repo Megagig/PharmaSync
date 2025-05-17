@@ -3,6 +3,7 @@ import connectDB from './config/db.config';
 import env from './config/env.config';
 import logger from './utils/logger';
 import { connectRedis, disconnectRedis } from './config/redis';
+import { startCacheWarmingJob, stopCacheWarmingJob } from './utils/cacheWarmer';
 
 // Connect to MongoDB
 connectDB();
@@ -13,6 +14,16 @@ connectRedis();
 // Start server
 const server = app.listen(env.PORT, () => {
   logger.info(`Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
+
+  // Start cache warming job in production
+  if (env.NODE_ENV === 'production') {
+    const cacheWarmingJob = startCacheWarmingJob();
+
+    // Stop cache warming job on process exit
+    process.on('exit', () => {
+      stopCacheWarmingJob(cacheWarmingJob);
+    });
+  }
 });
 
 // Handle unhandled promise rejections
