@@ -1,5 +1,7 @@
-// @ts-ignore
+// Import nodemailer for fallback
 import nodemailer from 'nodemailer';
+// Import axios for direct API calls to Brevo
+import axios from 'axios';
 import config from '../config';
 
 interface EmailOptions {
@@ -15,11 +17,82 @@ interface EmailOptions {
 }
 
 /**
- * Send an email using nodemailer
+ * Send an email using Brevo API directly
  * @param options Email options
  * @returns Promise<boolean> True if email was sent successfully
  */
 export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
+  try {
+    // Format recipients
+    const recipients = Array.isArray(options.to)
+      ? options.to.map((email) => ({ email: email }))
+      : [{ email: options.to }];
+
+    // Prepare email data for Brevo API
+    const emailData = {
+      sender: {
+        name: config.email.fromName,
+        email: config.email.fromEmail,
+      },
+      to: recipients,
+      subject: options.subject,
+      textContent: options.text,
+      htmlContent: options.html || '',
+    };
+
+    // Add attachments if provided
+    if (options.attachments && options.attachments.length > 0) {
+      emailData['attachment'] = options.attachments.map((attachment) => {
+        return {
+          name: attachment.filename,
+          content:
+            typeof attachment.content === 'string'
+              ? Buffer.from(attachment.content).toString('base64')
+              : attachment.content.toString('base64'),
+          contentType: attachment.contentType,
+        };
+      });
+    }
+
+    // Send email using Brevo API
+    const response = await axios.post(
+      'https://api.brevo.com/v3/smtp/email',
+      emailData,
+      {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'api-key': config.email.apiKey,
+        },
+      }
+    );
+
+    console.log('Email sent successfully:', response.data);
+    return true;
+  } catch (error) {
+    console.error('Brevo email sending error:', error);
+
+    // Try fallback to nodemailer if Brevo fails and SMTP is configured
+    if (config.email.host && config.email.user && config.email.password) {
+      try {
+        console.log('Attempting fallback to SMTP...');
+        return await sendEmailFallback(options);
+      } catch (fallbackError) {
+        console.error('Fallback email sending error:', fallbackError);
+        return false;
+      }
+    }
+
+    return false;
+  }
+};
+
+/**
+ * Fallback method to send email using nodemailer
+ * @param options Email options
+ * @returns Promise<boolean> True if email was sent successfully
+ */
+const sendEmailFallback = async (options: EmailOptions): Promise<boolean> => {
   try {
     // Create a transporter
     const transporter = nodemailer.createTransport({
@@ -44,10 +117,10 @@ export const sendEmail = async (options: EmailOptions): Promise<boolean> => {
 
     // Send email
     await transporter.sendMail(mailOptions);
-
+    console.log('Fallback email sent successfully');
     return true;
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('Fallback email sending error:', error);
     return false;
   }
 };

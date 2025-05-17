@@ -27,13 +27,19 @@ const config = {
     credentials: true,
   },
 
-  // Email configuration
+  // Email configuration (Brevo)
   email: {
-    host: process.env.EMAIL_HOST || 'smtp.mailtrap.io',
-    port: parseInt(process.env.EMAIL_PORT || '2525', 10),
-    secure: process.env.EMAIL_SECURE === 'true',
-    user: process.env.EMAIL_USER || '',
-    password: process.env.EMAIL_PASSWORD || '',
+    // Brevo API key
+    apiKey: process.env.BREVO_API_KEY || '',
+
+    // Legacy SMTP configuration (kept for backward compatibility)
+    host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
+    port: parseInt(process.env.SMTP_PORT || '2525', 10),
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER || '',
+    password: process.env.SMTP_PASS || '',
+
+    // Email sender information
     fromEmail: process.env.EMAIL_FROM || 'noreply@pharmasync.com',
     fromName: process.env.EMAIL_FROM_NAME || 'PharmaSync',
   },

@@ -7,7 +7,7 @@ services:
     container_name: pharmasync-mongo
     restart: always
     ports:
-      - "27017:27017"
+      - '27017:27017'
     volumes:
       - mongo-data:/data/db
     environment:
@@ -24,7 +24,7 @@ services:
     container_name: pharmasync-api
     restart: always
     ports:
-      - "5000:5000"
+      - '5000:5000'
     depends_on:
       - mongo
     environment:
@@ -33,6 +33,10 @@ services:
       - MONGODB_URI=mongodb://root:rootpassword@mongo:27017/pharmasync?authSource=admin
       - JWT_SECRET=your_jwt_secret_key
       - JWT_EXPIRES_IN=7d
+      # Brevo Email Configuration
+      - BREVO_API_KEY=your_brevo_api_key
+      - EMAIL_FROM=noreply@pharmasync.com
+      - EMAIL_FROM_NAME=PharmaSync
     networks:
       - pharmasync-network
 
@@ -44,7 +48,7 @@ services:
     container_name: pharmasync-client
     restart: always
     ports:
-      - "80:80"
+      - '80:80'
     depends_on:
       - api
     networks:

@@ -12,6 +12,7 @@ This is the backend server for the PharmaSync application, a comprehensive pharm
 - Reporting and analytics
 - User management and authentication
 - Redis caching for improved performance
+- Email notifications via Brevo
 
 ## Prerequisites
 
@@ -35,6 +36,42 @@ npm install
 ```bash
 npm run dev
 ```
+
+## Email Service (Brevo)
+
+The application uses Brevo (formerly Sendinblue) for sending transactional emails. This includes account verification, password reset, notifications, and reports.
+
+### Configuration
+
+Brevo configuration is defined in the `.env` file:
+
+```
+# Email Configuration (Brevo)
+BREVO_API_KEY=your_brevo_api_key
+EMAIL_FROM=noreply@pharmasync.com
+EMAIL_FROM_NAME=PharmaSync
+```
+
+### Email Types
+
+The following email types are supported:
+
+- Welcome emails
+- Registration confirmation emails
+- Account approval/rejection emails
+- Password reset emails
+- Notification emails
+- Report emails
+
+### Testing the Email Service
+
+You can test the Brevo email integration using the provided test script:
+
+```bash
+npx ts-node src/scripts/test-brevo-email.ts
+```
+
+Make sure to update the recipient email address in the script before running it.
 
 ## Redis Caching
 

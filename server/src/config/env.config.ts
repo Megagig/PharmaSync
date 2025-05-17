@@ -40,12 +40,16 @@ const env = cleanEnv(process.env, {
   REDIS_CLUSTER_URL: str({ default: 'redis://localhost:6379' }),
   REDIS_CLUSTER_ENABLED: bool({ default: false }),
 
-  // Email Configuration
-  SMTP_HOST: str(),
-  SMTP_PORT: num(),
-  SMTP_USER: str(),
-  SMTP_PASS: str(),
+  // Email Configuration (Brevo)
+  BREVO_API_KEY: str({ default: '' }),
   EMAIL_FROM: str(),
+  EMAIL_FROM_NAME: str({ default: 'PharmaSync' }),
+
+  // Legacy Email Configuration (kept for backward compatibility)
+  SMTP_HOST: str({ default: 'smtp.example.com' }),
+  SMTP_PORT: num({ default: 587 }),
+  SMTP_USER: str({ default: '' }),
+  SMTP_PASS: str({ default: '' }),
 
   // Storage Configuration
   STORAGE_TYPE: str({ choices: ['local', 's3'], default: 'local' }),

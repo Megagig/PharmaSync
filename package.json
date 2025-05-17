@@ -42,6 +42,7 @@
     "@fullcalendar/list": "^6.1.17",
     "@fullcalendar/react": "^6.1.17",
     "@fullcalendar/timegrid": "^6.1.17",
+    "@getbrevo/brevo": "^2.2.0",
     "chart.js": "^4.4.9",
     "envalid": "^8.0.0"
   }
