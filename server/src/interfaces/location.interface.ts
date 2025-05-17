@@ -18,6 +18,11 @@ export interface ILocationAddress {
   country: string;
 }
 
+export interface ILocationStock {
+  product: Types.ObjectId;
+  quantity: number;
+}
+
 export interface ILocation extends Document {
   name: string;
   code: string;
@@ -31,6 +36,7 @@ export interface ILocation extends Document {
   notes?: string;
   parentLocation?: Types.ObjectId; // For hierarchical locations
   createdBy: Types.ObjectId;
+  stock: ILocationStock[];
   createdAt: Date;
   updatedAt: Date;
   _id: Types.ObjectId;

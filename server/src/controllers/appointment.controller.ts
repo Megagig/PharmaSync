@@ -66,7 +66,7 @@ export const createAppointment = async (
     // Add the user ID to the appointment data
     const appointmentData = {
       ...req.body,
-      createdBy: req.user?._id,
+      createdBy: req.user?.id,
     };
 
     const appointment = await appointmentService.createAppointment(

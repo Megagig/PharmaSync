@@ -1,7 +1,7 @@
 import express from 'express';
 import * as integrationController from '../controllers/integration.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
-import { UserRole } from '../interfaces/user.interface';
+import { Permission } from '../interfaces/user.interface';
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.use(authenticate);
 // Get integration status (admin only)
 router.get(
   '/status',
-  authorize(UserRole.ADMIN),
+  authorize(Permission.MANAGE_ROLES),
   integrationController.getIntegrationStatus
 );
 
@@ -44,7 +44,7 @@ router.post(
 // Pharmacy system integration routes
 router.post(
   '/pharmacy-system/inventory/sync',
-  authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+  authorize(Permission.MANAGE_INVENTORY),
   integrationController.syncPharmacyInventory
 );
 

@@ -146,9 +146,9 @@ export const createShift = asyncHandler(async (req: Request, res: Response) => {
   // Log activity
   await ActivityLog.create({
     user: req.user.id,
-    activityType: ActivityType.SCHEDULE_CREATE,
+    type: ActivityType.SCHEDULE_CREATE,
     description: `Created new shift for ${userExists.firstName} ${userExists.lastName}`,
-    details: {
+    metadata: {
       shiftId: shift._id,
       userId: user,
       shiftType,
@@ -204,9 +204,9 @@ export const updateShift = asyncHandler(async (req: Request, res: Response) => {
   // Log activity
   await ActivityLog.create({
     user: req.user.id,
-    activityType: ActivityType.SCHEDULE_UPDATE,
+    type: ActivityType.SCHEDULE_UPDATE,
     description: `Updated shift for ${shift.user}`,
-    details: {
+    metadata: {
       shiftId: shift._id,
       updatedFields: Object.keys(req.body),
     },
@@ -237,9 +237,9 @@ export const deleteShift = asyncHandler(async (req: Request, res: Response) => {
   // Log activity
   await ActivityLog.create({
     user: req.user.id,
-    activityType: ActivityType.SCHEDULE_DELETE,
+    type: ActivityType.SCHEDULE_DELETE,
     description: `Deleted shift for ${shift.user}`,
-    details: {
+    metadata: {
       shiftId: shift._id,
     },
     ipAddress: req.ip,
@@ -369,9 +369,9 @@ export const createTimeOffRequest = asyncHandler(
     // Log activity
     await ActivityLog.create({
       user: req.user.id,
-      activityType: ActivityType.SCHEDULE_CREATE,
+      type: ActivityType.SCHEDULE_CREATE,
       description: 'Created new time off request',
-      details: {
+      metadata: {
         timeOffRequestId: timeOffRequest._id,
         startDate,
         endDate,
@@ -417,11 +417,11 @@ export const updateTimeOffRequestStatus = asyncHandler(
     // Log activity
     await ActivityLog.create({
       user: req.user.id,
-      activityType: ActivityType.SCHEDULE_UPDATE,
+      type: ActivityType.SCHEDULE_UPDATE,
       description: `${
         status === 'approved' ? 'Approved' : 'Rejected'
       } time off request`,
-      details: {
+      metadata: {
         timeOffRequestId: timeOffRequest._id,
         userId: timeOffRequest.user,
         status,
@@ -453,13 +453,16 @@ export const deleteTimeOffRequest = asyncHandler(
     // Only allow users to delete their own pending requests
     if (
       timeOffRequest.user.toString() !== req.user.id &&
-      req.user.role !== 'admin'
+      !req.user.roles?.some((role) => role.type === 'admin')
     ) {
       throw new AppError('Not authorized to delete this time off request', 403);
     }
 
     // Only allow deletion of pending requests
-    if (timeOffRequest.status !== 'pending' && req.user.role !== 'admin') {
+    if (
+      timeOffRequest.status !== 'pending' &&
+      !req.user.roles?.some((role) => role.type === 'admin')
+    ) {
       throw new AppError(
         'Cannot delete a request that has already been processed',
         400
@@ -471,9 +474,9 @@ export const deleteTimeOffRequest = asyncHandler(
     // Log activity
     await ActivityLog.create({
       user: req.user.id,
-      activityType: ActivityType.SCHEDULE_DELETE,
+      type: ActivityType.SCHEDULE_DELETE,
       description: 'Deleted time off request',
-      details: {
+      metadata: {
         timeOffRequestId: timeOffRequest._id,
       },
       ipAddress: req.ip,

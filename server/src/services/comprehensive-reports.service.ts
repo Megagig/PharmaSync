@@ -569,7 +569,19 @@ export const generateSalesComprehensiveReport = async (
   if (groupBy === 'day') {
     const dailySales: Record<string, SalesByPeriod> = {};
     allTransactions.forEach((transaction) => {
-      const date = new Date(transaction.saleDate || transaction.createdAt);
+      // Use type assertion to check if transaction has createdAt property
+      const hasSaleDate = 'saleDate' in transaction;
+      const hasCreatedAt = 'createdAt' in transaction;
+
+      // Use saleDate if available, otherwise use createdAt if available, or fallback to current date
+      const date = new Date(
+        hasSaleDate
+          ? transaction.saleDate
+          : hasCreatedAt
+          ? (transaction as any).createdAt
+          : new Date()
+      );
+
       const day = date.toISOString().split('T')[0];
       if (!dailySales[day]) {
         dailySales[day] = { period: day, sales: 0, count: 0 };
@@ -582,7 +594,19 @@ export const generateSalesComprehensiveReport = async (
   } else if (groupBy === 'month') {
     const monthlySales: Record<string, SalesByPeriod> = {};
     allTransactions.forEach((transaction) => {
-      const date = new Date(transaction.saleDate || transaction.createdAt);
+      // Use type assertion to check if transaction has createdAt property
+      const hasSaleDate = 'saleDate' in transaction;
+      const hasCreatedAt = 'createdAt' in transaction;
+
+      // Use saleDate if available, otherwise use createdAt if available, or fallback to current date
+      const date = new Date(
+        hasSaleDate
+          ? transaction.saleDate
+          : hasCreatedAt
+          ? (transaction as any).createdAt
+          : new Date()
+      );
+
       const month = `${date.getFullYear()}-${String(
         date.getMonth() + 1
       ).padStart(2, '0')}`;

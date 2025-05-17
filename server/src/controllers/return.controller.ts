@@ -6,6 +6,7 @@ import Product from '../models/product.model';
 import { ReturnStatus, RefundStatus } from '../interfaces/return.interface';
 import { SaleStatus } from '../interfaces/sale.interface';
 import { AppError } from '../utils/error';
+import { toObjectId } from '../utils/idConverter';
 
 /**
  * @desc    Get all returns with pagination and filtering
@@ -356,7 +357,7 @@ export const processRefund = asyncHandler(
     if (refundMethod) returnDoc.refundMethod = refundMethod;
     if (refundReference) returnDoc.refundReference = refundReference;
     returnDoc.refundDate = refundDate ? new Date(refundDate) : new Date();
-    returnDoc.processedBy = req.user.id;
+    returnDoc.processedBy = toObjectId(req.user.id);
     if (notes) returnDoc.notes = notes;
 
     // If refund is processed, update return status to completed

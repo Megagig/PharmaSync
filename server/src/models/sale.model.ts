@@ -1,9 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
-import {
-  ISale,
-  SaleStatus,
-  PaymentStatus,
-} from '../interfaces/sale.interface';
+import { ISale, SaleStatus, PaymentStatus } from '../interfaces/sale.interface';
 import { generateRandomString } from '../utils/helpers';
 
 const saleItemSchema = new Schema(
@@ -16,22 +12,28 @@ const saleItemSchema = new Schema(
     quantity: {
       type: Number,
       required: true,
-      min: 0.01,
+      min: [0, 'Quantity cannot be negative'],
     },
     unitPrice: {
       type: Number,
       required: true,
-      min: 0,
+      min: [0, 'Unit price cannot be negative'],
     },
     discount: {
       type: Number,
+      min: [0, 'Discount cannot be negative'],
+      max: [100, 'Discount cannot exceed 100%'],
       default: 0,
-      min: 0,
     },
     subtotal: {
       type: Number,
       required: true,
-      min: 0,
+      min: [0, 'Subtotal cannot be negative'],
+    },
+    finalPrice: {
+      type: Number,
+      required: true,
+      min: [0, 'Final price cannot be negative'],
     },
     batchNumber: {
       type: String,
@@ -71,28 +73,41 @@ const saleSchema = new Schema<ISale>(
       enum: Object.values(SaleStatus),
       default: SaleStatus.COMPLETED,
     },
-    items: [saleItemSchema],
+    items: {
+      type: [saleItemSchema],
+      required: true,
+      validate: {
+        validator: function (items: any[]) {
+          return items.length > 0;
+        },
+        message: 'Sale must have at least one item',
+      },
+    },
     subtotal: {
       type: Number,
       required: true,
+      min: [0, 'Subtotal cannot be negative'],
+    },
+    totalDiscount: {
+      type: Number,
+      required: true,
+      min: [0, 'Total discount cannot be negative'],
       default: 0,
-      min: 0,
     },
     discount: {
       type: Number,
+      min: [0, 'Discount cannot be negative'],
       default: 0,
-      min: 0,
     },
     tax: {
       type: Number,
+      min: [0, 'Tax cannot be negative'],
       default: 0,
-      min: 0,
     },
     total: {
       type: Number,
       required: true,
-      default: 0,
-      min: 0,
+      min: [0, 'Total cannot be negative'],
     },
     paymentStatus: {
       type: String,
@@ -101,8 +116,8 @@ const saleSchema = new Schema<ISale>(
     },
     paymentMethod: {
       type: String,
+      required: true,
       enum: ['cash', 'card', 'transfer', 'credit', 'multiple'],
-      default: 'cash',
     },
     notes: {
       type: String,
@@ -122,9 +137,17 @@ const saleSchema = new Schema<ISale>(
       type: Boolean,
       default: false,
     },
+    voidedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    voidedAt: Date,
+    voidReason: String,
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
@@ -137,13 +160,25 @@ saleSchema.index({ paymentStatus: 1 });
 saleSchema.index({ location: 1 });
 saleSchema.index({ createdBy: 1 });
 
+// Virtuals
+saleSchema.virtual('itemCount').get(function () {
+  return this.items.length;
+});
+
+saleSchema.virtual('averageItemPrice').get(function () {
+  if (this.items.length === 0) return 0;
+  return this.total / this.items.length;
+});
+
 // Generate sale number before saving
 saleSchema.pre('save', function (next) {
   if (!this.saleNumber) {
     // Format: SALE-YYYYMMDD-XXXXX (where XXXXX is a random alphanumeric string)
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    this.saleNumber = `SALE-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+    this.saleNumber = `SALE-${dateStr}-${generateRandomString(
+      5
+    ).toUpperCase()}`;
   }
 
   // Calculate totals
@@ -152,7 +187,7 @@ saleSchema.pre('save', function (next) {
     this.subtotal = this.items.reduce((sum, item) => sum + item.subtotal, 0);
 
     // Calculate total
-    this.total = this.subtotal - this.discount + this.tax;
+    this.total = this.subtotal - this.totalDiscount;
   }
 
   next();

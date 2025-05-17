@@ -12,9 +12,8 @@ import Modal from '@/components/common/Modal/Modal';
 const UserList = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { users, isLoading, error, totalUsers, totalPages, currentPage } = useSelector(
-    (state: RootState) => state.users
-  );
+  const { users, isLoading, error, totalUsers, totalPages, currentPage } =
+    useSelector((state: RootState) => state.users);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
@@ -78,17 +77,30 @@ const UserList = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">User Management</h1>
-        <Button variant="primary" onClick={() => navigate('/users/new')}>
-          Add New User
-        </Button>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          User Management
+        </h1>
+        <div className="flex space-x-3">
+          <Button
+            variant="secondary"
+            onClick={() => navigate('/users/pending')}
+          >
+            Pending Approvals
+          </Button>
+          <Button variant="primary" onClick={() => navigate('/users/new')}>
+            Add New User
+          </Button>
+        </div>
       </div>
 
       <Card>
         <div className="p-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1">
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="search"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Search
               </label>
               <div className="flex">
@@ -113,7 +125,10 @@ const UserList = () => {
             </div>
 
             <div>
-              <label htmlFor="roleFilter" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="roleFilter"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Role
               </label>
               <select
@@ -132,7 +147,10 @@ const UserList = () => {
             </div>
 
             <div>
-              <label htmlFor="activeFilter" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="activeFilter"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Status
               </label>
               <select
@@ -218,7 +236,8 @@ const UserList = () => {
                             user.role
                           )}`}
                         >
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                          {user.role.charAt(0).toUpperCase() +
+                            user.role.slice(1)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -281,12 +300,19 @@ const UserList = () => {
         title="Confirm Deletion"
       >
         <div className="p-6">
-          <p className="mb-4">Are you sure you want to deactivate this user? This action cannot be undone.</p>
+          <p className="mb-4">
+            Are you sure you want to deactivate this user? This action cannot be
+            undone.
+          </p>
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
               Cancel
             </Button>
-            <Button variant="danger" onClick={confirmDelete} isLoading={isLoading}>
+            <Button
+              variant="danger"
+              onClick={confirmDelete}
+              isLoading={isLoading}
+            >
               Deactivate User
             </Button>
           </div>

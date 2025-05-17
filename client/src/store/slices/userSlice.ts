@@ -11,27 +11,25 @@ import {
   // TwoFactorVerifyData,
   // EmailVerificationData,
 } from '@/types/user.types';
-import {
-  getUsers,
+import userService from '@/api/services/users.service';
+
+const {
+  getAllUsers: getUsers,
   getUserById,
-  createUser as createUserApi,
-  updateUser as updateUserApi,
-  deleteUser as deleteUserApi,
-  getCurrentUser,
-  updateCurrentUser,
-  changePassword,
-  // These functions are not used directly in this file
-  // verifyEmail,
-  // resendEmailVerification,
-  // setupTwoFactor,
-  // verifyTwoFactor,
-  // getTwoFactorBackupCodes,
-  // generateTwoFactorBackupCodes,
-  // disableTwoFactor,
-  // getUserActivityLogs,
-  changeUserPassword as changeUserPasswordApi,
-} from '@/services/user.service';
-import { getUserPermissions } from '@/services/role.service';
+  createUser: createUserApi,
+  updateUser: updateUserApi,
+  deleteUser: deleteUserApi,
+  getUserProfile: getCurrentUser,
+  updateUserProfile: updateCurrentUser,
+  changeUserProfilePassword: changePassword,
+  changeUserPassword: changeUserPasswordApi,
+  getPendingUsers: getPendingUsersApi,
+  approveUser: approveUserApi,
+  rejectUser: rejectUserApi,
+} = userService;
+// Import role service
+import roleService from '@/api/services/roles.service';
+const { getUserPermissions } = roleService;
 
 const initialState: UsersState = {
   users: [],
@@ -208,6 +206,54 @@ export const fetchUserPermissions = createAsyncThunk(
   }
 );
 
+export const fetchPendingUsers = createAsyncThunk(
+  'users/fetchPendingUsers',
+  async (
+    { page = 1, limit = 10 }: { page?: number; limit?: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await getPendingUsersApi(page, limit);
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch pending users'
+      );
+    }
+  }
+);
+
+export const approveUser = createAsyncThunk(
+  'users/approveUser',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const response = await approveUserApi(userId);
+      return { userId, message: response.message };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to approve user'
+      );
+    }
+  }
+);
+
+export const rejectUser = createAsyncThunk(
+  'users/rejectUser',
+  async (
+    { id, reason }: { id: string; reason?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await rejectUserApi(id, reason);
+      return { userId: id, message: response.message };
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to reject user'
+      );
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: 'users',
   initialState,
@@ -373,6 +419,59 @@ const userSlice = createSlice({
         state.userPermissions = action.payload;
       })
       .addCase(fetchUserPermissions.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+
+      // Fetch pending users
+      .addCase(fetchPendingUsers.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchPendingUsers.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.users = action.payload.data;
+        state.totalUsers = action.payload.meta.total;
+        state.totalPages = action.payload.meta.pages;
+        state.currentPage = action.payload.meta.page;
+      })
+      .addCase(fetchPendingUsers.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+
+      // Approve user
+      .addCase(approveUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(approveUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Remove the approved user from the list of pending users
+        state.users = state.users.filter(
+          (user) => user.id !== action.payload.userId
+        );
+        state.totalUsers = Math.max(0, state.totalUsers - 1);
+      })
+      .addCase(approveUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+
+      // Reject user
+      .addCase(rejectUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(rejectUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        // Remove the rejected user from the list of pending users
+        state.users = state.users.filter(
+          (user) => user.id !== action.payload.userId
+        );
+        state.totalUsers = Math.max(0, state.totalUsers - 1);
+      })
+      .addCase(rejectUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

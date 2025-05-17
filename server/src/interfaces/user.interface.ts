@@ -117,6 +117,12 @@ export interface IUserSettings {
   };
 }
 
+export enum ApprovalStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected'
+}
+
 export interface IUser extends Document {
   email: string;
   password: string;
@@ -125,7 +131,7 @@ export interface IUser extends Document {
   // Legacy role field (will be deprecated)
   role?: UserRole;
   // Legacy permissions field (will be deprecated)
-  permissions?: Permission[];
+  permissions?: (Permission | IPermission)[];
   // New roles field (array of role IDs)
   roles?: string[];
   phoneNumber?: string;
@@ -150,6 +156,10 @@ export interface IUser extends Document {
   settings?: IUserSettings;
   isActive: boolean;
   isEmailVerified: boolean;
+  approvalStatus: ApprovalStatus;
+  approvedBy?: string;
+  approvedAt?: Date;
+  rejectionReason?: string;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
   lastLogin?: Date;
@@ -180,8 +190,8 @@ export interface IUser extends Document {
   updatedAt: Date;
 
   // Methods
-  hasPermission(resource: string, action: string): boolean;
-  hasRole(roleType: RoleType): boolean;
+  hasPermission(resource: string, action: string): Promise<boolean>;
+  hasRole(roleType: RoleType): Promise<boolean>;
   getEffectivePermissions(): Promise<IPermission[]>;
   invalidateTokens(): Promise<void>; // Method to invalidate all tokens
 }
@@ -194,7 +204,7 @@ export interface IUserCreate {
   // Legacy role field (will be deprecated)
   role?: UserRole;
   // Legacy permissions field (will be deprecated)
-  permissions?: Permission[];
+  permissions?: (Permission | IPermission)[];
   // New roles field (array of role IDs)
   roles?: string[];
   phoneNumber?: string;
@@ -219,6 +229,7 @@ export interface IUserCreate {
   settings?: IUserSettings;
   isActive?: boolean;
   isEmailVerified?: boolean;
+  approvalStatus?: ApprovalStatus;
 }
 
 export interface IUserUpdate {
@@ -227,7 +238,7 @@ export interface IUserUpdate {
   // Legacy role field (will be deprecated)
   role?: UserRole;
   // Legacy permissions field (will be deprecated)
-  permissions?: Permission[];
+  permissions?: (Permission | IPermission)[];
   phoneNumber?: string;
   licenseNumber?: string;
   address?: {
@@ -257,6 +268,7 @@ export interface IUserLogin {
   email: string;
   password: string;
   twoFactorCode?: string;
+  rememberMe?: boolean;
 }
 
 export interface IUserResponse {
@@ -267,7 +279,7 @@ export interface IUserResponse {
   // Legacy role field (will be deprecated)
   role?: UserRole;
   // Legacy permissions field (will be deprecated)
-  permissions?: Permission[];
+  permissions?: (Permission | IPermission)[];
   // New roles field (array of role objects)
   roles?: {
     id: string;
@@ -296,6 +308,9 @@ export interface IUserResponse {
   settings?: IUserSettings;
   isActive: boolean;
   isEmailVerified: boolean;
+  approvalStatus: ApprovalStatus;
+  approvedBy?: string;
+  approvedAt?: Date;
   twoFactorEnabled?: boolean;
   lastLogin?: Date;
   createdAt: Date;

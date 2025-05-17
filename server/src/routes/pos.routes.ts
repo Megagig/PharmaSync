@@ -1,10 +1,20 @@
+import express from 'express';
+import * as posController from '../controllers/pos.controller';
+import { protect, authorize } from '../middleware/auth.middleware';
+import { validateRequest } from '../middleware/validate.middleware';
+import {
+  createSaleSchema,
+  voidSaleSchema,
+  getSalesSchema,
+} from '../schemas/pos.schema';
 import { Router } from 'express';
-import { protect, restrictTo } from '../middleware/auth.middleware';
+import { restrictTo } from '../middleware/auth.middleware';
 import { RoleType } from '../interfaces/role.interface';
+import { Permission } from '../interfaces/user.interface';
 import * as posSessionController from '../controllers/posSession.controller';
 import * as posTransactionController from '../controllers/posTransaction.controller';
 
-const router = Router();
+const router = express.Router();
 
 // Protect all routes
 router.use(protect);
@@ -117,5 +127,30 @@ router.get(
   ]),
   posTransactionController.generatePosReceipt
 );
+
+router
+  .route('/sales')
+  .post(
+    authorize('create:sales' as Permission),
+    validateRequest(createSaleSchema),
+    posController.createSale
+  )
+  .get(
+    authorize('read:sales' as Permission),
+    validateRequest(getSalesSchema),
+    posController.getSales
+  );
+
+router
+  .route('/sales/:id')
+  .get(authorize('read:sales' as Permission), posController.getSaleById);
+
+router
+  .route('/sales/:id/void')
+  .patch(
+    authorize('void:sales' as Permission),
+    validateRequest(voidSaleSchema),
+    posController.voidSale
+  );
 
 export default router;

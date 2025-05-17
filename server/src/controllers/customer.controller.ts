@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
 import Customer from '../models/customer.model';
 import { AppError } from '../utils/error';
+import { toObjectId } from '../utils/idConverter';
 
 /**
  * @desc    Get all customers
@@ -137,7 +138,7 @@ export const createCustomer = asyncHandler(
       notes,
       isActive: true,
       patientId,
-      createdBy: req.user._id,
+      createdBy: toObjectId(req.user.id),
     });
 
     res.status(201).json({

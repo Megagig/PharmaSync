@@ -1,76 +1,73 @@
-import { useState, useCallback } from 'react';
-
-type ToastType = 'success' | 'error' | 'warning' | 'info';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface Toast {
-  id: number;
+  id: string;
   message: string;
-  type: ToastType;
+  type: 'success' | 'error' | 'warning' | 'info';
   duration?: number;
 }
 
-export const useToast = () => {
+interface ToastContextType {
+  toasts: Toast[];
+  showToast: (message: string, type: 'success' | 'error' | 'warning' | 'info') => void;
+}
+
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = useCallback(
-    (message: string, type: ToastType = 'info', duration = 5000) => {
-      const id = Date.now();
-      
-      setToasts((prevToasts) => [
-        ...prevToasts,
-        { id, message, type, duration },
-      ]);
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+    const id = Date.now().toString();
+    setToasts(prev => [
+      ...prev,
+      { id, message, type, duration: 5000 }
+    ]);
+  };
 
-      if (duration !== Infinity) {
-        setTimeout(() => {
-          setToasts((prevToasts) =>
-            prevToasts.filter((toast) => toast.id !== id)
-          );
-        }, duration);
-      }
+  useEffect(() => {
+    if (toasts.length === 0) return;
 
-      return id;
-    },
-    []
-  );
+    const timer = setTimeout(() => {
+      setToasts(prev => prev.slice(1));
+    }, toasts[0].duration || 5000);
 
-  const hideToast = useCallback((id: number) => {
-    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
-  }, []);
+    return () => clearTimeout(timer);
+  }, [toasts]);
 
-  return { toasts, showToast, hideToast };
-};
-
-// Toast component for rendering in your app
-export const ToastContainer: React.FC = () => {
-  const { toasts, hideToast } = useToast();
-
-  if (toasts.length === 0) return null;
+  const renderToasts = () => {
+    return toasts.map((toast) => (
+      <div
+        key={toast.id}
+        className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg ${
+          toast.type === 'success'
+            ? 'bg-green-500 text-white'
+            : toast.type === 'error'
+            ? 'bg-red-500 text-white'
+            : toast.type === 'warning'
+            ? 'bg-yellow-500 text-gray-800'
+            : 'bg-blue-500 text-white'
+        }`}
+      >
+        {toast.message}
+      </div>
+    ));
+  };
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
-      {toasts.map((toast) => (
-        <div
-          key={toast.id}
-          className={`p-4 rounded shadow-md flex justify-between items-center ${
-            toast.type === 'success'
-              ? 'bg-green-100 text-green-800'
-              : toast.type === 'error'
-              ? 'bg-red-100 text-red-800'
-              : toast.type === 'warning'
-              ? 'bg-yellow-100 text-yellow-800'
-              : 'bg-blue-100 text-blue-800'
-          }`}
-        >
-          <span>{toast.message}</span>
-          <button
-            onClick={() => hideToast(toast.id)}
-            className="ml-4 text-gray-500 hover:text-gray-700"
-          >
-            ×
-          </button>
-        </div>
-      ))}
-    </div>
+    <ToastContext.Provider value={{ toasts, showToast }}>
+      {children}
+      <div className="fixed bottom-4 right-4 z-50">
+        {renderToasts()}
+      </div>
+    </ToastContext.Provider>
   );
+};
+
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (context === undefined) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context;
 };

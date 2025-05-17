@@ -6,6 +6,7 @@ import Location from '../models/location.model';
 import { BudgetStatus } from '../interfaces/budget.interface';
 import { ExpenseStatus } from '../interfaces/expense.interface';
 import { AppError } from '../utils/error';
+import { toObjectId } from '../utils/idConverter';
 import {
   getPaginationOptions,
   createPaginationResult,
@@ -251,7 +252,7 @@ export const activateBudget = asyncHandler(
 
     // Update budget status
     budget.status = BudgetStatus.ACTIVE;
-    budget.approvedBy = req.user.id;
+    budget.approvedBy = toObjectId(req.user.id);
     budget.approvedAt = new Date();
 
     // Save updated budget
@@ -283,7 +284,7 @@ export const closeBudget = asyncHandler(async (req: Request, res: Response) => {
 
   // Update budget status
   budget.status = BudgetStatus.CLOSED;
-  budget.closedBy = req.user.id;
+  budget.closedBy = toObjectId(req.user.id);
   budget.closedAt = new Date();
 
   // Save updated budget

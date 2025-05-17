@@ -2,54 +2,55 @@ import { Document, Types } from 'mongoose';
 
 export enum SaleStatus {
   COMPLETED = 'completed',
+  VOIDED = 'voided',
   RETURNED = 'returned',
-  CANCELLED = 'cancelled',
-  PENDING = 'pending',
 }
 
 export enum PaymentStatus {
   PAID = 'paid',
   UNPAID = 'unpaid',
   PARTIAL = 'partial',
+  OVERPAID = 'overpaid',
 }
 
-export interface ISaleItem {
+export interface SaleItem {
   product: Types.ObjectId;
   quantity: number;
   unitPrice: number;
-  discount: number;
+  discount?: number;
   subtotal: number;
+  finalPrice: number;
   batchNumber: string;
   expiryDate?: Date;
   notes?: string;
-  _id?: Types.ObjectId;
 }
 
 export interface ISale extends Document {
+  items: SaleItem[];
   customer: Types.ObjectId;
   saleNumber: string;
-  saleDate: Date;
-  status: SaleStatus;
-  items: Types.DocumentArray<ISaleItem>;
   subtotal: number;
+  totalDiscount: number;
   discount: number;
   tax: number;
   total: number;
+  paymentMethod: string;
   paymentStatus: PaymentStatus;
-  paymentMethod?: 'cash' | 'card' | 'transfer' | 'credit' | 'multiple';
   notes?: string;
+  status: SaleStatus;
+  saleDate: Date;
   createdBy: Types.ObjectId;
   location: Types.ObjectId;
   receiptGenerated: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-  _id: Types.ObjectId;
+  voidedBy?: Types.ObjectId;
+  voidedAt?: Date;
+  voidReason?: string;
 }
 
 export interface ISaleCreate {
   customer: string;
   saleDate?: Date;
-  items: Omit<ISaleItem, 'subtotal'>[];
+  items: Omit<SaleItem, 'subtotal'>[];
   discount?: number;
   tax?: number;
   paymentMethod?: 'cash' | 'card' | 'transfer' | 'credit' | 'multiple';

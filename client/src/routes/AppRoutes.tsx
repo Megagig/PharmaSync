@@ -12,6 +12,8 @@ import LandingPage from '@/pages/Landing/LandingPage';
 import Login from '@/features/auth/pages/Login';
 import Register from '@/features/auth/pages/Register';
 import Logout from '@/features/auth/pages/Logout';
+import ForgotPassword from '@/features/auth/pages/ForgotPassword';
+import ResetPassword from '@/features/auth/pages/ResetPassword';
 
 // Main pages
 import Dashboard from '@/pages/Dashboard';
@@ -118,6 +120,7 @@ import UserList from '@/pages/UserManagement/UserList';
 import UserForm from '@/pages/UserManagement/UserForm';
 import UserDetail from '@/pages/UserManagement/UserDetail';
 import UserProfile from '@/pages/UserManagement/UserProfile';
+import PendingUsers from '@/pages/UserManagement/PendingUsers';
 
 // Activity Log pages
 import ActivityLogList from '@/pages/ActivityLogs/ActivityLogList';
@@ -201,6 +204,8 @@ const AppRoutes = () => {
       <Route element={<PublicRoute />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
       </Route>
 
       {/* Logout route */}
@@ -377,6 +382,7 @@ const AppRoutes = () => {
           {/* User Management */}
           <Route path="/users" element={<UserList />} />
           <Route path="/users/new" element={<UserForm />} />
+          <Route path="/users/pending" element={<PendingUsers />} />
           <Route path="/users/:id" element={<UserDetail />} />
           <Route path="/users/:id/edit" element={<UserForm />} />
           <Route path="/profile" element={<UserProfile />} />

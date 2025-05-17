@@ -8,7 +8,13 @@ export enum PosTransactionType {
 }
 
 export interface IPosPaymentMethod {
-  method: 'cash' | 'card' | 'transfer' | 'credit' | 'gift_card' | 'store_credit';
+  method:
+    | 'cash'
+    | 'card'
+    | 'transfer'
+    | 'credit'
+    | 'gift_card'
+    | 'store_credit';
   amount: number;
   reference?: string;
   cardType?: string;
@@ -23,6 +29,8 @@ export interface IPosTransaction extends ISale {
   cashier: Types.ObjectId;
   paymentMethods: Types.DocumentArray<IPosPaymentMethod>;
   changeDue: number;
+  discount: number;
+  tax: number;
   returnReason?: string;
   originalSale?: Types.ObjectId; // For returns/exchanges, reference to the original sale
   giftCardIssued?: boolean;
@@ -49,7 +57,13 @@ export interface IPosTransactionCreate {
   discount?: number;
   tax?: number;
   paymentMethods: {
-    method: 'cash' | 'card' | 'transfer' | 'credit' | 'gift_card' | 'store_credit';
+    method:
+      | 'cash'
+      | 'card'
+      | 'transfer'
+      | 'credit'
+      | 'gift_card'
+      | 'store_credit';
     amount: number;
     reference?: string;
     cardType?: string;

@@ -137,38 +137,6 @@ export const generateNotificationEmail = (
 };
 
 /**
- * Send a password reset email
- * @param to Recipient email
- * @param resetToken Reset token
- * @param userName User's name
- * @returns Promise<boolean> True if email was sent successfully
- */
-export const sendPasswordResetEmail = async (
-  to: string,
-  resetToken: string,
-  userName: string
-): Promise<boolean> => {
-  const resetUrl = `${config.clientUrl}/reset-password/${resetToken}`;
-
-  const subject = 'Password Reset Request';
-  const text = `Hello ${userName},\n\nYou are receiving this email because you (or someone else) has requested the reset of a password.\n\nPlease click on the following link, or paste this into your browser to complete the process:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.\n`;
-
-  const html = generateNotificationEmail(
-    'Password Reset Request',
-    `Hello ${userName},<br><br>You are receiving this email because you (or someone else) has requested the reset of a password.<br><br>Please click the button below to complete the process:`,
-    resetUrl,
-    'Reset Password'
-  );
-
-  return sendEmail({
-    to,
-    subject,
-    text,
-    html,
-  });
-};
-
-/**
  * Send a welcome email
  * @param to Recipient email
  * @param userName User's name
@@ -188,6 +156,126 @@ export const sendWelcomeEmail = async (
     `Hello ${userName},<br><br>Welcome to PharmaSync! We're excited to have you on board.<br><br>You can log in to your account by clicking the button below:`,
     loginUrl,
     'Log In'
+  );
+
+  return sendEmail({
+    to,
+    subject,
+    text,
+    html,
+  });
+};
+
+/**
+ * Send a registration confirmation email with pending approval message
+ * @param to Recipient email
+ * @param userName User's name
+ * @returns Promise<boolean> True if email was sent successfully
+ */
+export const sendRegistrationConfirmationEmail = async (
+  to: string,
+  userName: string
+): Promise<boolean> => {
+  const subject = 'Registration Confirmation - PharmaSync';
+  const text = `Hello ${userName},\n\nThank you for registering with PharmaSync!\n\nYour account is currently pending approval by an administrator. You will receive another email once your account has been approved.\n\nIf you have any questions, please don't hesitate to contact us.\n`;
+
+  const html = generateNotificationEmail(
+    'Registration Confirmation',
+    `Hello ${userName},<br><br>Thank you for registering with PharmaSync!<br><br>Your account is currently <strong>pending approval</strong> by an administrator. You will receive another email once your account has been approved.<br><br>If you have any questions, please don't hesitate to contact us.`,
+    null,
+    null
+  );
+
+  return sendEmail({
+    to,
+    subject,
+    text,
+    html,
+  });
+};
+
+/**
+ * Send an account approval notification email
+ * @param to Recipient email
+ * @param userName User's name
+ * @returns Promise<boolean> True if email was sent successfully
+ */
+export const sendAccountApprovalEmail = async (
+  to: string,
+  userName: string
+): Promise<boolean> => {
+  const loginUrl = `${config.clientUrl}/login`;
+
+  const subject = 'Account Approved - PharmaSync';
+  const text = `Hello ${userName},\n\nCongratulations! Your PharmaSync account has been approved by an administrator.\n\nYou can now log in to your account using the following link:\n\n${loginUrl}\n\nIf you have any questions, please don't hesitate to contact us.\n`;
+
+  const html = generateNotificationEmail(
+    'Account Approved',
+    `Hello ${userName},<br><br>Congratulations! Your PharmaSync account has been <strong>approved</strong> by an administrator.<br><br>You can now log in to your account by clicking the button below:`,
+    loginUrl,
+    'Log In'
+  );
+
+  return sendEmail({
+    to,
+    subject,
+    text,
+    html,
+  });
+};
+
+/**
+ * Send an account rejection notification email
+ * @param to Recipient email
+ * @param userName User's name
+ * @param reason Rejection reason
+ * @returns Promise<boolean> True if email was sent successfully
+ */
+export const sendAccountRejectionEmail = async (
+  to: string,
+  userName: string,
+  reason?: string
+): Promise<boolean> => {
+  const subject = 'Account Registration Status - PharmaSync';
+  const reasonText = reason ? `\n\nReason: ${reason}` : '';
+  const text = `Hello ${userName},\n\nWe regret to inform you that your PharmaSync account registration has been rejected.${reasonText}\n\nIf you believe this is an error or would like more information, please contact our support team.\n`;
+
+  const reasonHtml = reason ? `<br><br><strong>Reason:</strong> ${reason}` : '';
+  const html = generateNotificationEmail(
+    'Account Registration Status',
+    `Hello ${userName},<br><br>We regret to inform you that your PharmaSync account registration has been <strong>rejected</strong>.${reasonHtml}<br><br>If you believe this is an error or would like more information, please contact our support team.`,
+    null,
+    null
+  );
+
+  return sendEmail({
+    to,
+    subject,
+    text,
+    html,
+  });
+};
+
+/**
+ * Send a password reset email with a reset link
+ * @param to Recipient email
+ * @param userName User's name
+ * @param resetUrl Password reset URL
+ * @returns Promise<boolean> True if email was sent successfully
+ */
+export const sendPasswordResetEmail = async (
+  to: string,
+  userName: string,
+  resetUrl: string
+): Promise<boolean> => {
+  const subject = 'Password Reset - PharmaSync';
+  const text = `Hello ${userName},\n\nYou are receiving this email because you (or someone else) has requested a password reset for your account.\n\nPlease click on the following link to reset your password:\n\n${resetUrl}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.\n\nThis link will expire in 1 hour.\n`;
+
+  const html = generateNotificationEmail(
+    'Password Reset Request',
+    `Hello ${userName},<br><br>You are receiving this email because you (or someone else) has requested a password reset for your account.<br><br>Please click on the button below to reset your password:`,
+    resetUrl,
+    'Reset Password'
   );
 
   return sendEmail({

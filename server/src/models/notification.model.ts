@@ -8,7 +8,7 @@ import {
 const notificationSchema = new Schema<INotification>(
   {
     user: {
-      type: String,
+      type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
       // index: true, // Removed to avoid duplicate index with explicit index declaration

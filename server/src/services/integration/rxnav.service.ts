@@ -362,8 +362,7 @@ class RxNavService {
         }
       } catch (propError) {
         logger.warn(
-          `Error filtering strength properties: ${
-            (propError as Error).message || 'Unknown error'
+          `Error filtering strength properties: ${(propError as Error).message || 'Unknown error'
           }`
         );
         // Continue to next approach
@@ -388,8 +387,7 @@ class RxNavService {
       } catch (error) {
         const relatedError = error as Error;
         logger.warn(
-          `Error fetching related drugs: ${
-            relatedError.message || 'Unknown error'
+          `Error fetching related drugs: ${relatedError.message || 'Unknown error'
           }`
         );
         // Continue to the next approach
@@ -422,8 +420,7 @@ class RxNavService {
       } catch (error) {
         const allRelatedError = error as Error;
         logger.warn(
-          `Error fetching all related drugs: ${
-            allRelatedError.message || 'Unknown error'
+          `Error fetching all related drugs: ${allRelatedError.message || 'Unknown error'
           }`
         );
       }
@@ -500,8 +497,7 @@ class RxNavService {
         }
       } catch (propError) {
         logger.warn(
-          `Error getting side effects from properties: ${
-            (propError as Error).message || 'Unknown error'
+          `Error getting side effects from properties: ${(propError as Error).message || 'Unknown error'
           }`
         );
         // Continue to next approach
@@ -529,8 +525,7 @@ class RxNavService {
         }
       } catch (apiError) {
         logger.warn(
-          `Error getting side effects from NDF-RT API: ${
-            (apiError as Error).message || 'Unknown error'
+          `Error getting side effects from NDF-RT API: ${(apiError as Error).message || 'Unknown error'
           }`
         );
         // Continue to fallback
@@ -614,8 +609,7 @@ class RxNavService {
         }
       } catch (propError) {
         logger.warn(
-          `Error getting contraindications from properties: ${
-            (propError as Error).message || 'Unknown error'
+          `Error getting contraindications from properties: ${(propError as Error).message || 'Unknown error'
           }`
         );
         // Continue to next approach
@@ -643,8 +637,7 @@ class RxNavService {
         }
       } catch (apiError) {
         logger.warn(
-          `Error getting contraindications from NDF-RT API: ${
-            (apiError as Error).message || 'Unknown error'
+          `Error getting contraindications from NDF-RT API: ${(apiError as Error).message || 'Unknown error'
           }`
         );
         // Continue to fallback
@@ -730,8 +723,7 @@ class RxNavService {
         }
       } catch (propError) {
         logger.warn(
-          `Error getting dosage from properties: ${
-            (propError as Error).message || 'Unknown error'
+          `Error getting dosage from properties: ${(propError as Error).message || 'Unknown error'
           }`
         );
         // Continue to fallback

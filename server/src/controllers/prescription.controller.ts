@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import Prescription from '../models/prescription.model';
 import Patient from '../models/patient.model';
 import Medication from '../models/medication.model';
@@ -214,6 +215,11 @@ export const addPrescriptionItem = asyncHandler(
       refillsRemaining: refills,
       startDate: startDate ? new Date(startDate) : new Date(),
       endDate: endDate ? new Date(endDate) : undefined,
+      dosageInstructions: {
+        frequency: 'daily', // Default value, should be provided in the request
+        duration: '30 days', // Default value, should be provided in the request
+        instructions: 'Take as directed', // Default value, should be provided in the request
+      },
       notes,
     });
 
@@ -384,12 +390,6 @@ export const dispenseMedication = asyncHandler(
       // Update inventory quantity
       inventoryItem.quantity -= quantity;
 
-      // Calculate total stock from inventory
-      const totalStock = medication.inventory.reduce(
-        (total, item) => total + item.quantity,
-        0
-      );
-
       await medication.save();
 
       // Decrement refills remaining
@@ -404,7 +404,7 @@ export const dispenseMedication = asyncHandler(
         0
       ),
       batchNumber: items.map((item: any) => item.batchNumber).join(', '),
-      dispensedBy: req.user.id, // From auth middleware
+      dispensedBy: new mongoose.Types.ObjectId(req.user.id), // From auth middleware
       notes,
     });
 

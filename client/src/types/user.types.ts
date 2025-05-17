@@ -9,6 +9,12 @@ export enum UserRole {
   PATIENT = 'patient',
 }
 
+export enum ApprovalStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 export enum Permission {
   // Patient permissions
   VIEW_PATIENTS = 'view_patients',
@@ -109,6 +115,10 @@ export interface User {
   settings?: UserSettings;
   isActive: boolean;
   isEmailVerified: boolean;
+  approvalStatus: ApprovalStatus;
+  approvedBy?: string;
+  approvedAt?: string;
+  rejectionReason?: string;
   twoFactorEnabled?: boolean;
   lastLogin?: string;
   createdAt: string;
@@ -140,6 +150,7 @@ export interface UserFormData {
   settings?: UserSettings;
   isActive?: boolean;
   isEmailVerified?: boolean;
+  approvalStatus?: ApprovalStatus;
   twoFactorEnabled?: boolean;
 }
 

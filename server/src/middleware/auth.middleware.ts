@@ -1,212 +1,203 @@
 import { Request, Response, NextFunction } from 'express';
 import { UnauthorizedError, ForbiddenError } from '../utils/error';
 import { verifyAccessToken } from '../config/auth.config';
-import { UserRole } from '../interfaces/user.interface';
-import { RoleType } from '../interfaces/role.interface';
+import { Permission } from '../interfaces/user.interface';
+import { RoleType, IPermission } from '../interfaces/role.interface';
 import User from '../models/user.model';
 import Role from '../models/role.model';
 import { createActivityLog } from '../controllers/activityLog.controller';
 import { ActivityType } from '../interfaces/activityLog.interface';
+import jwt from 'jsonwebtoken';
+import env from '../config/env.config';
+import { Types } from 'mongoose';
 
 // Extend the Express Request interface to include user
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
+      user?: {
+        id: string;
+        _id?: string; // For backward compatibility
+        roles?: Array<{ type: RoleType }>;
+        permissions?: (Permission | IPermission)[];
+        firstName?: string; // For backward compatibility
+        lastName?: string; // For backward compatibility
+      };
     }
   }
 }
 
-export const protect = async (
+// Main authentication middleware
+export const authenticate = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
-  // For development purposes, bypass authentication
-  if (process.env.NODE_ENV === 'development') {
-    // Set a mock user for development
-    const mockUser = await User.findOne()
-      .select(
-        '-password -passwordResetToken -passwordResetExpires -refreshToken -refreshTokenExpires -twoFactorSecret -twoFactorBackupCodes'
-      )
-      .populate({
-        path: 'roles',
-        select: 'name type permissions',
-      });
-
-    if (mockUser) {
-      req.user = mockUser;
-    } else {
-      // If no user exists, create a mock user object with admin privileges
-      req.user = {
-        _id: '000000000000000000000000',
-        name: 'Development User',
-        email: 'dev@example.com',
-        isActive: true,
-        roles: [{ type: 'admin', name: 'Administrator' }],
-      };
-    }
-
-    return next();
-  }
-
+): Promise<void> => {
   try {
-    // Get token from header
-    const authHeader = req.headers.authorization;
+    let token: string | undefined;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedError('No token provided');
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.cookies?.token) {
+      token = req.cookies.token;
     }
-
-    const token = authHeader.split(' ')[1];
 
     if (!token) {
-      throw new UnauthorizedError('No token provided');
+      throw new UnauthorizedError('Not authorized to access this route');
     }
 
-    // Verify token
-    const decoded = verifyAccessToken(token);
+    try {
+      // Verify token
+      let decoded;
 
-    // Check if it's an access token
-    if (decoded.type !== 'access') {
-      throw new UnauthorizedError('Invalid token type');
-    }
+      try {
+        // Always verify token signature properly
+        decoded = jwt.verify(
+          token,
+          Buffer.from(env.JWT_SECRET, 'utf-8')
+        ) as jwt.JwtPayload & {
+          id: string;
+          type?: string;
+          tokenVersion?: number;
+        };
 
-    // Check if user exists
-    const user = await User.findById(decoded.id)
-      .select(
-        '-password -passwordResetToken -passwordResetExpires -refreshToken -refreshTokenExpires -twoFactorSecret -twoFactorBackupCodes'
-      )
-      .populate({
-        path: 'roles',
-        select: 'name type permissions',
-      });
+        // Ensure token has required fields
+        if (!decoded || !decoded.id) {
+          throw new UnauthorizedError('Invalid token format');
+        }
 
-    if (!user) {
-      throw new UnauthorizedError('User not found');
-    }
+        // Check if it's an access token
+        if (decoded.type && decoded.type !== 'access') {
+          throw new UnauthorizedError('Invalid token type');
+        }
+      } catch (error) {
+        // Provide more specific error messages based on the error type
+        if (error instanceof jwt.TokenExpiredError) {
+          throw new UnauthorizedError('Token has expired');
+        } else if (error instanceof jwt.JsonWebTokenError) {
+          throw new UnauthorizedError('Invalid token');
+        } else {
+          throw new UnauthorizedError('Authentication failed');
+        }
+      }
 
-    if (!user.isActive) {
-      throw new UnauthorizedError('User account is inactive');
-    }
+      // Get user from token
+      const user = await User.findById(decoded.id)
+        .select('+password')
+        .populate({
+          path: 'roles',
+          select: 'type permissions',
+        });
 
-    // Check token version
-    if (user.tokenVersion !== decoded.tokenVersion) {
-      throw new UnauthorizedError(
-        'Token has been revoked. Please log in again'
-      );
-    }
+      if (!user) {
+        throw new UnauthorizedError('User not found');
+      }
 
-    // Check if password was changed after token was issued
-    if (user.passwordChangedAt && decoded.iat) {
-      const changedTimestamp = Math.floor(
-        user.passwordChangedAt.getTime() / 1000
-      );
+      // Check if user is active
+      if (!user.isActive) {
+        throw new UnauthorizedError('User account is inactive');
+      }
 
-      if (decoded.iat < changedTimestamp) {
+      // Check if user changed password after token was issued
+      if (user.passwordChangedAt) {
+        const changedTimestamp = parseInt(
+          (user.passwordChangedAt.getTime() / 1000).toString(),
+          10
+        );
+
+        if (decoded.iat && decoded.iat < changedTimestamp) {
+          throw new UnauthorizedError(
+            'User recently changed password! Please log in again.'
+          );
+        }
+      }
+
+      // Check token version (for token invalidation)
+      if (
+        decoded.tokenVersion !== undefined &&
+        user.tokenVersion !== undefined &&
+        decoded.tokenVersion < user.tokenVersion
+      ) {
         throw new UnauthorizedError(
-          'Password was changed recently. Please log in again'
+          'Token has been invalidated. Please log in again.'
         );
       }
+
+      // Add user to request
+      req.user = {
+        id: user._id.toString(),
+        _id: user._id.toString(), // For backward compatibility
+        firstName: user.firstName, // For backward compatibility
+        lastName: user.lastName, // For backward compatibility
+        roles:
+          user.roles?.map((role) => ({
+            type: (role as any).type as RoleType,
+          })) || [],
+        permissions: user.permissions || [],
+      };
+      next();
+    } catch (error) {
+      throw new UnauthorizedError('Not authorized to access this route');
     }
-
-    // Check if account is locked
-    if (user.lockoutUntil && user.lockoutUntil > new Date()) {
-      throw new UnauthorizedError(
-        'Account is temporarily locked. Please try again later'
-      );
-    }
-
-    // Set user in request
-    req.user = user;
-
-    // Get IP address and user agent for security tracking
-    const ipAddress = req.ip || req.socket.remoteAddress;
-    const userAgent = req.headers['user-agent'];
-
-    // Update last access info (but don't wait for it to complete)
-    User.findByIdAndUpdate(
-      user._id,
-      {
-        lastIpAddress: ipAddress,
-        lastUserAgent: userAgent,
-        $push: {
-          securityEvents: {
-            type: 'api_access',
-            timestamp: new Date(),
-            ipAddress,
-            userAgent,
-            details: `API access: ${req.method} ${req.originalUrl}`,
-          },
-        },
-      },
-      { new: true }
-    ).catch((err) => {
-      console.error('Error updating access information:', err);
-    });
-
-    next();
-  } catch (error: any) {
-    if (error && error.name === 'JsonWebTokenError') {
-      return next(new UnauthorizedError('Invalid token'));
-    }
-
-    if (error && error.name === 'TokenExpiredError') {
-      return next(new UnauthorizedError('Token expired'));
-    }
-
+  } catch (error) {
     next(error);
   }
 };
 
 // Alias for backward compatibility
-export const authenticate = protect;
+export const protect = authenticate;
 
 /**
- * Middleware to restrict access to specific legacy roles (for backward compatibility)
+ * Middleware to authorize based on permissions
  */
-export const authorize = (...roles: UserRole[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return next(new UnauthorizedError('User not authenticated'));
+export const authorize = (...permissions: Permission[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Check if user exists (should be added by authenticate middleware)
+      if (!req.user) {
+        throw new UnauthorizedError('Not authorized to access this route');
+      }
+
+      // Get user from database to check permissions
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        throw new UnauthorizedError('User not found');
+      }
+
+      // Check each required permission
+      for (const permission of permissions) {
+        if (typeof permission === 'string') {
+          // Legacy string permission
+          const [action, resource] = permission.split(':');
+          const hasPermission = await user.hasPermission(resource, action);
+          if (!hasPermission) {
+            throw new ForbiddenError('Not authorized to access this route');
+          }
+        } else {
+          // IPermission object
+          const permObj = permission as unknown as IPermission;
+          const hasPermission = await user.hasPermission(
+            permObj.resource,
+            permObj.actions[0]
+          );
+          if (!hasPermission) {
+            throw new ForbiddenError('Not authorized to access this route');
+          }
+        }
+      }
+
+      next();
+    } catch (error) {
+      next(error);
     }
-
-    // For development purposes, allow all authenticated users to access all routes
-    // In production, you would want to uncomment the role checking code below
-
-    // DEVELOPMENT MODE: Skip role checking
-    return next();
-
-    /*
-    if (!roles.includes(req.user.role)) {
-      // Log unauthorized access attempt
-      createActivityLog({
-        user: req.user.id,
-        type: ActivityType.UNAUTHORIZED_ACCESS,
-        description: `Attempted to access resource restricted to roles: ${roles.join(
-          ', '
-        )}`,
-        metadata: {
-          path: req.originalUrl,
-          method: req.method,
-          userRole: req.user.role,
-        },
-      }).catch((err) =>
-        console.error('Error logging unauthorized access:', err)
-      );
-
-      return next(
-        new ForbiddenError('You do not have permission to perform this action')
-      );
-    }
-    */
-
-    next();
   };
 };
 
 /**
- * Middleware to restrict access to specific role types (new role system)
+ * Middleware to restrict access to specific role types
  */
 export const restrictTo = (roleTypes: RoleType[]) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -216,35 +207,17 @@ export const restrictTo = (roleTypes: RoleType[]) => {
 
     try {
       // For development purposes, allow all authenticated users to access all routes
-      // In production, you would want to uncomment the role checking code below
-
-      // DEVELOPMENT MODE: Skip role checking
       return next();
 
       /*
       // Check if user has any of the required role types
-      let hasRequiredRole = false;
-
-      // First check populated roles
-      if (req.user.roles && Array.isArray(req.user.roles)) {
-        hasRequiredRole = req.user.roles.some((role: any) =>
-          roleTypes.includes(role.type)
-        );
-      }
-
-      // If roles aren't populated or user doesn't have required role, check using the method
-      if (!hasRequiredRole) {
-        for (const roleType of roleTypes) {
-          if (await req.user.hasRole(roleType)) {
-            hasRequiredRole = true;
-            break;
-          }
-        }
-      }
+      const hasRequiredRole = req.user.roles?.some((role) =>
+        roleTypes.includes(role.type)
+      );
 
       if (!hasRequiredRole) {
         // Log unauthorized access attempt
-        createActivityLog({
+        await createActivityLog({
           user: req.user.id,
           type: ActivityType.UNAUTHORIZED_ACCESS,
           description: `Attempted to access resource restricted to role types: ${roleTypes.join(
@@ -253,13 +226,9 @@ export const restrictTo = (roleTypes: RoleType[]) => {
           metadata: {
             path: req.originalUrl,
             method: req.method,
-            userRoles: req.user.roles
-              ? req.user.roles.map((r: any) => r.type || r)
-              : [],
+            userRoles: req.user.roles?.map((r) => r.type) || [],
           },
-        }).catch((err) =>
-          console.error('Error logging unauthorized access:', err)
-        );
+        });
 
         return next(
           new ForbiddenError(
@@ -287,9 +256,6 @@ export const requirePermission = (resource: string, action: string) => {
 
     try {
       // For development purposes, allow all authenticated users to access all resources
-      // In production, you would want to uncomment the permission checking code below
-
-      // DEVELOPMENT MODE: Skip permission checking
       return next();
 
       /*
@@ -298,7 +264,7 @@ export const requirePermission = (resource: string, action: string) => {
 
       if (!hasPermission) {
         // Log unauthorized access attempt
-        createActivityLog({
+        await createActivityLog({
           user: req.user.id,
           type: ActivityType.UNAUTHORIZED_ACCESS,
           description: `Attempted to access resource requiring permission: ${resource}:${action}`,
@@ -308,9 +274,7 @@ export const requirePermission = (resource: string, action: string) => {
             resource,
             action,
           },
-        }).catch((err) =>
-          console.error('Error logging unauthorized access:', err)
-        );
+        });
 
         return next(
           new ForbiddenError(

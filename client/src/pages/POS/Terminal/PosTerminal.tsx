@@ -6,27 +6,15 @@ import {
   fetchActivePosSession,
   createPosTransaction,
 } from '@/store/slices/posSlice';
-import { PosTransactionType, PosSessionStatus } from '@/types/pos.types';
-import Card from '@/components/common/Card/Card';
-import Button from '@/components/common/Button/Button';
-import Input from '@/components/common/Input/Input';
-import Select from '@/components/common/Select/Select';
+import { PosTransactionType, PaymentStatus } from '@/types/pos.types';
 import { useToast } from '@/hooks/useToast';
 import api from '@/services/api';
 import { formatCurrency } from '@/utils/formatters';
-import ProductSearch from '@/components/common/ProductSearch/ProductSearch';
-import CustomerSearch from '@/components/common/CustomerSearch/CustomerSearch';
-import PosCart from './components/PosCart';
-import PosPayment from './components/PosPayment';
-import PosNumpad from './components/PosNumpad';
-import PosProductGrid from './components/PosProductGrid';
-import PosHeader from './components/PosHeader';
 
 const PosTerminal = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
-  const { activeSession, isLoading, error } = useSelector(
+  const { activeSession } = useSelector(
     (state: RootState) => state.pos
   );
   const { showToast } = useToast();
@@ -35,20 +23,15 @@ const PosTerminal = () => {
   const queryParams = new URLSearchParams(location.search);
   const sessionId = queryParams.get('session');
 
-  // State for locations
-  const [locations, setLocations] = useState<{ _id: string; name: string }[]>(
-    []
-  );
+  // State declarations
+  const [showExpiryModal, setShowExpiryModal] = useState(false);
+  const [locations, setLocations] = useState<{ _id: string; name: string }[]>([]);
   const [selectedLocation, setSelectedLocation] = useState('');
-
-  // State for register
   const [register, setRegister] = useState('Main Register');
-
-  // State for transaction
   const [transactionType, setTransactionType] = useState<PosTransactionType>(
     PosTransactionType.SALE
   );
-  const [selectedCustomer, setSelectedCustomer] = useState<any>({
+  const [selectedCustomer, setSelectedCustomer] = useState({
     _id: 'walk-in-customer',
     firstName: 'Walk-in',
     lastName: 'Customer',
@@ -60,77 +43,59 @@ const PosTerminal = () => {
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
   const [notes, setNotes] = useState('');
-
-  // State for payment
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
-
-  // State for product search
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [availableExpiryDates, setAvailableExpiryDates] = useState<any[]>([]);
   const [selectedExpiryDate, setSelectedExpiryDate] = useState('');
   const [unitPrice, setUnitPrice] = useState(0);
   const [productDiscount, setProductDiscount] = useState(0);
+  const [error, setError] = useState<string>('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
   const total = subtotal - discount + tax;
 
   useEffect(() => {
-    // Fetch locations
-    const fetchLocations = async () => {
+    const initializeTerminal = async () => {
       try {
-        const response = await api.get('/locations/active');
-        console.log('PosTerminal - Locations API response:', response.data);
-
-        // The active endpoint returns an array directly
-        if (Array.isArray(response.data.data)) {
-          console.log(
-            'PosTerminal - Setting locations array:',
-            response.data.data
-          );
-          setLocations(response.data.data);
-
-          if (response.data.data.length > 0) {
-            console.log(
-              'PosTerminal - Setting default location:',
-              response.data.data[0]._id
-            );
-            setSelectedLocation(response.data.data[0]._id);
-          } else {
-            console.log(
-              'PosTerminal - No locations found in the response data array'
-            );
+        // Fetch locations
+        const locationsResponse = await api.get('/locations/active');
+        if (Array.isArray(locationsResponse.data.data)) {
+          setLocations(locationsResponse.data.data);
+          if (locationsResponse.data.data.length > 0) {
+            setSelectedLocation(locationsResponse.data.data[0]._id);
           }
-        } else {
-          console.error(
-            'PosTerminal - Unexpected API response format:',
-            response.data
-          );
         }
-      } catch (error) {
-        console.error('Failed to fetch locations:', error);
+
+        // Fetch payment methods
+        const paymentMethodsResponse = await api.get('/payment-methods');
+        if (Array.isArray(paymentMethodsResponse.data.data)) {
+          setPaymentMethods(paymentMethodsResponse.data.data);
+        }
+
+        // Fetch active session if not already loaded
+        if (!activeSession && sessionId) {
+          await dispatch(fetchActivePosSession({ location: selectedLocation })).unwrap();
+        }
+      } catch (err: any) {
+        console.error('Error initializing POS terminal:', err);
+        setError(err.message || 'Failed to initialize POS terminal');
       }
     };
 
-    fetchLocations();
-  }, []);
+    initializeTerminal();
+  }, [dispatch, sessionId, activeSession, selectedLocation]);
 
   useEffect(() => {
-    // If session ID is provided, fetch the session
+    // If session ID is provided and location is selected, fetch the session
     if (sessionId && selectedLocation) {
-      // Make sure register is not empty
-      const registerName = register || 'Main Register';
-      console.log('Fetching active POS session with:', {
-        location: selectedLocation,
-        register: registerName,
-      });
-
       dispatch(
         fetchActivePosSession({
           location: selectedLocation,
-          register: registerName,
+          register: register || 'Main Register'
         }) as any
       );
     }
@@ -146,78 +111,42 @@ const PosTerminal = () => {
 
   const fetchProductBatches = async () => {
     try {
-      console.log('Fetching expiry dates for product:', selectedProduct);
+      if (!selectedProduct || !selectedProduct._id) return;
 
-      if (!selectedProduct || !selectedProduct._id) {
-        console.error('Invalid product or missing _id:', selectedProduct);
-        return;
-      }
+      const response = await api.get(`/products/${selectedProduct._id}/batches`);
+      const batches = response.data.data || [];
 
-      // Set the unit price immediately when a product is selected
-      setUnitPrice(selectedProduct.defaultPrice || 0);
-
-      const response = await api.get(
-        `/products/${selectedProduct._id}/batches`
-      );
-      console.log('Product batches response:', response.data);
-
-      if (response.data && response.data.data) {
-        // Check if there are any batches
-        if (response.data.data.length > 0) {
-          // Group batches by expiry date
-          const batchesByExpiryDate = response.data.data.reduce(
-            (acc: any, batch: any) => {
-              const expiryDate = new Date(batch.expiryDate)
-                .toISOString()
-                .split('T')[0];
-              if (!acc[expiryDate]) {
-                acc[expiryDate] = [];
-              }
-              acc[expiryDate].push(batch);
-              return acc;
-            },
-            {}
+      if (batches.length > 0) {
+        const groupedBatches = batches.reduce((groups: any[], batch: any) => {
+          const existingGroup = groups.find(
+            (g) => g.expiryDate === batch.expiryDate
           );
 
-          // Convert to array format and sort by expiry date (earliest first - FIFO)
-          const expiryDates = Object.keys(batchesByExpiryDate)
-            .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
-            .map((date) => ({
-              expiryDate: date,
-              batches: batchesByExpiryDate[date],
-              totalQuantity: batchesByExpiryDate[date].reduce(
-                (sum: number, b: any) => sum + b.quantity,
-                0
-              ),
-            }));
-
-          setAvailableExpiryDates(expiryDates);
-
-          // Automatically select the earliest expiry date (FIFO)
-          if (expiryDates.length > 0) {
-            setSelectedExpiryDate(expiryDates[0].expiryDate);
+          if (existingGroup) {
+            existingGroup.batches.push(batch);
+            existingGroup.totalQuantity += batch.quantity;
+          } else {
+            groups.push({
+              expiryDate: batch.expiryDate,
+              batches: [batch],
+              totalQuantity: batch.quantity,
+            });
           }
-        } else {
-          // No batches found
-          setAvailableExpiryDates([]);
-          setSelectedExpiryDate('');
 
-          // Show a toast message instead of browser alert
-          showToast(
-            `No inventory found for ${selectedProduct.name}. Please add inventory first.`,
-            'warning'
-          );
-        }
+          return groups;
+        }, []);
+
+        setAvailableExpiryDates(groupedBatches);
       } else {
-        console.error('Unexpected batches response format:', response.data);
         setAvailableExpiryDates([]);
-        setSelectedExpiryDate('');
-        showToast(
-          'Failed to load product inventory. Please try again.',
-          'error'
-        );
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error fetching product batches:', error);
+      setAvailableExpiryDates([]);
+    }
+  };
+
+  } catch (error) {
       console.error('Failed to fetch product inventory:', error);
       setAvailableExpiryDates([]);
       setSelectedExpiryDate('');
@@ -225,103 +154,83 @@ const PosTerminal = () => {
     }
   };
 
-  const handleAddToCart = () => {
+  const { showToast } = useToast();
+
+  const handleAddToCart = async () => {
+    if (!selectedProduct || quantity <= 0) {
+      showToast('Please select a valid product and quantity', 'error');
+      return;
+    }
+
+    setIsProcessing(true);
+    setError('');
+
     try {
-      console.log(
-        'Adding to cart. Product:',
-        selectedProduct,
-        'Quantity:',
-        quantity
-      );
+      const productResponse = await api.get(`/products/${selectedProduct._id}`);
+      const product = productResponse.data.data;
 
-      // Validate inputs
-      if (!selectedProduct) {
-        showToast('Please select a product', 'error');
+      if (!product.active) {
+        setError('This product is currently inactive');
+        showToast('This product is currently inactive', 'error');
         return;
       }
 
-      // Ensure product has an _id
-      if (!selectedProduct._id) {
-        console.error('Product is missing _id:', selectedProduct);
-        showToast('Invalid product data. Please try another product.', 'error');
+      if (product.inventoryType === 'tracked' && product.quantity < quantity) {
+        setError('Insufficient stock for this product');
+        showToast('Insufficient stock for this product', 'error');
         return;
       }
 
-      // If no expiry dates are available, show an error
-      if (!availableExpiryDates || availableExpiryDates.length === 0) {
-        showToast(
-          'This product has no inventory. Please add inventory first.',
-          'error'
-        );
+      // Check if product has expiry dates
+      if (product.expiryDates && product.expiryDates.length > 0) {
+        setAvailableExpiryDates(product.expiryDates);
+        setShowExpiryModal(true);
         return;
       }
 
-      // Validate quantity
-      if (quantity <= 0) {
-        showToast('Please enter a valid quantity', 'error');
-        return;
-      }
-
-      // Always use the earliest expiry date (FIFO)
-      // The availableExpiryDates array is already sorted by date in fetchProductBatches
-      const expiryDateGroup = availableExpiryDates[0];
-      console.log('Using expiry date group:', expiryDateGroup);
-
-      // Check stock quantity
-      if (quantity > expiryDateGroup.totalQuantity) {
-        showToast(
-          `Insufficient stock. Available: ${expiryDateGroup.totalQuantity}`,
-          'error'
-        );
-        return;
-      }
-
-      // Calculate subtotal
-      const itemSubtotal = quantity * unitPrice - productDiscount;
-
-      // Use the first batch from the earliest expiry date group
-      const firstBatch = expiryDateGroup.batches[0];
-      console.log('Using batch:', firstBatch);
-
-      // Create cart item
-      const newItem = {
-        product: selectedProduct._id,
-        productDetails: {
-          _id: selectedProduct._id,
-          name: selectedProduct.name || 'Unknown Product',
-          sku: selectedProduct.sku || 'No SKU',
-          defaultPrice: selectedProduct.defaultPrice || unitPrice,
-        },
+      // Add to cart
+      const cartItem = {
+        productId: product._id,
+        productName: product.name,
         quantity,
-        unitPrice,
+        unitPrice: product.price,
         discount: productDiscount,
-        subtotal: itemSubtotal,
-        batchNumber: firstBatch.batchNumber,
-        expiryDate: expiryDateGroup.expiryDate,
+        subtotal: (product.price * quantity) * (1 - productDiscount / 100),
       };
 
-      console.log('New cart item created:', newItem);
+      // Check if item already exists in cart
+      const existingItemIndex = cartItems.findIndex(
+        (item: any) => item.productId === product._id
+      );
 
-      // Create a new array with the new item to ensure state update
-      const updatedCartItems = [...cartItems, newItem];
-      console.log('Setting cart items to:', updatedCartItems);
-
-      // Force a state update with a new array
-      setCartItems([...updatedCartItems]);
-
-      console.log('Cart items after update:', updatedCartItems);
-      showToast(`Added ${quantity} ${selectedProduct.name} to cart`, 'success');
+      if (existingItemIndex >= 0) {
+        // Update existing item
+        const updatedItems = [...cartItems];
+        updatedItems[existingItemIndex] = {
+          ...cartItems[existingItemIndex],
+          ...cartItem,
+        };
+        setCartItems(updatedItems);
+        showToast('Item quantity updated', 'success');
+      } else {
+        // Add new item
+        setCartItems([...cartItems, cartItem]);
+        showToast('Item added to cart', 'success');
+      }
 
       // Reset product selection
       setSelectedProduct(null);
-      setSelectedExpiryDate('');
       setQuantity(1);
-      setUnitPrice(0);
       setProductDiscount(0);
       setAvailableExpiryDates([]);
-    } catch (error) {
-      console.error('Error adding item to cart:', error);
-      showToast('Failed to add item to cart. Please try again.', 'error');
+      setSelectedExpiryDate('');
+
+    } catch (error: any) {
+      console.error('Error adding to cart:', error);
+      setError(error.message || 'Failed to add item to cart');
+      showToast('Failed to add item to cart', 'error');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -411,91 +320,82 @@ const PosTerminal = () => {
   };
 
   const handleCompleteTransaction = async () => {
-    if (!activeSession) {
-      showToast('No active POS session', 'error');
-      return;
-    }
-
-    if (!selectedCustomer) {
-      showToast('Please select a customer', 'error');
-      return;
-    }
-
     if (cartItems.length === 0) {
-      showToast('Please add at least one item to the cart', 'error');
+      setError('Please add items to cart');
       return;
     }
 
-    if (paymentMethods.length === 0) {
-      showToast('Please add at least one payment method', 'error');
+    if (!selectedLocation) {
+      setError('Please select a location');
       return;
     }
 
-    // Validate all items have valid expiry dates
-    for (const item of cartItems) {
-      if (!item.expiryDate) {
-        showToast(
-          `Item ${item.productDetails.name} has an invalid expiry date. Please remove it and add again.`,
-          'error'
-        );
-        return;
-      }
+    if (!activeSession) {
+      setError('No active POS session found');
+      return;
     }
 
-    const transactionData = {
-      customer: selectedCustomer._id,
-      transactionType,
-      posSession: activeSession._id,
-      register: activeSession.register,
-      items: cartItems.map((item) => ({
-        product: item.product,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discount: item.discount,
-        batchNumber: item.batchNumber,
-        expiryDate: item.expiryDate,
-      })),
-      discount,
-      tax,
-      paymentMethods,
-      notes,
-      location: activeSession.location._id || activeSession.location,
-    };
+    setIsProcessing(true);
+    setError('');
 
     try {
-      const resultAction = await dispatch(
-        createPosTransaction(transactionData) as any
-      );
-      if (createPosTransaction.fulfilled.match(resultAction)) {
-        showToast('Transaction completed successfully', 'success');
-        navigate(`/pos/transactions/${resultAction.payload._id}/receipt`);
+      // Validate payment
+      const totalAmount = subtotal - discount + tax;
+      const totalPaid = paymentMethods.reduce((sum, method) => sum + method.amount, 0);
+      const change = totalPaid - totalAmount;
 
-        // Reset form
-        const walkInCustomer = {
-          _id: 'walk-in-customer',
-          firstName: 'Walk-in',
-          lastName: 'Customer',
-          customerNumber: 'WALK-IN',
-          phone: '',
-          email: '',
-        };
+      // Create transaction
+      const transactionData = {
+        customer: selectedCustomer._id,
+        transactionType: transactionType as PosTransactionType,
+        location: selectedLocation,
+        cashier: activeSession.cashier,
+        posSession: activeSession._id,
+        cartItems,
+        subtotal,
+        discount,
+        tax,
+        total: totalAmount,
+        notes,
+        payments: paymentMethods.map((method) => ({
+          method: method._id,
+          amount: method.amount,
+          reference: method.reference,
+        })),
+        paymentStatus: totalPaid >= totalAmount ? PaymentStatus.PAID : PaymentStatus.PARTIAL,
+      };
 
-        console.log('Resetting customer to walk-in after transaction');
-        setSelectedCustomer(walkInCustomer);
-        setCartItems([]);
-        setDiscount(0);
-        setTax(0);
-        setNotes('');
-        setPaymentMethods([]);
-        setShowPaymentModal(false);
-      } else if (resultAction.error) {
-        const errorMessage =
-          resultAction.error.message || 'Failed to complete transaction';
-        showToast(errorMessage, 'error');
-      }
-    } catch (error: any) {
-      console.error('Failed to complete transaction:', error);
-      showToast(error.message || 'Failed to complete transaction', 'error');
+      const result = await dispatch(createPosTransaction(transactionData)).unwrap();
+
+      // Update session totals
+      await api.patch(`/pos/sessions/${activeSession._id}/update-totals`, {
+        totalSales: (activeSession.totalSales || 0) + totalAmount,
+        totalPayments: (activeSession.totalPayments || 0) + totalPaid,
+      });
+
+      // Reset transaction
+      setCartItems([]);
+      setDiscount(0);
+      setTax(0);
+      setNotes('');
+      setSelectedCustomer({
+        _id: 'walk-in-customer',
+        firstName: 'Walk-in',
+        lastName: 'Customer',
+        customerNumber: 'WALK-IN',
+        phone: '',
+        email: '',
+      });
+      setPaymentMethods([]);
+
+      showToast('success', 'Transaction completed successfully' as ToastType);
+      navigate(`/pos/transactions/${result._id}`);
+    } catch (err: any) {
+      console.error('Error completing transaction:', err);
+      setError(err.message || 'Failed to complete transaction');
+      showToast('error', 'Failed to complete transaction' as ToastType);
+    } finally {
+      setIsProcessing(false);
     }
   };
 

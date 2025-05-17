@@ -109,6 +109,10 @@ const customerSchema = new Schema<ICustomer>(
       type: Number,
       default: 0,
     },
+    totalPurchases: {
+      type: Number,
+      default: 0,
+    },
     creditStatus: {
       type: String,
       enum: ['active', 'suspended', 'blocked'],

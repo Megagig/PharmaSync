@@ -1,60 +1,77 @@
 import { Document, Types } from 'mongoose';
-import { IDosage } from './medication.interface';
 
 export enum PrescriptionStatus {
-  PENDING = 'pending',
+  DRAFT = 'draft',
   ACTIVE = 'active',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled',
+  EXPIRED = 'expired',
+  PENDING = 'pending',
 }
 
-export interface IPrescriptionItem extends Document {
-  medication: Types.ObjectId; // Reference to medication ID
-  dosage: IDosage;
+export interface IDosageInstructions {
+  frequency: string;
+  duration: string;
+  instructions: string;
+  timing?: string;
+  route?: string;
+  additionalNotes?: string;
+}
+
+export interface IPrescriptionItem {
+  _id?: Types.ObjectId;
+  medication: Types.ObjectId;
+  dosage: string;
   quantity: number;
   refills: number;
   refillsRemaining: number;
-  startDate: Date;
+  startDate?: Date;
   endDate?: Date;
+  dosageInstructions: IDosageInstructions;
   notes?: string;
-  _id: Types.ObjectId;
+  isNew?: boolean; // Used in Mongoose pre-save hook
 }
 
-export interface IDispensing extends Document {
+export interface IDispensing {
   date: Date;
   quantity: number;
   batchNumber: string;
   dispensedBy: Types.ObjectId; // Reference to user ID
   notes?: string;
-  _id: Types.ObjectId;
+  _id?: Types.ObjectId;
 }
 
 export interface IPrescription extends Document {
-  patient: Types.ObjectId; // Reference to patient ID
-  prescriber: Types.ObjectId; // Reference to user ID (pharmacist)
+  _id: Types.ObjectId;
+  patient: Types.ObjectId;
+  prescriber: Types.ObjectId;
   prescriptionNumber: string;
   prescriptionDate: Date;
   expiryDate: Date;
+  items: IPrescriptionItem[];
   status: PrescriptionStatus;
-  items: Types.DocumentArray<IPrescriptionItem>;
-  dispensingHistory: Types.DocumentArray<IDispensing>;
+  issuedDate: Date;
+  validUntil: Date;
+  dispensingHistory: IDispensing[];
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
-  _id: Types.ObjectId;
 }
 
 export interface IPrescriptionCreate {
-  patient: string;
-  prescriptionDate: Date;
-  expiryDate: Date;
-  items: Omit<IPrescriptionItem, 'refillsRemaining'>[];
+  patient: Types.ObjectId;
+  prescriber: Types.ObjectId;
+  items: IPrescriptionItem[];
+  status?: PrescriptionStatus;
+  issuedDate?: Date;
+  validUntil?: Date;
   notes?: string;
 }
 
 export interface IPrescriptionUpdate {
+  items?: IPrescriptionItem[];
   status?: PrescriptionStatus;
-  expiryDate?: Date;
+  validUntil?: Date;
   notes?: string;
 }
 
@@ -65,9 +82,29 @@ export interface IPrescriptionResponse {
   prescriptionNumber: string;
   prescriptionDate: Date;
   expiryDate: Date;
+  items: Array<{
+    id?: string;
+    medication: string;
+    dosage: string;
+    quantity: number;
+    refills: number;
+    refillsRemaining: number;
+    startDate?: Date;
+    endDate?: Date;
+    dosageInstructions: IDosageInstructions;
+    notes?: string;
+  }>;
   status: PrescriptionStatus;
-  items: IPrescriptionItem[];
-  dispensingHistory: IDispensing[];
+  issuedDate: Date;
+  validUntil: Date;
+  dispensingHistory: Array<{
+    id: string;
+    date: Date;
+    quantity: number;
+    batchNumber: string;
+    dispensedBy: string;
+    notes?: string;
+  }>;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;

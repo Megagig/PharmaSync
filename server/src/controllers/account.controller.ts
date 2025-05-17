@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import Account from '../models/account.model';
 import { AccountStatus } from '../interfaces/accounting.interface';
 import { AppError } from '../utils/error';
+import { toObjectId } from '../utils/idConverter';
 
 /**
  * @desc    Get all accounts with pagination and filtering
@@ -205,7 +206,7 @@ export const updateAccount = asyncHandler(
     if (isSubAccount !== undefined) account.isSubAccount = isSubAccount;
     if (status) account.status = status;
     if (notes !== undefined) account.notes = notes;
-    account.updatedBy = req.user.id; // From auth middleware
+    account.updatedBy = toObjectId(req.user.id); // From auth middleware
 
     await account.save();
 

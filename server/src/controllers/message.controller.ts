@@ -370,11 +370,11 @@ export const sendMessage = asyncHandler(async (req: Request, res: Response) => {
         user: recipient.toString(),
         type: NotificationType.NEW_MESSAGE,
         title: 'New Message',
-        message: `You have a new message from ${req.user.firstName} ${req.user.lastName}`,
+        message: `You have a new message`,
         priority: NotificationPriority.MEDIUM,
         data: {
           conversationId,
-          messageId: message._id,
+          messageId: message._id.toString(),
         },
         link: `/messages/conversations/${conversationId}`,
       })

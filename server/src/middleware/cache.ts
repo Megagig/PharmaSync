@@ -148,7 +148,9 @@ export const cacheMiddleware = (options: CacheOptions = {}) => {
  * Clear cache for a specific pattern
  * @param pattern Cache key pattern to clear
  */
-export const clearCache = async (pattern: string): Promise<void> => {
+export const clearCacheByPattern = async (
+  pattern: string | string[]
+): Promise<void> => {
   // Skip if Redis is not available
   if (!isRedisAvailable()) {
     logger.debug(
@@ -158,19 +160,47 @@ export const clearCache = async (pattern: string): Promise<void> => {
   }
 
   try {
-    // Get all keys matching the pattern
-    const keys = await redisClient.keys(`cache:${pattern}*`);
-
-    if (keys.length > 0) {
-      // Delete all matching keys
-      await redisClient.del(keys);
-      logger.info(
-        `Cleared ${keys.length} cache entries matching pattern: ${pattern}`
-      );
+    if (Array.isArray(pattern)) {
+      // Handle array of patterns
+      for (const p of pattern) {
+        const keys = await redisClient.keys(`cache:${p}*`);
+        if (keys.length > 0) {
+          await redisClient.del(keys);
+          logger.info(
+            `Cleared ${keys.length} cache entries matching pattern: ${p}`
+          );
+        }
+      }
+    } else {
+      // Handle single pattern
+      const keys = await redisClient.keys(`cache:${pattern}*`);
+      if (keys.length > 0) {
+        await redisClient.del(keys);
+        logger.info(
+          `Cleared ${keys.length} cache entries matching pattern: ${pattern}`
+        );
+      }
     }
   } catch (error) {
     logger.error(`Failed to clear cache: ${error}`);
   }
+};
+
+/**
+ * Middleware to clear cache for specific patterns
+ * @param pattern Cache key pattern or array of patterns to clear
+ * @returns Express middleware function
+ */
+export const clearCache = (pattern: string | string[]) => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await clearCacheByPattern(pattern);
+      next();
+    } catch (error) {
+      logger.error(`Cache clear middleware error: ${error}`);
+      next();
+    }
+  };
 };
 
 /**
@@ -195,4 +225,20 @@ export const clearAllCache = async (): Promise<void> => {
   } catch (error) {
     logger.error(`Failed to clear all cache: ${error}`);
   }
+};
+
+/**
+ * Middleware to clear all cache
+ * @returns Express middleware function
+ */
+export const clearAllCacheMiddleware = () => {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await clearAllCache();
+      next();
+    } catch (error) {
+      logger.error(`Clear all cache middleware error: ${error}`);
+      next();
+    }
+  };
 };

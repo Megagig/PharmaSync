@@ -1,5 +1,9 @@
 import mongoose, { Schema } from 'mongoose';
-import { ILocation, LocationType } from '../interfaces/location.interface';
+import {
+  ILocation,
+  LocationType,
+  ILocationStock,
+} from '../interfaces/location.interface';
 
 const locationAddressSchema = new Schema(
   {
@@ -91,6 +95,21 @@ const locationSchema = new Schema<ILocation>(
       ref: 'User',
       required: true,
     },
+    stock: [
+      {
+        product: {
+          type: Schema.Types.ObjectId,
+          ref: 'Product',
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
+        _id: false,
+      },
+    ],
   },
   {
     timestamps: true,

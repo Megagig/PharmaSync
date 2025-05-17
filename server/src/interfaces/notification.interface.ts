@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export enum NotificationType {
   // System notifications
@@ -55,27 +55,42 @@ export enum NotificationType {
   // Care plan notifications
   CARE_PLAN_ADDED = 'care_plan_added',
   CARE_PLAN_UPDATED = 'care_plan_updated',
+
+  // New types
+  USER = 'user',
+  INVENTORY = 'inventory',
+  ORDER = 'order',
+  PRESCRIPTION = 'prescription',
+  PAYMENT = 'payment',
+  APPOINTMENT = 'appointment',
+  REMINDER = 'reminder'
 }
 
 export enum NotificationPriority {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
-  URGENT = 'urgent',
+  URGENT = 'urgent'
+}
+
+export interface NotificationData {
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface INotification extends Document {
-  user: string; // Reference to user ID
+  _id: Types.ObjectId;
+  user: Types.ObjectId;
   type: NotificationType;
   title: string;
   message: string;
   priority: NotificationPriority;
   isRead: boolean;
   isArchived: boolean;
-  data?: any; // Additional data related to the notification
-  link?: string; // Optional link to navigate to
+  data?: NotificationData;
+  link?: string;
   createdAt: Date;
   readAt?: Date;
+  updatedAt: Date;
 }
 
 export interface INotificationCreate {
@@ -84,13 +99,18 @@ export interface INotificationCreate {
   title: string;
   message: string;
   priority?: NotificationPriority;
-  data?: any;
+  data?: NotificationData;
   link?: string;
 }
 
 export interface INotificationUpdate {
+  title?: string;
+  message?: string;
+  priority?: NotificationPriority;
   isRead?: boolean;
   isArchived?: boolean;
+  data?: NotificationData;
+  link?: string;
   readAt?: Date;
 }
 
@@ -103,7 +123,7 @@ export interface INotificationResponse {
   priority: NotificationPriority;
   isRead: boolean;
   isArchived: boolean;
-  data?: any;
+  data?: NotificationData;
   link?: string;
   createdAt: Date;
   readAt?: Date;

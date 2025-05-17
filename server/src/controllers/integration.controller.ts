@@ -1,9 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import integrationManagerService from '../services/integration/integrationManager.service';
-import ehrIntegrationService from '../services/integration/ehrIntegration.service';
+import { EHRIntegrationService } from '../services/integration/ehrIntegration.service';
+const ehrIntegrationService = new EHRIntegrationService();
 import pharmacySystemIntegrationService from '../services/integration/pharmacySystemIntegration.service';
 import drugDatabaseIntegrationService from '../services/integration/drugDatabaseIntegration.service';
 import { AppError } from '../utils/error';
+import { Types } from 'mongoose';
+import {
+  PrescriptionStatus,
+  IPrescription,
+} from '../interfaces/prescription.interface';
 
 /**
  * @desc    Get integration status
@@ -438,34 +444,37 @@ export const sendPrescriptionToPharmacy = async (
     }
 
     // In a real implementation, you would fetch the prescription from the database
-    // For this example, we'll use a mock prescription
+    // For this example, we'll use a mock prescription that matches the IPrescription interface
     const mockPrescription = {
-      _id: prescriptionId,
-      patient: {
-        _id: '123456789',
-        firstName: 'John',
-        lastName: 'Doe',
-      },
-      prescribedBy: {
-        name: 'Dr. Smith',
-      },
+      _id: new Types.ObjectId(prescriptionId),
+      patient: new Types.ObjectId('123456789'),
+      prescriber: new Types.ObjectId('987654321'),
+      prescriptionNumber: 'RX-' + Date.now(),
       prescriptionDate: new Date(),
-      medications: [
+      expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      items: [
         {
-          medication: {
-            _id: '987654321',
-            name: 'Amoxicillin',
-          },
+          medication: new Types.ObjectId('987654321'),
           dosage: '500mg',
-          frequency: 'Three times daily',
-          duration: '7 days',
-          route: 'Oral',
-          instructions: 'Take with food',
           quantity: 21,
+          refills: 0,
+          refillsRemaining: 0,
+          dosageInstructions: {
+            frequency: 'Three times daily',
+            duration: '7 days',
+            route: 'Oral',
+            instructions: 'Take with food',
+          },
         },
       ],
+      status: PrescriptionStatus.ACTIVE,
+      issuedDate: new Date(),
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      dispensingHistory: [],
       notes: 'Patient has penicillin allergy',
-    };
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as IPrescription;
 
     const result = await integrationManagerService.sendPrescriptionToPharmacy(
       mockPrescription

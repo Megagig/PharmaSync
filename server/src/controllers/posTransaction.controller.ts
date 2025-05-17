@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import asyncHandler from 'express-async-handler';
 import PosTransaction from '../models/posTransaction.model';
 import PosSession from '../models/posSession.model';
@@ -8,8 +8,9 @@ import Location from '../models/location.model';
 import { PosTransactionType } from '../interfaces/posTransaction.interface';
 import { PaymentStatus } from '../interfaces/sale.interface';
 import { MovementType } from '../interfaces/inventoryMovement.interface';
-import { createInventoryMovement } from './inventoryMovement.controller';
 import { AppError } from '../utils/error';
+import { toObjectId } from '../utils/idConverter';
+import InventoryMovement from '../models/inventoryMovement.model';
 
 /**
  * @desc    Get all POS transactions
@@ -138,147 +139,113 @@ export const createPosTransaction = asyncHandler(
     const {
       customer,
       transactionType,
+      location,
+      cashier,
       posSession,
-      register,
-      items,
+      cartItems,
+      subtotal,
       discount,
       tax,
-      paymentMethods,
+      total,
       notes,
-      location,
-      returnReason,
-      originalSale,
-      giftCardIssued,
-      giftCardAmount,
-      giftCardNumber,
-      storeCreditIssued,
-      storeCreditAmount,
+      payments,
     } = req.body;
 
-    // Verify customer exists
-    const customerExists = await Customer.findById(customer);
-    if (!customerExists) {
-      throw new AppError('Customer not found', 404);
+    // Validate required fields
+    if (!customer || !transactionType || !location || !cashier || !posSession) {
+      throw new AppError('Missing required fields', 400);
     }
 
-    // Verify location exists
-    const locationExists = await Location.findById(location);
-    if (!locationExists) {
-      throw new AppError('Location not found', 404);
+    // Validate cart items
+    if (!Array.isArray(cartItems) || cartItems.length === 0) {
+      throw new AppError('Cart items are required', 400);
     }
 
-    // Verify session exists and is open
-    const sessionExists = await PosSession.findById(posSession);
-    if (!sessionExists) {
-      throw new AppError('POS session not found', 404);
+    // Validate payments
+    if (!Array.isArray(payments) || payments.length === 0) {
+      throw new AppError('At least one payment method is required', 400);
     }
 
-    if (sessionExists.status !== 'open') {
-      throw new AppError('POS session is not open', 400);
-    }
-
-    // Process each item
-    const processedItems = [];
-    let subtotal = 0;
-
-    for (const item of items) {
-      const product = await Product.findById(item.product);
-      if (!product) {
-        throw new AppError(`Product not found: ${item.product}`, 404);
-      }
-
-      // Check if product has sufficient stock
-      const batchItem = product.inventory.find(
-        (inv) => inv.batchNumber === item.batchNumber
-      );
-
-      if (!batchItem) {
-        throw new AppError(
-          `Batch ${item.batchNumber} not found for product ${product.name}`,
-          404
-        );
-      }
-
-      if (batchItem.quantity < item.quantity) {
-        throw new AppError(
-          `Insufficient stock for ${product.name}. Available: ${batchItem.quantity}, Requested: ${item.quantity}`,
-          400
-        );
-      }
-
-      const itemSubtotal =
-        item.quantity * item.unitPrice - (item.discount || 0);
-      subtotal += itemSubtotal;
-
-      processedItems.push({
-        product: item.product,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discount: item.discount || 0,
-        subtotal: itemSubtotal,
-        batchNumber: item.batchNumber,
-        expiryDate: item.expiryDate || batchItem.expiryDate,
-        notes: item.notes,
-      });
-    }
-
-    // Calculate discount and tax
-    const discountAmount = discount || 0;
-    const taxAmount = tax || 0;
-    const total = subtotal - discountAmount + taxAmount;
-
-    // Validate payment methods
-    const totalPaid = paymentMethods.reduce(
-      (sum: number, method: any) => sum + method.amount,
+    // Calculate total from cart items
+    const calculatedTotal = cartItems.reduce(
+      (sum, item) => sum + (item.quantity * item.unitPrice - item.discount),
       0
     );
 
-    // Determine payment status
-    let paymentStatus = PaymentStatus.PAID;
-    if (totalPaid < total) {
-      paymentStatus = PaymentStatus.UNPAID;
-    } else if (totalPaid > 0 && totalPaid < total) {
-      paymentStatus = PaymentStatus.PARTIAL;
+    if (calculatedTotal !== total) {
+      throw new AppError('Total amount does not match cart items', 400);
     }
 
-    // Create transaction record
+    // Validate session
+    const session = await PosSession.findById(posSession);
+    if (!session) {
+      throw new AppError('POS session not found', 404);
+    }
+
+    if (session.status !== 'open') {
+      throw new AppError('POS session is not open', 400);
+    }
+
+    // Generate sale number
+    const lastTransaction = await PosTransaction.findOne()
+      .sort({ createdAt: -1 })
+      .select('saleNumber');
+
+    const saleNumber = lastTransaction
+      ? `POS-${parseInt(lastTransaction.saleNumber.split('-')[1]) + 1}`
+      : 'POS-1';
+
+    // Create transaction
     const transaction = await PosTransaction.create({
       customer,
       transactionType,
-      posSession,
-      register,
-      items: processedItems,
-      subtotal,
-      discount: discountAmount,
-      tax: taxAmount,
-      total,
-      paymentMethods,
-      paymentStatus,
-      paymentMethod:
-        paymentMethods.length > 1 ? 'multiple' : paymentMethods[0].method,
-      notes,
       location,
-      cashier: req.user.id, // From auth middleware
-      createdBy: req.user.id,
-      returnReason,
-      originalSale,
-      giftCardIssued,
-      giftCardAmount,
-      giftCardNumber,
-      storeCreditIssued,
-      storeCreditAmount,
+      cashier,
+      posSession,
+      cartItems,
+      subtotal,
+      discount,
+      tax,
+      total,
+      notes,
+      saleNumber,
+      saleDate: new Date(),
+      status: 'completed',
+      paymentStatus: 'pending',
+      payments,
     });
 
-    // Update session with this transaction
-    await PosSession.findByIdAndUpdate(posSession, {
-      $push: { transactions: transaction._id },
-      $inc: {
-        expectedClosingBalance: totalPaid - (transaction.changeDue || 0),
-      },
-    });
+    // Update payment status
+    const totalPaid = payments.reduce(
+      (sum, payment) => sum + payment.amount,
+      0
+    );
+    let paymentStatus: PaymentStatus;
 
-    // Update inventory
+    if (totalPaid < total) {
+      paymentStatus = PaymentStatus.PARTIAL;
+    } else if (totalPaid === total) {
+      paymentStatus = PaymentStatus.PAID;
+    } else {
+      paymentStatus = PaymentStatus.OVERPAID;
+    }
+
+    transaction.paymentStatus = paymentStatus;
+    transaction.changeDue = Math.max(0, totalPaid - total);
+
+    // Update inventory for each cart item
     await updateInventoryForTransaction(transaction);
+
+    // Update session totals
+    await PosSession.updateOne(
+      { _id: posSession },
+      {
+        $inc: {
+          totalSales: total,
+          totalPayments: totalPaid,
+        },
+      }
+    );
 
     res.status(201).json({
       status: 'success',
@@ -390,29 +357,20 @@ const updateInventoryForTransaction = async (transaction: any) => {
     createdBy: transaction.createdBy,
   };
 
-  // Call the inventory movement controller directly with the data
-  // This avoids TypeScript errors with the Response return type
+  // Create inventory movement directly using the model
   try {
-    const req = {
-      body: movementData,
-      user: { _id: transaction.createdBy }, // Changed from id to _id to match the controller
-    } as Request;
-
-    const res = {
-      status: (code: number) => ({
-        json: (data: any) => {
-          // Just a mock implementation that doesn't return anything
-          return;
-        },
-      }),
-    } as unknown as Response;
-
-    // Create a mock next function to satisfy the Express middleware signature
-    const next = (err?: any) => {
-      if (err) throw err;
-    };
-
-    await createInventoryMovement(req, res, next);
+    // Create the inventory movement document
+    await InventoryMovement.create({
+      referenceNumber: movementData.referenceNumber,
+      type: movementData.type,
+      date: movementData.date,
+      sourceLocation: movementData.sourceLocation,
+      destinationLocation: movementData.destinationLocation,
+      items: movementData.items,
+      notes: movementData.notes,
+      createdBy: toObjectId(transaction.createdBy.toString()),
+      status: 'pending',
+    });
   } catch (error) {
     console.error('Error updating inventory:', error);
     throw error;

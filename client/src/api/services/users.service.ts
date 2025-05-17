@@ -6,6 +6,7 @@ import {
   PasswordChangeData,
   PasswordResetRequestData,
   PasswordResetData,
+  ApprovalStatus,
 } from '@/types/user.types';
 
 const userService = {
@@ -14,7 +15,8 @@ const userService = {
     limit = 10,
     isActive = '',
     role = '',
-    search = ''
+    search = '',
+    approvalStatus = ''
   ): Promise<{
     data: User[];
     meta: {
@@ -25,21 +27,47 @@ const userService = {
     };
   }> => {
     let url = `/users?page=${page}&limit=${limit}`;
-    
+
     if (isActive !== '') {
       url += `&isActive=${isActive}`;
     }
-    
+
     if (role) {
       url += `&role=${role}`;
     }
-    
+
     if (search) {
       url += `&search=${search}`;
     }
-    
+
+    if (approvalStatus) {
+      url += `&approvalStatus=${approvalStatus}`;
+    }
+
     const response = await axiosInstance.get(url);
     return response.data;
+  },
+
+  getPendingUsers: async (
+    page = 1,
+    limit = 10
+  ): Promise<{
+    data: User[];
+    meta: {
+      total: number;
+      pages: number;
+      page: number;
+      limit: number;
+    };
+  }> => {
+    return userService.getAllUsers(
+      page,
+      limit,
+      '',
+      '',
+      '',
+      ApprovalStatus.PENDING
+    );
   },
 
   getUserById: async (id: string): Promise<User> => {
@@ -52,7 +80,10 @@ const userService = {
     return response.data.data;
   },
 
-  updateUser: async (id: string, updateData: Partial<UserFormData>): Promise<User> => {
+  updateUser: async (
+    id: string,
+    updateData: Partial<UserFormData>
+  ): Promise<User> => {
     const response = await axiosInstance.patch(`/users/${id}`, updateData);
     return response.data.data;
   },
@@ -70,22 +101,49 @@ const userService = {
     return response.data.data;
   },
 
-  updateUserProfile: async (updateData: UserProfileUpdateData): Promise<User> => {
+  updateUserProfile: async (
+    updateData: UserProfileUpdateData
+  ): Promise<User> => {
     const response = await axiosInstance.patch('/users/profile', updateData);
     return response.data.data;
   },
 
-  changeUserProfilePassword: async (passwordData: PasswordChangeData): Promise<void> => {
+  changeUserProfilePassword: async (
+    passwordData: PasswordChangeData
+  ): Promise<void> => {
     await axiosInstance.patch('/users/profile/change-password', passwordData);
   },
 
-  forgotPassword: async (data: PasswordResetRequestData): Promise<{ message: string }> => {
+  forgotPassword: async (
+    data: PasswordResetRequestData
+  ): Promise<{ message: string }> => {
     const response = await axiosInstance.post('/users/forgot-password', data);
     return response.data;
   },
 
-  resetPassword: async (token: string, data: PasswordResetData): Promise<{ message: string }> => {
-    const response = await axiosInstance.patch(`/users/reset-password/${token}`, data);
+  resetPassword: async (
+    token: string,
+    data: PasswordResetData
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.patch(
+      `/users/reset-password/${token}`,
+      data
+    );
+    return response.data;
+  },
+
+  approveUser: async (userId: string): Promise<{ message: string }> => {
+    const response = await axiosInstance.patch(`/admin/approve-user/${userId}`);
+    return response.data;
+  },
+
+  rejectUser: async (
+    userId: string,
+    reason?: string
+  ): Promise<{ message: string }> => {
+    const response = await axiosInstance.patch(`/admin/reject-user/${userId}`, {
+      reason,
+    });
     return response.data;
   },
 };

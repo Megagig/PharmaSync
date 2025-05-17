@@ -20,7 +20,7 @@ export const createPatient = async (
 ) => {
   try {
     const patientData: IPatientCreate = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const patient = await patientService.createPatient(patientData, userId);
 

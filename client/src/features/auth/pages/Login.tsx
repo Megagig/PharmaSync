@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { RootState } from '@/store/store';
 import { login } from '@/store/slices/authSlice';
 import Button from '@/components/common/Button/Button';
+import { toast } from 'react-toastify';
 
 interface LoginFormData {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
 const Login = () => {
@@ -26,12 +28,31 @@ const Login = () => {
 
   const from = location.state?.from?.pathname || '/dashboard';
 
+  // Parse error message to display specific messages for different error types
+  const parseErrorMessage = (errorMsg: string) => {
+    if (errorMsg.includes('pending approval')) {
+      return 'Your account is pending approval by an administrator. Please wait for approval.';
+    } else if (errorMsg.includes('rejected')) {
+      return 'Your account registration has been rejected. Please contact support for more information.';
+    } else if (errorMsg.includes('inactive')) {
+      return 'Your account is inactive. Please contact an administrator.';
+    } else {
+      return 'Invalid email or password. Please try again.';
+    }
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await dispatch(login(data));
+      await dispatch(login({
+        email: data.email,
+        password: data.password,
+        rememberMe: data.rememberMe
+      }));
       navigate(from, { replace: true });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login failed:', error);
+      const errorMessage = error.message || 'Login failed. Please try again.';
+      toast.error(parseErrorMessage(errorMessage));
     }
   };
 
@@ -71,7 +92,7 @@ const Login = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
+                <p className="text-sm text-red-700">{parseErrorMessage(error)}</p>
               </div>
             </div>
           </div>
@@ -169,23 +190,23 @@ const Login = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <input
-                id="remember-me"
-                name="remember-me"
+                id="rememberMe"
                 type="checkbox"
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                {...register('rememberMe')}
               />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
                 Remember me
               </label>
             </div>
 
             <div className="text-sm">
-              <a
-                href="#forgot-password"
+              <Link
+                to="/forgot-password"
                 className="font-medium text-primary-600 hover:text-primary-500"
               >
                 Forgot your password?
-              </a>
+              </Link>
             </div>
           </div>
 

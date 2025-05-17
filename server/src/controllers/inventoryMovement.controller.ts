@@ -6,6 +6,9 @@ import Product from '../models/product.model';
 import Location from '../models/location.model';
 import { AppError } from '../utils/error';
 import { MovementType } from '../interfaces/inventoryMovement.interface';
+import logger from '../utils/logger';
+import { redisClient } from '../config/redis';
+import { toObjectId } from '../utils/idConverter';
 
 /**
  * @desc    Get all inventory movements
@@ -116,120 +119,130 @@ export const getInventoryMovementById = asyncHandler(
   }
 );
 
+interface CreateInventoryMovementParams {
+  product: string;
+  location: string;
+  quantity: number;
+  type: MovementType;
+  reference: string;
+  notes?: string;
+  session?: mongoose.ClientSession;
+}
+
 /**
- * @desc    Create new inventory movement
- * @route   POST /api/inventory/movements
- * @access  Private
+ * Create inventory movement with transaction support
  */
-export const createInventoryMovement = asyncHandler(
-  async (req: Request, res: Response) => {
-    const {
-      referenceNumber,
-      type,
-      date,
-      sourceLocation,
-      destinationLocation,
-      items,
-      notes,
-    } = req.body;
+export const createInventoryMovement = async ({
+  product,
+  location,
+  quantity,
+  type,
+  reference,
+  notes,
+  session,
+}: CreateInventoryMovementParams) => {
+  const useSession = session || (await mongoose.startSession());
+  if (!session) useSession.startTransaction();
 
-    // Validate source location
-    const sourceLocationDoc = await Location.findById(sourceLocation);
-    if (!sourceLocationDoc) {
-      throw new AppError('Source location not found', 404);
+  try {
+    // Validate product
+    const productDoc = await Product.findById(product).session(useSession);
+    if (!productDoc) {
+      throw new AppError(`Product not found: ${product}`, 404);
     }
 
-    // Validate destination location if it's a transfer
-    if (type === MovementType.TRANSFER) {
-      if (!destinationLocation) {
-        throw new AppError(
-          'Destination location is required for transfers',
-          400
-        );
-      }
+    // Validate location
+    const locationDoc = await Location.findById(location).session(useSession);
+    if (!locationDoc) {
+      throw new AppError(`Location not found: ${location}`, 404);
+    }
 
-      const destinationLocationDoc = await Location.findById(
-        destinationLocation
+    // Check if movement would result in negative stock
+    if (type === MovementType.SALE || type === MovementType.TRANSFER) {
+      const currentStock = await getProductStockAtLocation(
+        product,
+        location,
+        useSession
       );
-      if (!destinationLocationDoc) {
-        throw new AppError('Destination location not found', 404);
-      }
-
-      if (sourceLocation === destinationLocation) {
+      if (currentStock + quantity < 0) {
         throw new AppError(
-          'Source and destination locations cannot be the same',
+          `Insufficient stock for product ${productDoc.name} at location ${locationDoc.name}`,
           400
         );
       }
     }
 
-    // Validate items
-    if (!items || items.length === 0) {
-      throw new AppError('At least one item is required', 400);
+    // Create movement
+    const movement = await InventoryMovement.create(
+      [
+        {
+          product,
+          location,
+          quantity,
+          type,
+          reference,
+          notes,
+          date: new Date(),
+          runningBalance: productDoc.totalStock + quantity,
+        },
+      ],
+      { session: useSession }
+    );
+
+    // Update product stock
+    productDoc.totalStock += quantity;
+    await productDoc.save({ session: useSession });
+
+    // Update location stock
+    const locationStock = locationDoc.stock.find(
+      (s) => s.product.toString() === product
+    );
+    if (locationStock) {
+      locationStock.quantity += quantity;
+    } else {
+      locationDoc.stock.push({
+        product: toObjectId(product),
+        quantity,
+      });
+    }
+    await locationDoc.save({ session: useSession });
+
+    if (!session) await useSession.commitTransaction();
+
+    // Clear cache
+    if (redisClient.isOpen) {
+      await redisClient.del(`product:${product}:stock`);
+      await redisClient.del(`location:${location}:stock`);
     }
 
-    // Validate each item
-    for (const item of items) {
-      const product = await Product.findById(item.product);
-      if (!product) {
-        throw new AppError(`Product with ID ${item.product} not found`, 404);
-      }
-
-      if (item.quantity <= 0) {
-        throw new AppError('Quantity must be greater than zero', 400);
-      }
-
-      // For outgoing movements, check if there's enough stock
-      if (
-        type === MovementType.SALE ||
-        type === MovementType.TRANSFER ||
-        type === MovementType.ADJUSTMENT ||
-        type === MovementType.EXPIRY ||
-        type === MovementType.DAMAGE ||
-        type === MovementType.THEFT
-      ) {
-        // Find the batch in the product inventory
-        const batch = product.inventory.find(
-          (inv) =>
-            inv.batchNumber === item.batchNumber &&
-            inv.location === sourceLocation
-        );
-
-        if (!batch) {
-          throw new AppError(
-            `Batch ${item.batchNumber} not found for product ${product.name}`,
-            404
-          );
-        }
-
-        if (batch.quantity < item.quantity) {
-          throw new AppError(
-            `Not enough stock for product ${product.name} batch ${item.batchNumber}`,
-            400
-          );
-        }
-      }
-    }
-
-    // Create inventory movement
-    const movement = await InventoryMovement.create({
-      referenceNumber,
-      type,
-      date: date ? new Date(date) : new Date(),
-      sourceLocation,
-      destinationLocation,
-      items,
-      notes,
-      status: 'pending',
-      createdBy: req.user._id,
-    });
-
-    res.status(201).json({
-      status: 'success',
-      data: movement,
-    });
+    return movement[0];
+  } catch (error) {
+    if (!session) await useSession.abortTransaction();
+    throw error;
+  } finally {
+    if (!session) useSession.endSession();
   }
-);
+};
+
+/**
+ * Get product stock at location
+ */
+const getProductStockAtLocation = async (
+  product: string,
+  location: string,
+  session?: mongoose.ClientSession
+) => {
+  const locationDoc = await Location.findById(location)
+    .select('stock')
+    .session(session || null);
+
+  if (!locationDoc) return 0;
+
+  const stockItem = locationDoc.stock.find(
+    (s) => s.product.toString() === product
+  );
+  return stockItem ? stockItem.quantity : 0;
+};
 
 /**
  * @desc    Update inventory movement
@@ -289,7 +302,7 @@ export const approveInventoryMovement = asyncHandler(
 
     // Update movement status
     movement.status = 'approved';
-    movement.approvedBy = req.user._id;
+    movement.approvedBy = toObjectId(req.user.id);
     await movement.save();
 
     res.status(200).json({
@@ -574,5 +587,91 @@ export const cancelInventoryMovement = asyncHandler(
       status: 'success',
       data: movement,
     });
+  }
+);
+
+/**
+ * @desc    Get inventory movements with pagination and filtering
+ * @route   GET /api/inventory/movements
+ * @access  Private
+ */
+export const getInventoryMovements = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 10;
+      const skip = (page - 1) * limit;
+
+      // Build filter object
+      const filter: any = {};
+
+      // Filter by product
+      if (req.query.product) {
+        filter.product = req.query.product;
+      }
+
+      // Filter by location
+      if (req.query.location) {
+        filter.location = req.query.location;
+      }
+
+      // Filter by movement type
+      if (req.query.type) {
+        filter.type = req.query.type;
+      }
+
+      // Filter by date range
+      if (req.query.startDate && req.query.endDate) {
+        filter.date = {
+          $gte: new Date(req.query.startDate as string),
+          $lte: new Date(req.query.endDate as string),
+        };
+      }
+
+      // Search by reference
+      if (req.query.search) {
+        filter.reference = {
+          $regex: req.query.search,
+          $options: 'i',
+        };
+      }
+
+      // Get total count
+      const total = await InventoryMovement.countDocuments(filter);
+
+      // Get movements with pagination
+      const movements = await InventoryMovement.find(filter)
+        .populate('product', 'name sku')
+        .populate('location', 'name')
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      // Cache the results
+      if (redisClient.isOpen) {
+        const cacheKey = `inventory:movements:${JSON.stringify(
+          filter
+        )}:${page}:${limit}`;
+        await redisClient.setEx(
+          cacheKey,
+          300,
+          JSON.stringify({ movements, total })
+        ); // Cache for 5 minutes
+      }
+
+      res.status(200).json({
+        status: 'success',
+        data: movements,
+        meta: {
+          total,
+          pages: Math.ceil(total / limit),
+          page,
+          limit,
+        },
+      });
+    } catch (error) {
+      logger.error('Error in getInventoryMovements:', error);
+      throw new AppError('Failed to fetch inventory movements', 500);
+    }
   }
 );

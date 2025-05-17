@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { RootState } from '@/store/store';
 import { register as registerUser } from '@/store/slices/authSlice';
 import { UserRole } from '@/types/auth.types';
 import Button from '@/components/common/Button/Button';
+import { toast } from 'react-toastify';
 
 interface RegisterFormData {
   firstName: string;
@@ -37,14 +38,40 @@ const Register = () => {
 
   const password = watch('password');
 
+  const selectedRole = watch('role');
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    hasUppercase: false,
+    hasLowercase: false,
+    hasSpecialChar: false,
+    hasMinLength: false,
+  });
+
+  // Watch password changes to validate in real-time
+  const currentPassword = watch('password');
+
+  useEffect(() => {
+    if (currentPassword) {
+      setPasswordRequirements({
+        hasUppercase: /[A-Z]/.test(currentPassword),
+        hasLowercase: /[a-z]/.test(currentPassword),
+        hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(currentPassword),
+        hasMinLength: currentPassword.length >= 8,
+      });
+    }
+  }, [currentPassword]);
+
   const onSubmit = async (data: RegisterFormData) => {
-    const { confirmPassword, ...registerData } = data;
-    
     try {
-      await dispatch(registerUser(registerData));
-      navigate('/dashboard');
+      // Send the complete form data including confirmPassword
+      await dispatch(registerUser(data));
+      setRegistrationSuccess(true);
+      toast.success(
+        'Registration successful! Your account is pending approval.'
+      );
     } catch (error) {
       console.error('Registration failed:', error);
+      toast.error('Registration failed. Please try again.');
     }
   };
 
@@ -65,6 +92,34 @@ const Register = () => {
             </Link>
           </p>
         </div>
+
+        {registrationSuccess && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-green-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-green-700">
+                  Registration successful! Your account is pending approval by
+                  an administrator. You will receive an email notification once
+                  your account is approved.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4">
@@ -110,7 +165,9 @@ const Register = () => {
                   })}
                 />
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.firstName.message}
+                  </p>
                 )}
               </div>
               <div>
@@ -130,7 +187,9 @@ const Register = () => {
                   })}
                 />
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.lastName.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -155,7 +214,9 @@ const Register = () => {
                 })}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
               )}
             </div>
             <div>
@@ -182,23 +243,37 @@ const Register = () => {
                   required: 'Role is required',
                 })}
               >
+                <option value={UserRole.ADMIN}>Admin</option>
                 <option value={UserRole.PHARMACIST}>Pharmacist</option>
                 <option value={UserRole.TECHNICIAN}>Pharmacy Technician</option>
                 <option value={UserRole.STAFF}>Staff</option>
+                <option value={UserRole.PATIENT}>Patient</option>
               </select>
             </div>
-            <div>
-              <label htmlFor="licenseNumber" className="sr-only">
-                License Number
-              </label>
-              <input
-                id="licenseNumber"
-                type="text"
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="License Number (for Pharmacists)"
-                {...register('licenseNumber')}
-              />
-            </div>
+            {selectedRole === UserRole.PHARMACIST && (
+              <div>
+                <label htmlFor="licenseNumber" className="sr-only">
+                  License Number
+                </label>
+                <input
+                  id="licenseNumber"
+                  type="text"
+                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
+                  placeholder="License Number (Required for Pharmacists)"
+                  {...register('licenseNumber', {
+                    required:
+                      selectedRole === UserRole.PHARMACIST
+                        ? 'License number is required for pharmacists'
+                        : false,
+                  })}
+                />
+                {errors.licenseNumber && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.licenseNumber.message}
+                  </p>
+                )}
+              </div>
+            )}
             <div>
               <label htmlFor="password" className="sr-only">
                 Password
@@ -215,8 +290,19 @@ const Register = () => {
                   {...register('password', {
                     required: 'Password is required',
                     minLength: {
-                      value: 6,
-                      message: 'Password must be at least 6 characters',
+                      value: 8,
+                      message: 'Password must be at least 8 characters',
+                    },
+                    validate: {
+                      hasUppercase: (value) =>
+                        /[A-Z]/.test(value) ||
+                        'Password must contain at least one uppercase letter',
+                      hasLowercase: (value) =>
+                        /[a-z]/.test(value) ||
+                        'Password must contain at least one lowercase letter',
+                      hasSpecialChar: (value) =>
+                        /[!@#$%^&*(),.?":{}|<>]/.test(value) ||
+                        'Password must contain at least one special character',
                     },
                   })}
                 />
@@ -257,7 +343,60 @@ const Register = () => {
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
+              )}
+
+              {/* Password requirements indicator */}
+              {currentPassword && (
+                <div className="mt-2 text-xs space-y-1">
+                  <p className="font-medium text-gray-700">
+                    Password requirements:
+                  </p>
+                  <ul className="pl-5 space-y-1">
+                    <li
+                      className={
+                        passwordRequirements.hasMinLength
+                          ? 'text-green-600'
+                          : 'text-gray-500'
+                      }
+                    >
+                      {passwordRequirements.hasMinLength ? '✓' : '○'} At least 8
+                      characters
+                    </li>
+                    <li
+                      className={
+                        passwordRequirements.hasUppercase
+                          ? 'text-green-600'
+                          : 'text-gray-500'
+                      }
+                    >
+                      {passwordRequirements.hasUppercase ? '✓' : '○'} At least
+                      one uppercase letter
+                    </li>
+                    <li
+                      className={
+                        passwordRequirements.hasLowercase
+                          ? 'text-green-600'
+                          : 'text-gray-500'
+                      }
+                    >
+                      {passwordRequirements.hasLowercase ? '✓' : '○'} At least
+                      one lowercase letter
+                    </li>
+                    <li
+                      className={
+                        passwordRequirements.hasSpecialChar
+                          ? 'text-green-600'
+                          : 'text-gray-500'
+                      }
+                    >
+                      {passwordRequirements.hasSpecialChar ? '✓' : '○'} At least
+                      one special character
+                    </li>
+                  </ul>
+                </div>
               )}
             </div>
             <div>
@@ -293,10 +432,24 @@ const Register = () => {
               fullWidth
               size="lg"
               isLoading={isLoading}
+              disabled={registrationSuccess}
             >
-              Create Account
+              {registrationSuccess
+                ? 'Registration Submitted'
+                : 'Create Account'}
             </Button>
           </div>
+
+          {registrationSuccess && (
+            <div className="text-center mt-4">
+              <Link
+                to="/login"
+                className="font-medium text-primary-600 hover:text-primary-500"
+              >
+                Go to Login Page
+              </Link>
+            </div>
+          )}
         </form>
       </div>
     </div>

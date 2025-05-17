@@ -15,7 +15,7 @@ export const createMedication = async (
 ) => {
   try {
     const medicationData: IMedicationCreate = req.body;
-    const userId = req.user._id;
+    const userId = req.user.id;
 
     const medication = await medicationService.createMedication(
       medicationData,

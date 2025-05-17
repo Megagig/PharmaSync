@@ -1,50 +1,73 @@
+// src/config/env.config.ts
 import dotenv from 'dotenv';
-import path from 'path';
+import { cleanEnv, str, num, bool } from 'envalid';
 
 // Load environment variables from .env file
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+dotenv.config();
 
-const env = {
-  NODE_ENV: process.env.NODE_ENV || 'development',
-  PORT: parseInt(process.env.PORT || '5000', 10),
+const env = cleanEnv(process.env, {
+  // Server Configuration
+  NODE_ENV: str({ choices: ['development', 'production', 'test'] }),
+  PORT: num({ default: 5000 }),
+  API_VERSION: str({ default: 'v1' }),
+  CORS_ORIGIN: str({ default: 'http://localhost:5173,http://localhost:3000' }),
+  RATE_LIMIT_WINDOW_MS: num({ default: 15 * 60 * 1000 }), // 15 minutes
+  RATE_LIMIT_MAX: num({ default: 100 }), // 100 requests per windowMs
 
-  // MongoDB
-  MONGODB_URI:
-    process.env.MONGODB_URI || 'mongodb://localhost:27017/pharmasync',
-  MONGODB_URI_TEST:
-    process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/pharmasync_test',
+  // MongoDB Configuration
+  MONGODB_URI: str({
+    default:
+      'mongodb://megagigdev:CGaPkfAtL73vikoI@ac-ixnxnxl-shard-00-00.io0gig6.mongodb.net:27017,ac-ixnxnxl-shard-00-01.io0gig6.mongodb.net:27017,ac-ixnxnxl-shard-00-02.io0gig6.mongodb.net:27017/PharmaSyncDB?ssl=true&replicaSet=atlas-ixnxnxl-shard-0&authSource=admin&retryWrites=true&w=majority',
+  }),
+  MONGODB_URI_TEST: str({
+    default: 'mongodb://localhost:27017/pharmasync-test',
+  }),
+  MONGODB_URI_DEV: str({ default: 'mongodb://localhost:27017/pharmasync-dev' }),
+  MONGODB_POOL_SIZE: num({ default: 10 }),
+  MONGODB_CONNECT_TIMEOUT_MS: num({ default: 30000 }),
 
-  // JWT
-  JWT_SECRET:
-    process.env.JWT_SECRET || 'default_jwt_secret_key_for_development',
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d', // Legacy support
-  JWT_ACCESS_EXPIRES_IN: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
-  JWT_REFRESH_SECRET:
-    process.env.JWT_REFRESH_SECRET ||
-    'default_refresh_token_secret_key_for_development',
-  JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  // JWT Configuration
+  JWT_SECRET: str(),
+  JWT_EXPIRES_IN: str({ default: '1d' }),
+  JWT_ACCESS_EXPIRES_IN: str({ default: '15m' }),
+  JWT_REFRESH_SECRET: str(),
+  JWT_REFRESH_EXPIRES_IN: str({ default: '7d' }),
 
-  // Logging
-  LOG_LEVEL: process.env.LOG_LEVEL || 'info',
+  // Redis Configuration
+  REDIS_URL: str({ default: 'redis://localhost:6379' }),
+  REDIS_PASSWORD: str({ default: '' }),
+  REDIS_DB: num({ default: 0 }),
+  REDIS_CLUSTER_URL: str({ default: 'redis://localhost:6379' }),
+  REDIS_CLUSTER_ENABLED: bool({ default: false }),
 
-  // Rate Limiting
-  RATE_LIMIT_WINDOW_MS: parseInt(
-    process.env.RATE_LIMIT_WINDOW_MS || '900000',
-    10
-  ), // 15 minutes
-  RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100', 10), // limit each IP to 100 requests per windowMs
+  // Email Configuration
+  SMTP_HOST: str(),
+  SMTP_PORT: num(),
+  SMTP_USER: str(),
+  SMTP_PASS: str(),
+  EMAIL_FROM: str(),
 
-  // Redis
-  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
-  REDIS_PASSWORD: process.env.REDIS_PASSWORD || '',
-  REDIS_TTL: parseInt(process.env.REDIS_TTL || '3600', 10), // Default TTL for cache items (1 hour)
+  // Storage Configuration
+  STORAGE_TYPE: str({ choices: ['local', 's3'], default: 'local' }),
+  STORAGE_PATH: str({ default: 'uploads' }),
+  MAX_FILE_SIZE: num({ default: 5242880 }), // 5MB
+  ALLOWED_FILE_TYPES: str({ default: 'image/jpeg,image/png,application/pdf' }),
 
-  // Redis Cluster
-  REDIS_CLUSTER_ENABLED: process.env.REDIS_CLUSTER_ENABLED === 'true',
-  REDIS_CLUSTER_URL: process.env.REDIS_CLUSTER_URL || 'redis://localhost:6379',
-  REDIS_CLUSTER_NODES: process.env.REDIS_CLUSTER_NODES
-    ? process.env.REDIS_CLUSTER_NODES.split(',')
-    : [],
-};
+  // AWS Configuration
+  AWS_ACCESS_KEY_ID: str({ default: '' }),
+  AWS_SECRET_ACCESS_KEY: str({ default: '' }),
+  AWS_REGION: str({ default: '' }),
+  AWS_BUCKET_NAME: str({ default: '' }),
+
+  // EHR Integration Configuration
+  EHR_API_URL: str({ default: 'https://api.ehrsystem.example.com' }),
+  EHR_API_KEY: str({ default: '' }),
+  EHR_ENABLED: bool({ default: false }),
+
+  // Drug Database Integration Configuration
+  RXNAV_API_URL: str({ default: 'https://rxnav.nlm.nih.gov/REST' }),
+  RXNAV_API_KEY: str({ default: '' }),
+  RXNAV_ENABLED: bool({ default: false }),
+});
 
 export default env;

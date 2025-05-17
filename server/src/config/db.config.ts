@@ -1,30 +1,69 @@
 import mongoose from 'mongoose';
-import env from './env.config';
 import logger from '../utils/logger';
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
 
 const connectDB = async (): Promise<void> => {
   try {
-    const mongoURI =
-      env.NODE_ENV === 'test' ? env.MONGODB_URI_TEST : env.MONGODB_URI;
+    // Get MongoDB URI directly from environment variables
+    const mongoURI = process.env.MONGODB_URI;
 
-    // For development purposes, we'll allow the server to start even if MongoDB is not available
-    if (env.NODE_ENV === 'development' && !mongoURI) {
-      logger.warn('MongoDB URI not provided in development mode');
-      return;
+    if (!mongoURI) {
+      throw new Error('MongoDB URI is required. Please check your .env file.');
     }
 
-    await mongoose.connect(mongoURI);
+    logger.info('Connecting to MongoDB...');
 
-    logger.info('MongoDB connected successfully');
+    // Configure Mongoose
+    mongoose.set('strictQuery', true);
+
+    // Connection options for MongoDB Atlas
+    const options = {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 30000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 30000,
+      ssl: true,
+      tls: true,
+    };
+
+    // Connect to MongoDB
+    await mongoose.connect(mongoURI, options);
+
+    // Add connection event listeners
+    mongoose.connection.on('connected', () => {
+      logger.info('MongoDB connected successfully');
+    });
+
+    mongoose.connection.on('error', (err) => {
+      logger.error('MongoDB connection error:', err);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+      logger.warn('MongoDB disconnected');
+    });
+
+    // Handle process termination
+    process.on('SIGINT', async () => {
+      try {
+        await mongoose.connection.close();
+        logger.info('MongoDB connection closed through app termination');
+        process.exit(0);
+      } catch (err) {
+        logger.error('Error closing MongoDB connection:', err);
+        process.exit(1);
+      }
+    });
+
+    logger.info('MongoDB connection initialized successfully');
   } catch (error) {
-    if (env.NODE_ENV === 'development') {
-      logger.error('MongoDB connection error:', error);
-      logger.warn('Continuing without MongoDB in development mode');
-    } else {
-      logger.error('MongoDB connection error:', error);
-      process.exit(1);
-    }
+    logger.error('MongoDB connection error:', error);
+    process.exit(1);
   }
 };
 
+// Export the mongoose instance for use in tests
+export { mongoose };
 export default connectDB;

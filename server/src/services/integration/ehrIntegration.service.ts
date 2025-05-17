@@ -1,273 +1,286 @@
 import axios from 'axios';
-import { AppError } from '../../utils/error';
-import Patient from '../../models/patient.model';
-import { logger } from '../../utils/logger.utils';
-import config from '../../config/config';
+import {
+  IPatient,
+  Gender,
+  IAllergy,
+  IMedicalCondition,
+} from '../../interfaces/patient.interface';
+import { IMedication } from '../../interfaces/medication.interface';
+import {
+  IPrescription,
+  IPrescriptionItem,
+  PrescriptionStatus,
+  IDosageInstructions,
+} from '../../interfaces/prescription.interface';
+import env from '../../config/env.config';
+import logger from '../../utils/logger';
+
+interface EHRPatient {
+  id: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  gender: string;
+  email?: string;
+  phone?: string;
+  address?: {
+    street: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+  };
+  allergies?: Array<{
+    allergen: string;
+    reaction: string;
+    severity: 'mild' | 'moderate' | 'severe';
+    status: 'active' | 'inactive';
+    dateIdentified: string;
+    notes?: string;
+  }>;
+  conditions?: Array<{
+    condition: string;
+    status: 'active' | 'inactive' | 'resolved';
+    diagnosisDate: string;
+    notes?: string;
+  }>;
+}
+
+interface EHRMedication {
+  id: string;
+  name: string;
+  genericName?: string;
+  brandName?: string;
+  dosageForm: string;
+  strength: string;
+  manufacturer?: string;
+  ndc?: string;
+  rxnorm?: string;
+}
+
+interface EHRPrescriptionItem {
+  medicationId: string;
+  dosage: string;
+  quantity: number;
+  refills: number;
+  dosageInstructions: IDosageInstructions;
+  notes?: string;
+}
+
+interface EHRPrescription {
+  id: string;
+  patientId: string;
+  providerId: string;
+  items: EHRPrescriptionItem[];
+  status: PrescriptionStatus;
+  issuedDate: string;
+  validUntil: string;
+  notes?: string;
+}
 
 /**
  * Service for integrating with external Electronic Health Record (EHR) systems
  */
-class EHRIntegrationService {
-  private baseUrl: string;
-  private apiKey: string;
-  private isEnabled: boolean;
+export class EHRIntegrationService {
+  private readonly baseUrl: string;
+  private readonly apiKey: string;
+  private isConnectedFlag: boolean = false;
+  private lastSyncTime: Date | null = null;
 
   constructor() {
-    // Load configuration from environment variables
-    this.baseUrl =
-      config.integrations.ehr.baseUrl || 'https://api.ehrsystem.example.com';
-    this.apiKey = config.integrations.ehr.apiKey || '';
-    this.isEnabled = config.integrations.ehr.enabled === 'true';
+    this.baseUrl = env.EHR_API_URL;
+    this.apiKey = env.EHR_API_KEY;
   }
 
-  /**
-   * Check if EHR integration is enabled
-   */
-  isIntegrationEnabled(): boolean {
-    return this.isEnabled && !!this.apiKey;
-  }
-
-  /**
-   * Get patient data from EHR system by patient ID
-   * @param ehrPatientId External EHR patient ID
-   * @returns Patient data from EHR
-   */
-  async getPatientById(ehrPatientId: string): Promise<any> {
-    if (!this.isIntegrationEnabled()) {
-      throw new AppError('EHR integration is not enabled', 400);
-    }
-
+  async connect(): Promise<boolean> {
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/patients/${ehrPatientId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await axios.get(`${this.baseUrl}/health`, {
+        headers: {
+          'X-API-Key': this.apiKey,
+        },
+      });
 
-      return response.data;
-    } catch (error: any) {
-      logger.error(`Error fetching patient from EHR: ${error.message}`);
-      throw new AppError(
-        `Failed to fetch patient from EHR: ${error.message}`,
-        500
-      );
+      this.isConnectedFlag = response.status === 200;
+      return this.isConnectedFlag;
+    } catch (error) {
+      logger.error('Failed to connect to EHR system:', error);
+      this.isConnectedFlag = false;
+      return false;
     }
   }
 
-  /**
-   * Search for patients in EHR system
-   * @param query Search query (name, ID, etc.)
-   * @returns List of matching patients
-   */
-  async searchPatients(query: string): Promise<any[]> {
-    if (!this.isIntegrationEnabled()) {
-      throw new AppError('EHR integration is not enabled', 400);
-    }
+  isConnected(): boolean {
+    return this.isConnectedFlag;
+  }
 
+  isIntegrationEnabled(): boolean {
+    return this.isConnectedFlag;
+  }
+
+  getLastSyncTime(): Date | null {
+    return this.lastSyncTime;
+  }
+
+  getProviderName(): string {
+    return 'Generic EHR System';
+  }
+
+  async searchPatients(query: string): Promise<any[]> {
     try {
       const response = await axios.get(`${this.baseUrl}/patients/search`, {
         params: { query },
         headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
+          'X-API-Key': this.apiKey,
         },
       });
 
-      return response.data.results || [];
-    } catch (error: any) {
-      logger.error(`Error searching patients in EHR: ${error.message}`);
-      throw new AppError(
-        `Failed to search patients in EHR: ${error.message}`,
-        500
-      );
+      return response.data.map(this.mapEHRPatientToLocalPatient);
+    } catch (error) {
+      logger.error('Failed to search patients in EHR:', error);
+      return [];
     }
   }
 
-  /**
-   * Import patient from EHR system into local database
-   * @param ehrPatientId External EHR patient ID
-   * @returns Imported patient
-   */
-  async importPatient(ehrPatientId: string): Promise<any> {
-    if (!this.isIntegrationEnabled()) {
-      throw new AppError('EHR integration is not enabled', 400);
-    }
-
+  async importPatient(ehrPatientId: string): Promise<Partial<IPatient>> {
     try {
-      // Check if patient already exists
-      const existingPatient = await Patient.findOne({ ehrPatientId });
-      if (existingPatient) {
-        return this.updatePatientFromEHR(
-          existingPatient._id.toString(),
-          ehrPatientId
-        );
-      }
-
-      // Fetch patient data from EHR
-      const ehrPatient = await this.getPatientById(ehrPatientId);
-
-      // Map EHR patient data to our patient model
-      const patientData = this.mapEHRPatientToLocalPatient(ehrPatient);
-
-      // Create new patient
-      const patient = await Patient.create(patientData);
-      return patient;
-    } catch (error: any) {
-      logger.error(`Error importing patient from EHR: ${error.message}`);
-      throw new AppError(
-        `Failed to import patient from EHR: ${error.message}`,
-        500
+      const response = await axios.get<EHRPatient>(
+        `${this.baseUrl}/patients/${ehrPatientId}`,
+        {
+          headers: {
+            'X-API-Key': this.apiKey,
+          },
+        }
       );
+
+      return this.mapEHRPatientToLocalPatient(response.data);
+    } catch (error) {
+      logger.error('Failed to import patient from EHR:', error);
+      throw error;
     }
   }
 
-  /**
-   * Update existing patient with data from EHR
-   * @param patientId Local patient ID
-   * @param ehrPatientId External EHR patient ID
-   * @returns Updated patient
-   */
-  async updatePatientFromEHR(
-    patientId: string,
+  async getPatientMedications(
     ehrPatientId: string
-  ): Promise<any> {
-    if (!this.isIntegrationEnabled()) {
-      throw new AppError('EHR integration is not enabled', 400);
-    }
-
+  ): Promise<Partial<IMedication>[]> {
     try {
-      // Fetch patient data from EHR
-      const ehrPatient = await this.getPatientById(ehrPatientId);
-
-      // Map EHR patient data to our patient model
-      const patientData = this.mapEHRPatientToLocalPatient(ehrPatient);
-
-      // Update patient
-      const patient = await Patient.findByIdAndUpdate(patientId, patientData, {
-        new: true,
-        runValidators: true,
-      });
-
-      if (!patient) {
-        throw new AppError('Patient not found', 404);
-      }
-
-      return patient;
-    } catch (error: any) {
-      logger.error(`Error updating patient from EHR: ${error.message}`);
-      throw new AppError(
-        `Failed to update patient from EHR: ${error.message}`,
-        500
-      );
-    }
-  }
-
-  /**
-   * Get patient medications from EHR
-   * @param ehrPatientId External EHR patient ID
-   * @returns List of medications
-   */
-  async getPatientMedications(ehrPatientId: string): Promise<any[]> {
-    if (!this.isIntegrationEnabled()) {
-      throw new AppError('EHR integration is not enabled', 400);
-    }
-
-    try {
-      const response = await axios.get(
+      const response = await axios.get<EHRMedication[]>(
         `${this.baseUrl}/patients/${ehrPatientId}/medications`,
         {
           headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
+            'X-API-Key': this.apiKey,
           },
         }
       );
 
-      return response.data.medications || [];
-    } catch (error: any) {
-      logger.error(
-        `Error fetching patient medications from EHR: ${error.message}`
-      );
-      throw new AppError(
-        `Failed to fetch patient medications from EHR: ${error.message}`,
-        500
-      );
+      return response.data.map(this.mapEHRMedicationToLocalMedication);
+    } catch (error) {
+      logger.error('Failed to get patient medications from EHR:', error);
+      throw error;
     }
   }
 
-  /**
-   * Get patient allergies from EHR
-   * @param ehrPatientId External EHR patient ID
-   * @returns List of allergies
-   */
-  async getPatientAllergies(ehrPatientId: string): Promise<any[]> {
-    if (!this.isIntegrationEnabled()) {
-      throw new AppError('EHR integration is not enabled', 400);
-    }
-
+  async sendPrescription(prescription: IPrescription): Promise<boolean> {
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/patients/${ehrPatientId}/allergies`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      return response.data.allergies || [];
-    } catch (error: any) {
-      logger.error(
-        `Error fetching patient allergies from EHR: ${error.message}`
-      );
-      throw new AppError(
-        `Failed to fetch patient allergies from EHR: ${error.message}`,
-        500
-      );
+      const ehrPrescription = this.mapLocalPrescriptionToEHR(prescription);
+      await axios.post(`${this.baseUrl}/prescriptions`, ehrPrescription, {
+        headers: {
+          'X-API-Key': this.apiKey,
+        },
+      });
+      return true;
+    } catch (error) {
+      logger.error('Failed to send prescription to EHR:', error);
+      return false;
     }
   }
 
-  /**
-   * Map EHR patient data to local patient model
-   * @param ehrPatient Patient data from EHR
-   * @returns Mapped patient data for local database
-   */
-  private mapEHRPatientToLocalPatient(ehrPatient: any): any {
-    return {
-      ehrPatientId: ehrPatient.id,
-      firstName: ehrPatient.firstName || ehrPatient.first_name,
-      lastName: ehrPatient.lastName || ehrPatient.last_name,
-      dateOfBirth: ehrPatient.dateOfBirth || ehrPatient.date_of_birth,
-      gender: ehrPatient.gender?.toLowerCase(),
-      email: ehrPatient.email,
-      phone: ehrPatient.phone,
-      address: {
-        street: ehrPatient.address?.street,
-        city: ehrPatient.address?.city,
-        state: ehrPatient.address?.state,
-        zipCode: ehrPatient.address?.zipCode || ehrPatient.address?.zip_code,
-        country: ehrPatient.address?.country || 'Nigeria',
-      },
-      bloodGroup: ehrPatient.bloodGroup || ehrPatient.blood_group,
-      genotype: ehrPatient.genotype,
-      allergies: ehrPatient.allergies?.map((allergy: any) => ({
-        name: allergy.name,
+  private mapEHRPatientToLocalPatient(
+    ehrPatient: EHRPatient
+  ): Partial<IPatient> {
+    const mappedGender = (): Gender => {
+      switch (ehrPatient.gender.toLowerCase()) {
+        case 'male':
+          return Gender.MALE;
+        case 'female':
+          return Gender.FEMALE;
+        default:
+          return Gender.OTHER;
+      }
+    };
+
+    const mappedAddress = ehrPatient.address
+      ? `${ehrPatient.address.street}, ${ehrPatient.address.city}, ${ehrPatient.address.state} ${ehrPatient.address.postalCode}, ${ehrPatient.address.country}`
+      : '';
+
+    const mappedAllergies: IAllergy[] =
+      ehrPatient.allergies?.map((allergy) => ({
+        allergen: allergy.allergen,
         reaction: allergy.reaction,
         severity: allergy.severity,
-      })),
-      medicalConditions: ehrPatient.conditions?.map((condition: any) => ({
-        name: condition.name,
-        diagnosisDate: condition.diagnosisDate || condition.diagnosis_date,
+        status: allergy.status,
+        dateIdentified: new Date(allergy.dateIdentified),
+        notes: allergy.notes,
+      })) || [];
+
+    const mappedConditions: IMedicalCondition[] =
+      ehrPatient.conditions?.map((condition) => ({
+        condition: condition.condition,
         status: condition.status,
+        diagnosisDate: new Date(condition.diagnosisDate),
+        notes: condition.notes,
+      })) || [];
+
+    return {
+      firstName: ehrPatient.firstName,
+      lastName: ehrPatient.lastName,
+      dateOfBirth: new Date(ehrPatient.dateOfBirth),
+      gender: mappedGender(),
+      email: ehrPatient.email,
+      phoneNumber: ehrPatient.phone || '',
+      address: mappedAddress,
+      allergies: mappedAllergies,
+      medicalConditions: mappedConditions,
+    };
+  }
+
+  private mapEHRMedicationToLocalMedication(
+    ehrMedication: EHRMedication
+  ): Partial<IMedication> & { [key: string]: any } {
+    // Return medication data with additional properties
+    return {
+      name: ehrMedication.name,
+      genericName: ehrMedication.genericName || ehrMedication.name,
+      brandName: ehrMedication.brandName,
+      dosageForm: ehrMedication.dosageForm,
+      strength: ehrMedication.strength,
+      manufacturer: ehrMedication.manufacturer,
+      // Add custom properties that will be accessible via type casting
+      _externalId:
+        ehrMedication.rxnorm || ehrMedication.ndc || ehrMedication.id,
+      _rxnorm: ehrMedication.rxnorm,
+      _ndc: ehrMedication.ndc,
+    };
+  }
+
+  private mapLocalPrescriptionToEHR(
+    prescription: IPrescription
+  ): EHRPrescription {
+    return {
+      id: prescription._id.toString(),
+      patientId: prescription.patient.toString(),
+      providerId: prescription.prescriber.toString(),
+      items: prescription.items.map((item) => ({
+        medicationId: item.medication.toString(),
+        dosage: item.dosage,
+        quantity: item.quantity,
+        refills: item.refills,
+        dosageInstructions: item.dosageInstructions,
+        notes: item.notes,
       })),
-      ehrLastSyncedAt: new Date(),
+      status: prescription.status,
+      issuedDate: prescription.issuedDate.toISOString(),
+      validUntil: prescription.validUntil.toISOString(),
+      notes: prescription.notes,
     };
   }
 }
-
-export default new EHRIntegrationService();

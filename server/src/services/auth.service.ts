@@ -4,6 +4,7 @@ import {
   IUserLogin,
   IUserResponse,
   IUserUpdate,
+  ApprovalStatus,
 } from '../interfaces/user.interface';
 import User from '../models/user.model';
 import {
@@ -16,14 +17,19 @@ import {
 import {
   comparePassword,
   generateToken,
-  hashPassword,
+  hashPassword as hashPasswordUtil,
   generateTokens,
   verifyRefreshToken,
   validatePasswordStrength,
   generateEmailVerificationToken,
   generatePasswordResetToken,
 } from '../config/auth.config';
+import * as emailService from './email.service';
 import crypto from 'crypto';
+import config from '../config';
+
+// Export hashPassword function for use in other modules
+export const hashPassword = hashPasswordUtil;
 
 export const register = async (
   userData: IUserCreate,
@@ -59,6 +65,10 @@ export const register = async (
     tokenVersion: 0,
     lastIpAddress: ipAddress,
     lastUserAgent: userAgent,
+    // Set approval status to PENDING by default
+    approvalStatus: ApprovalStatus.PENDING,
+    // Set isActive to false until approved
+    isActive: false,
     securityEvents: [
       {
         type: 'account_created',
@@ -86,8 +96,16 @@ export const register = async (
   user.refreshTokenExpires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
   await user.save();
 
-  // TODO: Send verification email with token
-  // This would be implemented in an email service
+  // Send registration confirmation email
+  try {
+    await emailService.sendRegistrationConfirmationEmail(
+      user.email,
+      `${user.firstName} ${user.lastName}`
+    );
+  } catch (error) {
+    console.error('Failed to send registration confirmation email:', error);
+    // Don't throw error, continue with registration process
+  }
 
   // Return user data and tokens
   return {
@@ -101,6 +119,7 @@ export const register = async (
       licenseNumber: user.licenseNumber,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
+      approvalStatus: user.approvalStatus,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     },
@@ -127,8 +146,16 @@ export const login = async (
     console.warn(
       `Failed login attempt for non-existent user: ${credentials.email}`
     );
-    throw new UnauthorizedError('Invalid credentials');
+    throw new UnauthorizedError('Invalid email or password. Please try again.');
   }
+
+  // Log user details for debugging
+  console.log(`Login attempt for user: ${credentials.email}`);
+  console.log(`User exists: ${!!user}`);
+  console.log(`User ID: ${user._id}`);
+  console.log(`User role: ${user.role}`);
+  console.log(`User approval status: ${user.approvalStatus}`);
+  console.log(`User is active: ${user.isActive}`);
 
   // Check if user is active
   if (!user.isActive) {
@@ -149,6 +176,50 @@ export const login = async (
 
     throw new UnauthorizedError(
       'Your account is inactive. Please contact an administrator.'
+    );
+  }
+
+  // Check if user account is pending approval
+  if (user.approvalStatus === ApprovalStatus.PENDING) {
+    // Record security event
+    if (!user.securityEvents) {
+      user.securityEvents = [];
+    }
+
+    user.securityEvents.push({
+      type: 'login_attempt_pending_approval',
+      timestamp: new Date(),
+      ipAddress,
+      userAgent,
+      details: 'Login attempt on account pending approval',
+    });
+
+    await user.save();
+
+    throw new UnauthorizedError(
+      'Your account is pending approval. Please wait for an administrator to approve your account.'
+    );
+  }
+
+  // Check if user account is rejected
+  if (user.approvalStatus === ApprovalStatus.REJECTED) {
+    // Record security event
+    if (!user.securityEvents) {
+      user.securityEvents = [];
+    }
+
+    user.securityEvents.push({
+      type: 'login_attempt_rejected',
+      timestamp: new Date(),
+      ipAddress,
+      userAgent,
+      details: 'Login attempt on rejected account',
+    });
+
+    await user.save();
+
+    throw new UnauthorizedError(
+      'Your account registration has been rejected. Please contact support for more information.'
     );
   }
 
@@ -179,49 +250,66 @@ export const login = async (
   }
 
   // Check password
-  const isPasswordValid = await comparePassword(
-    credentials.password,
-    user.password
+  console.log(`Checking password for user: ${user.email}`);
+  console.log(
+    `Stored hashed password: ${user.password ? 'exists' : 'missing'}`
   );
 
-  if (!isPasswordValid) {
-    // Increment failed login attempts
-    user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+  try {
+    const isPasswordValid = await comparePassword(
+      credentials.password,
+      user.password
+    );
 
-    // Lock account after 5 failed attempts
-    if (user.failedLoginAttempts >= 5) {
-      // Lock for 15 minutes
-      user.lockoutUntil = new Date(Date.now() + 15 * 60 * 1000);
+    console.log(
+      `Password validation result: ${isPasswordValid ? 'valid' : 'invalid'}`
+    );
 
-      // Record security event
-      if (!user.securityEvents) {
-        user.securityEvents = [];
+    if (!isPasswordValid) {
+      // Increment failed login attempts
+      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+      console.log(`Failed login attempts: ${user.failedLoginAttempts}`);
+
+      // Lock account after 5 failed attempts
+      if (user.failedLoginAttempts >= 5) {
+        // Lock for 15 minutes
+        user.lockoutUntil = new Date(Date.now() + 15 * 60 * 1000);
+
+        // Record security event
+        if (!user.securityEvents) {
+          user.securityEvents = [];
+        }
+
+        user.securityEvents.push({
+          type: 'account_locked',
+          timestamp: new Date(),
+          ipAddress,
+          userAgent,
+          details: 'Account locked due to too many failed login attempts',
+        });
+      } else {
+        // Record failed login attempt
+        if (!user.securityEvents) {
+          user.securityEvents = [];
+        }
+
+        user.securityEvents.push({
+          type: 'login_failed',
+          timestamp: new Date(),
+          ipAddress,
+          userAgent,
+          details: `Failed login attempt (${user.failedLoginAttempts}/5)`,
+        });
       }
 
-      user.securityEvents.push({
-        type: 'account_locked',
-        timestamp: new Date(),
-        ipAddress,
-        userAgent,
-        details: 'Account locked due to too many failed login attempts',
-      });
-    } else {
-      // Record failed login attempt
-      if (!user.securityEvents) {
-        user.securityEvents = [];
-      }
-
-      user.securityEvents.push({
-        type: 'login_failed',
-        timestamp: new Date(),
-        ipAddress,
-        userAgent,
-        details: `Failed login attempt (${user.failedLoginAttempts}/5)`,
-      });
+      await user.save();
+      throw new UnauthorizedError(
+        'Invalid email or password. Please try again.'
+      );
     }
-
-    await user.save();
-    throw new UnauthorizedError('Invalid credentials');
+  } catch (error) {
+    console.error('Error during password validation:', error);
+    throw error;
   }
 
   // Check if two-factor authentication is enabled
@@ -322,6 +410,7 @@ export const login = async (
       licenseNumber: user.licenseNumber,
       isActive: user.isActive,
       isEmailVerified: user.isEmailVerified,
+      approvalStatus: user.approvalStatus,
       twoFactorEnabled: user.twoFactorEnabled,
       lastLogin: user.lastLogin,
       createdAt: user.createdAt,
@@ -349,6 +438,7 @@ export const getUserById = async (id: string): Promise<IUserResponse> => {
     licenseNumber: user.licenseNumber,
     isActive: user.isActive,
     isEmailVerified: user.isEmailVerified,
+    approvalStatus: user.approvalStatus,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -380,6 +470,7 @@ export const updateUser = async (
     licenseNumber: user.licenseNumber,
     isActive: user.isActive,
     isEmailVerified: user.isEmailVerified,
+    approvalStatus: user.approvalStatus,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
@@ -440,9 +531,37 @@ export const forgotPassword = async (
 
   await user.save();
 
-  // TODO: Send password reset email with token
-  // This would be implemented in an email service
-  console.log(`Password reset token for ${email}: ${token}`);
+  // Send password reset email
+  try {
+    const resetUrl = `${config.clientUrl}/reset-password/${token}`;
+    await emailService.sendPasswordResetEmail(
+      user.email,
+      `${user.firstName} ${user.lastName}`,
+      resetUrl
+    );
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    // Don't throw error, continue with password reset process
+  }
+};
+
+export const verifyPasswordResetToken = async (
+  token: string
+): Promise<boolean> => {
+  // Hash the token from the URL
+  const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+  // Find user with this token that hasn't expired
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new BadRequestError('Invalid or expired password reset token');
+  }
+
+  return true;
 };
 
 export const resetPassword = async (

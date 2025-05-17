@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import FinancialPeriod from '../models/financialPeriod.model';
 import { FinancialPeriodStatus } from '../interfaces/accounting.interface';
 import { AppError } from '../utils/error';
+import { toObjectId } from '../utils/idConverter';
 
 /**
  * @desc    Get all financial periods
@@ -215,7 +216,7 @@ export const closeFinancialPeriod = asyncHandler(
 
     // Update status
     financialPeriod.status = FinancialPeriodStatus.CLOSED;
-    financialPeriod.closedBy = req.user.id; // From auth middleware
+    financialPeriod.closedBy = toObjectId(req.user.id); // From auth middleware
     financialPeriod.closedAt = new Date();
 
     await financialPeriod.save();

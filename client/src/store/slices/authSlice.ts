@@ -23,7 +23,14 @@ export const login = createAsyncThunk(
       const response = await authService.login(credentials);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Login failed');
+      // Extract error message from different possible sources
+      const errorMessage =
+        error.message ||
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        'Login failed. Please check your credentials.';
+
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -103,10 +110,8 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
-        state.token = action.payload.accessToken;
-        state.isAuthenticated = true;
-        localStorage.setItem('token', action.payload.accessToken);
+        // For registration, we don't automatically log the user in since they need admin approval
+        // We just set the loading state to false and let the component handle the success message
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;

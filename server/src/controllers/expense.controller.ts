@@ -9,6 +9,7 @@ import {
   getPaginationOptions,
   createPaginationResult,
 } from '../utils/pagination';
+import { toObjectId } from '../utils/idConverter';
 
 /**
  * @desc    Get all expenses with pagination and filtering
@@ -280,7 +281,7 @@ export const approveExpense = asyncHandler(
 
     // Update expense status
     expense.status = ExpenseStatus.APPROVED;
-    expense.approvedBy = req.user.id;
+    expense.approvedBy = toObjectId(req.user.id);
     expense.approvedAt = new Date();
 
     // Save updated expense
@@ -322,7 +323,7 @@ export const rejectExpense = asyncHandler(
 
     // Update expense status
     expense.status = ExpenseStatus.REJECTED;
-    expense.rejectedBy = req.user.id;
+    expense.rejectedBy = toObjectId(req.user.id);
     expense.rejectedAt = new Date();
     expense.rejectionReason = rejectionReason;
 

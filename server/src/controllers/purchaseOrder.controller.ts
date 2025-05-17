@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import asyncHandler from 'express-async-handler';
+import mongoose from 'mongoose';
 import PurchaseOrder from '../models/purchaseOrder.model';
 import Supplier from '../models/supplier.model';
 import Medication from '../models/medication.model';
@@ -168,7 +169,7 @@ export const createPurchaseOrder = asyncHandler(
       total,
       paymentTerms: paymentTerms || supplierExists.paymentTerms,
       notes,
-      createdBy: req.user.id, // From auth middleware
+      createdBy: new mongoose.Types.ObjectId(req.user.id), // From auth middleware
     });
 
     res.status(201).json({
@@ -467,7 +468,7 @@ export const approvePurchaseOrder = asyncHandler(
 
     // Update status and approver
     purchaseOrder.status = PurchaseOrderStatus.APPROVED;
-    purchaseOrder.approvedBy = req.user.id; // From auth middleware
+    purchaseOrder.approvedBy = new mongoose.Types.ObjectId(req.user.id); // From auth middleware
 
     await purchaseOrder.save();
 
@@ -619,7 +620,7 @@ export const receivePurchaseOrder = asyncHandler(
     purchaseOrder.status = allItemsReceived
       ? PurchaseOrderStatus.RECEIVED
       : PurchaseOrderStatus.PARTIAL;
-    purchaseOrder.receivedBy = req.user.id; // From auth middleware
+    purchaseOrder.receivedBy = new mongoose.Types.ObjectId(req.user.id); // From auth middleware
 
     if (notes) {
       purchaseOrder.notes = purchaseOrder.notes

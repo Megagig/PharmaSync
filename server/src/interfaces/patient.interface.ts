@@ -34,19 +34,21 @@ export enum BloodGroup {
 }
 
 export interface IAllergy {
+  _id?: Types.ObjectId;
   allergen: string;
   reaction: string;
   severity: 'mild' | 'moderate' | 'severe';
+  status: 'active' | 'inactive';
   dateIdentified: Date;
-  _id?: Types.ObjectId;
+  notes?: string;
 }
 
 export interface IMedicalCondition {
-  condition: string;
-  diagnosisDate: Date;
-  status: 'active' | 'resolved' | 'in_remission';
-  notes?: string;
   _id?: Types.ObjectId;
+  condition: string;
+  status: 'active' | 'inactive' | 'resolved';
+  diagnosisDate: Date;
+  notes?: string;
 }
 
 export interface IMedicationHistory {
@@ -127,14 +129,14 @@ export interface ISoapNote {
 }
 
 export interface IPatient extends Document {
+  _id: Types.ObjectId;
   firstName: string;
   lastName: string;
   dateOfBirth: Date;
-  age?: number; // Calculated field
   gender: Gender;
-  phoneNumber: string;
   email?: string;
-  address?: string;
+  phoneNumber: string;
+  address: string;
   city?: string;
   state?: string;
   bloodGroup?: BloodGroup;
@@ -143,18 +145,18 @@ export interface IPatient extends Document {
   weight?: number;
   allergies: IAllergy[];
   medicalConditions: IMedicalCondition[];
+  medications: Types.ObjectId[];
   medicationHistory: IMedicationHistory[];
   clinicalAssessments: IClinicalAssessment[];
   laboratoryFindings: ILaboratoryFinding[];
   drugTherapyProblems: IDrugTherapyProblem[];
   carePlans: ICarePlan[];
   soapNotes: ISoapNote[];
-  medications: Types.ObjectId[]; // References to medication IDs
   notes?: string;
-  createdBy: Types.ObjectId; // Reference to user ID
+  createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
-  _id: Types.ObjectId;
+  age?: number; // Virtual property
 }
 
 export interface IPatientCreate {
@@ -162,24 +164,11 @@ export interface IPatientCreate {
   lastName: string;
   dateOfBirth: Date;
   gender: Gender;
-  phoneNumber: string;
   email?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  bloodGroup?: BloodGroup;
-  genotype?: Genotype;
-  maritalStatus?: MaritalStatus;
-  weight?: number;
+  phoneNumber: string;
+  address: string;
   allergies?: IAllergy[];
   medicalConditions?: IMedicalCondition[];
-  medicationHistory?: IMedicationHistory[];
-  clinicalAssessments?: IClinicalAssessment[];
-  laboratoryFindings?: ILaboratoryFinding[];
-  drugTherapyProblems?: IDrugTherapyProblem[];
-  carePlans?: ICarePlan[];
-  soapNotes?: ISoapNote[];
-  notes?: string;
 }
 
 export interface IPatientUpdate {
@@ -187,16 +176,11 @@ export interface IPatientUpdate {
   lastName?: string;
   dateOfBirth?: Date;
   gender?: Gender;
-  phoneNumber?: string;
   email?: string;
+  phoneNumber?: string;
   address?: string;
-  city?: string;
-  state?: string;
-  bloodGroup?: BloodGroup;
-  genotype?: Genotype;
-  maritalStatus?: MaritalStatus;
-  weight?: number;
-  notes?: string;
+  allergies?: IAllergy[];
+  medicalConditions?: IMedicalCondition[];
 }
 
 export interface IPatientResponse {
@@ -206,9 +190,9 @@ export interface IPatientResponse {
   dateOfBirth: Date;
   age?: number;
   gender: Gender;
-  phoneNumber: string;
   email?: string;
-  address?: string;
+  phoneNumber: string;
+  address: string;
   city?: string;
   state?: string;
   bloodGroup?: BloodGroup;

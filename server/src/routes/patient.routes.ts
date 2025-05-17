@@ -23,7 +23,7 @@ import {
   addSoapNoteSchema,
   updateSoapNoteSchema,
 } from '../validators/patient.validator';
-import { UserRole } from '../interfaces/user.interface';
+import { Permission } from '../interfaces/user.interface';
 
 const router = Router();
 
@@ -34,16 +34,14 @@ router.use(authenticate);
 router
   .route('/')
   .get(
+    authorize(Permission.VIEW_PATIENTS),
     cacheMiddleware({ expiration: 300 }), // Cache for 5 minutes
     patientController.getAllPatients
   )
   .post(
+    authorize(Permission.CREATE_PATIENTS),
     validate(createPatientSchema),
-    async (req, res, next) => {
-      // Clear patient cache when a new patient is created
-      await clearCache('GET:/patients');
-      next();
-    },
+    clearCache('GET:/patients'),
     patientController.createPatient
   );
 
@@ -51,147 +49,229 @@ router
 router
   .route('/:id')
   .get(
+    authorize(Permission.VIEW_PATIENTS),
     cacheMiddleware({ expiration: 600 }), // Cache for 10 minutes
     patientController.getPatientById
   )
   .patch(
+    authorize(Permission.EDIT_PATIENTS),
     validate(updatePatientSchema),
-    async (req, res, next) => {
-      // Clear specific patient cache when updated
-      await clearCache(`GET:/patients/${req.params.id}`);
-      // Also clear the all patients list cache
-      await clearCache('GET:/patients');
-      next();
-    },
+    clearCache(['GET:/patients', 'GET:/patients/:id']),
     patientController.updatePatient
   )
   .delete(
-    authorize(UserRole.ADMIN), // Only allow admin to delete patients
-    async (req, res, next) => {
-      // Clear specific patient cache when deleted
-      await clearCache(`GET:/patients/${req.params.id}`);
-      // Also clear the all patients list cache
-      await clearCache('GET:/patients');
-      next();
-    },
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients', 'GET:/patients/:id']),
     patientController.deletePatient
   );
 
 // Allergy routes
 router
   .route('/:id/allergies')
-  .post(validate(addAllergySchema), patientController.addAllergy);
+  .post(
+    authorize(Permission.EDIT_PATIENTS),
+    validate(addAllergySchema),
+    clearCache(['GET:/patients/:id']),
+    patientController.addAllergy
+  );
 
 router
   .route('/:id/allergies/:allergyId')
-  .patch(validate(updateAllergySchema), patientController.updateAllergy)
-  .delete(patientController.removeAllergy);
+  .patch(
+    authorize(Permission.EDIT_PATIENTS),
+    validate(updateAllergySchema),
+    clearCache(['GET:/patients/:id']),
+    patientController.updateAllergy
+  )
+  .delete(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.removeAllergy
+  );
 
 // Medical condition routes
 router
   .route('/:id/conditions')
   .post(
+    authorize(Permission.EDIT_PATIENTS),
     validate(addMedicalConditionSchema),
+    clearCache(['GET:/patients/:id']),
     patientController.addMedicalCondition
   );
 
 router
   .route('/:id/conditions/:conditionId')
   .patch(
+    authorize(Permission.EDIT_PATIENTS),
     validate(updateMedicalConditionSchema),
+    clearCache(['GET:/patients/:id']),
     patientController.updateMedicalCondition
   )
-  .delete(patientController.removeMedicalCondition);
+  .delete(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.removeMedicalCondition
+  );
 
 // Medication routes
-router.route('/:id/medications').post(patientController.addMedication);
+router
+  .route('/:id/medications')
+  .post(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.addMedication
+  );
 
 router
   .route('/:id/medications/:medicationId')
-  .delete(patientController.removeMedication);
+  .delete(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.removeMedication
+  );
 
 // Medication History routes
 router
   .route('/:id/medication-history')
   .post(
+    authorize(Permission.EDIT_PATIENTS),
     validate(addMedicationHistorySchema),
+    clearCache(['GET:/patients/:id']),
     patientController.addMedicationHistory
   );
 
 router
   .route('/:id/medication-history/:medicationId')
   .patch(
+    authorize(Permission.EDIT_PATIENTS),
     validate(updateMedicationHistorySchema),
+    clearCache(['GET:/patients/:id']),
     patientController.updateMedicationHistory
   )
-  .delete(patientController.removeMedicationHistory);
+  .delete(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.removeMedicationHistory
+  );
 
 // Clinical Assessment routes
 router
   .route('/:id/clinical-assessments')
   .post(
+    authorize(Permission.EDIT_PATIENTS),
     validate(addClinicalAssessmentSchema),
+    clearCache(['GET:/patients/:id']),
     patientController.addClinicalAssessment
   );
 
 router
   .route('/:id/clinical-assessments/:assessmentId')
   .patch(
+    authorize(Permission.EDIT_PATIENTS),
     validate(updateClinicalAssessmentSchema),
+    clearCache(['GET:/patients/:id']),
     patientController.updateClinicalAssessment
   )
-  .delete(patientController.removeClinicalAssessment);
+  .delete(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.removeClinicalAssessment
+  );
 
 // Laboratory Finding routes
 router
   .route('/:id/laboratory-findings')
   .post(
+    authorize(Permission.EDIT_PATIENTS),
     validate(addLaboratoryFindingSchema),
+    clearCache(['GET:/patients/:id']),
     patientController.addLaboratoryFinding
   );
 
 router
   .route('/:id/laboratory-findings/:findingId')
   .patch(
+    authorize(Permission.EDIT_PATIENTS),
     validate(updateLaboratoryFindingSchema),
+    clearCache(['GET:/patients/:id']),
     patientController.updateLaboratoryFinding
   )
-  .delete(patientController.removeLaboratoryFinding);
+  .delete(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.removeLaboratoryFinding
+  );
 
 // Drug Therapy Problem routes
 router
   .route('/:id/drug-therapy-problems')
   .post(
+    authorize(Permission.EDIT_PATIENTS),
     validate(addDrugTherapyProblemSchema),
+    clearCache(['GET:/patients/:id']),
     patientController.addDrugTherapyProblem
   );
 
 router
   .route('/:id/drug-therapy-problems/:problemId')
   .patch(
+    authorize(Permission.EDIT_PATIENTS),
     validate(updateDrugTherapyProblemSchema),
+    clearCache(['GET:/patients/:id']),
     patientController.updateDrugTherapyProblem
   )
-  .delete(patientController.removeDrugTherapyProblem);
+  .delete(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.removeDrugTherapyProblem
+  );
 
 // Care Plan routes
 router
   .route('/:id/care-plans')
-  .post(validate(addCarePlanSchema), patientController.addCarePlan);
+  .post(
+    authorize(Permission.EDIT_PATIENTS),
+    validate(addCarePlanSchema),
+    clearCache(['GET:/patients/:id']),
+    patientController.addCarePlan
+  );
 
 router
   .route('/:id/care-plans/:planId')
-  .patch(validate(updateCarePlanSchema), patientController.updateCarePlan)
-  .delete(patientController.removeCarePlan);
+  .patch(
+    authorize(Permission.EDIT_PATIENTS),
+    validate(updateCarePlanSchema),
+    clearCache(['GET:/patients/:id']),
+    patientController.updateCarePlan
+  )
+  .delete(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.removeCarePlan
+  );
 
 // SOAP Note routes
 router
   .route('/:id/soap-notes')
-  .post(validate(addSoapNoteSchema), patientController.addSoapNote);
+  .post(
+    authorize(Permission.EDIT_PATIENTS),
+    validate(addSoapNoteSchema),
+    clearCache(['GET:/patients/:id']),
+    patientController.addSoapNote
+  );
 
 router
   .route('/:id/soap-notes/:noteId')
-  .patch(validate(updateSoapNoteSchema), patientController.updateSoapNote)
-  .delete(patientController.removeSoapNote);
+  .patch(
+    authorize(Permission.EDIT_PATIENTS),
+    validate(updateSoapNoteSchema),
+    clearCache(['GET:/patients/:id']),
+    patientController.updateSoapNote
+  )
+  .delete(
+    authorize(Permission.EDIT_PATIENTS),
+    clearCache(['GET:/patients/:id']),
+    patientController.removeSoapNote
+  );
 
 export default router;

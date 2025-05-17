@@ -5,6 +5,7 @@ import {
   Permission,
   DEFAULT_ROLE_PERMISSIONS,
   IUserSettings,
+  ApprovalStatus,
 } from '../interfaces/user.interface';
 import { RoleType, IPermission } from '../interfaces/role.interface';
 import { hashPassword } from '../config/auth.config';
@@ -186,6 +187,20 @@ const userSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
     },
+    approvalStatus: {
+      type: String,
+      enum: Object.values(ApprovalStatus),
+      default: ApprovalStatus.PENDING,
+    },
+    approvedBy: {
+      type: String,
+    },
+    approvedAt: {
+      type: Date,
+    },
+    rejectionReason: {
+      type: String,
+    },
     emailVerificationToken: {
       type: String,
     },
@@ -246,6 +261,15 @@ const userSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
+    toJSON: {
+      transform: function (doc, ret) {
+        ret.id = ret._id.toString();
+        delete ret._id;
+        delete ret.__v;
+        delete ret.password;
+        return ret;
+      },
+    },
   }
 );
 
@@ -269,28 +293,58 @@ userSchema.methods.hasPermission = async function (
 ): Promise<boolean> {
   // First check legacy permissions (for backward compatibility)
   if (this.permissions && this.permissions.length > 0) {
-    // Map old permission format to new format for checking
-    const legacyPermissionMap: Record<
-      string,
-      { resource: string; action: string }
-    > = {
-      view_patients: { resource: 'patients', action: 'read' },
-      create_patients: { resource: 'patients', action: 'create' },
-      edit_patients: { resource: 'patients', action: 'update' },
-      view_medications: { resource: 'medications', action: 'read' },
-      create_medications: { resource: 'medications', action: 'create' },
-      edit_medications: { resource: 'medications', action: 'update' },
-      // Add more mappings as needed
-    };
+    // Check if any permission is a legacy string permission
+    const legacyPermissions = this.permissions.filter(
+      (p): p is string => typeof p === 'string'
+    );
+    if (legacyPermissions.length > 0) {
+      // Map old permission format to new format for checking
+      const legacyPermissionMap: Record<
+        string,
+        { resource: string; action: string }
+      > = {
+        view_patients: { resource: 'patients', action: 'read' },
+        create_patients: { resource: 'patients', action: 'create' },
+        edit_patients: { resource: 'patients', action: 'update' },
+        view_medications: { resource: 'medications', action: 'read' },
+        create_medications: { resource: 'medications', action: 'create' },
+        edit_medications: { resource: 'medications', action: 'update' },
+        // Add more mappings as needed
+      };
 
-    // Check if any legacy permission maps to the requested permission
-    for (const permission of this.permissions) {
-      const mapping = legacyPermissionMap[permission];
-      if (
-        mapping &&
-        mapping.resource === resource &&
-        mapping.action === action
-      ) {
+      // Check if any legacy permission maps to the requested permission
+      for (const permission of legacyPermissions) {
+        const mapping = legacyPermissionMap[permission];
+        if (
+          mapping &&
+          mapping.resource === resource &&
+          mapping.action === action
+        ) {
+          return true;
+        }
+      }
+    }
+
+    // Check if any permission is an IPermission object
+    const objectPermissions = this.permissions.filter(
+      (p): p is IPermission => typeof p === 'object' && p !== null
+    );
+    if (objectPermissions.length > 0) {
+      // Check for the 'manage' action which grants full access to the resource
+      const hasManagePermission = objectPermissions.some(
+        (p) => p.resource === resource && p.actions.includes('manage')
+      );
+
+      if (hasManagePermission) {
+        return true;
+      }
+
+      // Check for the specific action
+      const hasSpecificPermission = objectPermissions.some(
+        (p) => p.resource === resource && p.actions.includes(action)
+      );
+
+      if (hasSpecificPermission) {
         return true;
       }
     }
@@ -433,48 +487,86 @@ userSchema.methods.getEffectivePermissions = async function (): Promise<
 
   // First add legacy permissions (for backward compatibility)
   if (this.permissions && this.permissions.length > 0) {
-    // Map old permission format to new format
-    const legacyPermissionMap: Record<string, IPermission> = {
-      view_patients: { resource: 'patients', actions: ['read'] },
-      create_patients: { resource: 'patients', actions: ['create'] },
-      edit_patients: { resource: 'patients', actions: ['update'] },
-      view_medications: { resource: 'medications', actions: ['read'] },
-      create_medications: { resource: 'medications', actions: ['create'] },
-      edit_medications: { resource: 'medications', actions: ['update'] },
-      view_prescriptions: { resource: 'prescriptions', actions: ['read'] },
-      create_prescriptions: { resource: 'prescriptions', actions: ['create'] },
-      edit_prescriptions: { resource: 'prescriptions', actions: ['update'] },
-      view_dispensing: { resource: 'dispensings', actions: ['read'] },
-      create_dispensing: { resource: 'dispensings', actions: ['create'] },
-      edit_dispensing: { resource: 'dispensings', actions: ['update'] },
-      view_inventory: { resource: 'inventory', actions: ['read'] },
-      manage_inventory: { resource: 'inventory', actions: ['manage'] },
-      view_suppliers: { resource: 'suppliers', actions: ['read'] },
-      manage_suppliers: { resource: 'suppliers', actions: ['manage'] },
-      view_purchase_orders: { resource: 'purchase_orders', actions: ['read'] },
-      create_purchase_orders: {
-        resource: 'purchase_orders',
-        actions: ['create'],
-      },
-      edit_purchase_orders: {
-        resource: 'purchase_orders',
-        actions: ['update'],
-      },
-      view_reports: { resource: 'reports', actions: ['read'] },
-      view_schedule: { resource: 'schedule', actions: ['read'] },
-      // Add more mappings as needed
-    };
+    // Handle legacy string permissions
+    const legacyPermissions = this.permissions.filter(
+      (p): p is string => typeof p === 'string'
+    );
+    if (legacyPermissions.length > 0) {
+      // Map old permission format to new format
+      const legacyPermissionMap: Record<string, IPermission> = {
+        view_patients: { resource: 'patients', actions: ['read'] },
+        create_patients: { resource: 'patients', actions: ['create'] },
+        edit_patients: { resource: 'patients', actions: ['update'] },
+        view_medications: { resource: 'medications', actions: ['read'] },
+        create_medications: { resource: 'medications', actions: ['create'] },
+        edit_medications: { resource: 'medications', actions: ['update'] },
+        view_prescriptions: { resource: 'prescriptions', actions: ['read'] },
+        create_prescriptions: {
+          resource: 'prescriptions',
+          actions: ['create'],
+        },
+        edit_prescriptions: { resource: 'prescriptions', actions: ['update'] },
+        view_dispensing: { resource: 'dispensings', actions: ['read'] },
+        create_dispensing: { resource: 'dispensings', actions: ['create'] },
+        edit_dispensing: { resource: 'dispensings', actions: ['update'] },
+        view_inventory: { resource: 'inventory', actions: ['read'] },
+        manage_inventory: { resource: 'inventory', actions: ['manage'] },
+        view_suppliers: { resource: 'suppliers', actions: ['read'] },
+        manage_suppliers: { resource: 'suppliers', actions: ['manage'] },
+        view_purchase_orders: {
+          resource: 'purchase_orders',
+          actions: ['read'],
+        },
+        create_purchase_orders: {
+          resource: 'purchase_orders',
+          actions: ['create'],
+        },
+        edit_purchase_orders: {
+          resource: 'purchase_orders',
+          actions: ['update'],
+        },
+        view_reports: { resource: 'reports', actions: ['read'] },
+        view_schedule: { resource: 'schedule', actions: ['read'] },
+        // Add more mappings as needed
+      };
 
-    for (const permission of this.permissions) {
-      const mapping = legacyPermissionMap[permission];
-      if (mapping) {
-        // Check if we already have this resource in our effective permissions
+      for (const permission of legacyPermissions) {
+        const mapping = legacyPermissionMap[permission];
+        if (mapping) {
+          // Check if we already have this resource in our effective permissions
+          const existingPermission = effectivePermissions.find(
+            (p) => p.resource === mapping.resource
+          );
+          if (existingPermission) {
+            // Add actions that don't already exist
+            for (const action of mapping.actions) {
+              if (!existingPermission.actions.includes(action)) {
+                existingPermission.actions.push(action);
+              }
+            }
+          } else {
+            // Add new permission
+            effectivePermissions.push({
+              resource: mapping.resource,
+              actions: [...mapping.actions],
+            });
+          }
+        }
+      }
+    }
+
+    // Handle IPermission objects
+    const objectPermissions = this.permissions.filter(
+      (p): p is IPermission => typeof p === 'object' && p !== null
+    );
+    if (objectPermissions.length > 0) {
+      for (const permission of objectPermissions) {
         const existingPermission = effectivePermissions.find(
-          (p) => p.resource === mapping.resource
+          (p) => p.resource === permission.resource
         );
         if (existingPermission) {
           // Add actions that don't already exist
-          for (const action of mapping.actions) {
+          for (const action of permission.actions) {
             if (!existingPermission.actions.includes(action)) {
               existingPermission.actions.push(action);
             }
@@ -482,8 +574,8 @@ userSchema.methods.getEffectivePermissions = async function (): Promise<
         } else {
           // Add new permission
           effectivePermissions.push({
-            resource: mapping.resource,
-            actions: [...mapping.actions],
+            resource: permission.resource,
+            actions: [...permission.actions],
           });
         }
       }
@@ -540,52 +632,58 @@ userSchema.methods.getEffectivePermissions = async function (): Promise<
 
 // Method to invalidate all tokens for this user
 userSchema.methods.invalidateTokens = async function (): Promise<void> {
+  // Type assertion to access properties
+  const user = this as any;
+
   // Increment token version to invalidate all existing tokens
-  this.tokenVersion = (this.tokenVersion || 0) + 1;
+  user.tokenVersion = (user.tokenVersion || 0) + 1;
 
   // Clear any stored refresh token
-  this.refreshToken = undefined;
-  this.refreshTokenExpires = undefined;
+  user.refreshToken = undefined;
+  user.refreshTokenExpires = undefined;
 
   // Add security event
-  if (!this.securityEvents) {
-    this.securityEvents = [];
+  if (!user.securityEvents) {
+    user.securityEvents = [];
   }
 
-  this.securityEvents.push({
+  user.securityEvents.push({
     type: 'token_invalidation',
     timestamp: new Date(),
     details: 'All tokens invalidated',
   });
 
   // Save the user
-  await this.save();
+  await user.save();
 };
 
 // Hash password before saving
 userSchema.pre('save', async function (next) {
+  // Type assertion to access properties
+  const user = this as any;
+
   // Set default permissions based on role if permissions array is empty or role has changed
   // (Legacy support)
   if (
-    this.isNew ||
-    this.isModified('role') ||
-    (this.permissions && this.permissions.length === 0)
+    user.isNew ||
+    user.isModified('role') ||
+    (user.permissions && user.permissions.length === 0)
   ) {
-    const role = this.role as UserRoleEnum;
+    const role = user.role as UserRoleEnum;
     // Handle the case for PATIENT role which might not be in DEFAULT_ROLE_PERMISSIONS
     if (role === UserRoleEnum.PATIENT) {
-      this.permissions = [];
+      user.permissions = [];
     } else {
-      this.permissions = DEFAULT_ROLE_PERMISSIONS[role] || [];
+      user.permissions = DEFAULT_ROLE_PERMISSIONS[role] || [];
     }
   }
 
   // If this is a new user and no roles are assigned, assign a default role based on the legacy role
-  if (this.isNew && (!this.roles || this.roles.length === 0) && this.role) {
+  if (user.isNew && (!user.roles || user.roles.length === 0) && user.role) {
     try {
       // Find the corresponding new role type
       let roleType: RoleType;
-      switch (this.role) {
+      switch (user.role) {
         case UserRoleEnum.ADMIN:
           roleType = RoleType.ADMIN;
           break;
@@ -609,7 +707,7 @@ userSchema.pre('save', async function (next) {
       const role = await Role.findOne({ type: roleType });
       if (role && role._id) {
         // Use type assertion to handle the unknown type
-        this.roles = [(role._id as any).toString()];
+        user.roles = [(role._id as any).toString()];
       }
     } catch (error) {
       console.error('Error assigning default role:', error);
@@ -617,23 +715,23 @@ userSchema.pre('save', async function (next) {
   }
 
   // Hash password if it has been modified
-  if (this.isModified('password')) {
+  if (user.isModified('password')) {
     try {
-      this.password = await hashPassword(this.password);
+      user.password = await hashPassword(user.password);
 
       // Update passwordChangedAt field
-      this.passwordChangedAt = new Date();
-      this.lastPasswordChange = new Date();
+      user.passwordChangedAt = new Date();
+      user.lastPasswordChange = new Date();
 
       // Increment token version to invalidate all existing tokens
-      this.tokenVersion = (this.tokenVersion || 0) + 1;
+      user.tokenVersion = (user.tokenVersion || 0) + 1;
 
       // Add security event
-      if (!this.securityEvents) {
-        this.securityEvents = [];
+      if (!user.securityEvents) {
+        user.securityEvents = [];
       }
 
-      this.securityEvents.push({
+      user.securityEvents.push({
         type: 'password_change',
         timestamp: new Date(),
         details: 'Password changed',

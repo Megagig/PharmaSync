@@ -41,6 +41,7 @@ export interface ICustomer extends Document {
   priceLevel: string; // e.g., 'retail', 'wholesale', 'special'
   creditLimit?: number;
   currentBalance: number;
+  totalPurchases: number;
   creditStatus?: 'active' | 'suspended' | 'blocked';
   notes?: string;
   isActive: boolean;

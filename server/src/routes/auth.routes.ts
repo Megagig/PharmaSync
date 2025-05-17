@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as authController from '../controllers/auth.controller';
+import * as devAuthController from '../controllers/dev-auth.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
 import {
@@ -18,10 +19,27 @@ const router = Router();
 // Apply cookie parser middleware
 router.use(cookieParser());
 
+// Determine if we should use development controllers
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 // Public routes
 router.post('/register', validate(registerSchema), authController.register);
-router.post('/login', validate(loginSchema), authController.login);
-router.post('/refresh-token', authController.refreshToken);
+
+// Use development controller for login in development mode
+router.post(
+  '/login',
+  validate(loginSchema),
+  isDevelopment ? devAuthController.devLogin : authController.login
+);
+
+// Use development controller for refresh token in development mode
+router.post(
+  '/refresh-token',
+  isDevelopment
+    ? devAuthController.devRefreshToken
+    : authController.refreshToken
+);
+
 router.post(
   '/forgot-password',
   validate(forgotPasswordSchema),

@@ -4,6 +4,7 @@ import PosSession from '../models/posSession.model';
 import Location from '../models/location.model';
 import { PosSessionStatus } from '../interfaces/posSession.interface';
 import { AppError } from '../utils/error';
+import { toObjectId } from '../utils/idConverter';
 
 /**
  * @desc    Get all POS sessions
@@ -182,7 +183,7 @@ export const closePosSession = asyncHandler(
     session.status = PosSessionStatus.CLOSED;
     session.closingTime = new Date();
     session.actualClosingBalance = actualClosingBalance;
-    session.closedBy = req.user.id; // From auth middleware
+    session.closedBy = toObjectId(req.user.id); // From auth middleware
 
     if (notes) {
       session.notes = notes;

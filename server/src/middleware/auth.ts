@@ -3,15 +3,10 @@ import jwt from 'jsonwebtoken';
 import User from '../models/user.model';
 import { AppError } from '../utils/appError';
 import config from '../config';
+import { RoleType } from '../interfaces/role.interface';
 
-// Extend Express Request interface to include user property
-declare global {
-  namespace Express {
-    interface Request {
-      user?: any;
-    }
-  }
-}
+// This file is deprecated. Use auth.middleware.ts instead.
+// Keeping for backward compatibility
 
 /**
  * Authentication middleware
@@ -54,7 +49,14 @@ export const authenticate = async (
     }
 
     // Attach user to request object
-    req.user = user;
+    req.user = {
+      id: user._id.toString(),
+      _id: user._id.toString(),
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roles: user.roles?.map((role) => ({ type: role as RoleType })) || [],
+      permissions: user.permissions || [],
+    };
     next();
   } catch (error) {
     console.error('Authentication error:', error);
@@ -76,10 +78,18 @@ export const authorize = (roles: string | string[]) => {
       return next(new AppError('User not authenticated', 401));
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    // Check if user has any of the allowed roles
+    const userRoles = req.user.roles?.map((r) => r.type) || [];
+    const hasAllowedRole = userRoles.some((role) =>
+      allowedRoles.includes(role)
+    );
+
+    if (!hasAllowedRole) {
       return next(
         new AppError(
-          `Role (${req.user.role}) is not authorized to access this resource`,
+          `User roles (${userRoles.join(
+            ', '
+          )}) are not authorized to access this resource`,
           403
         )
       );
@@ -103,9 +113,18 @@ export const hasPermission = (requiredPermissions: string[]) => {
     const userPermissions = req.user.permissions || [];
 
     // Check if user has all required permissions
-    const hasAllPermissions = requiredPermissions.every((permission) =>
-      userPermissions.includes(permission)
-    );
+    const hasAllPermissions = requiredPermissions.every((permission) => {
+      if (typeof userPermissions[0] === 'string') {
+        return userPermissions.includes(permission as any);
+      } else {
+        // Handle complex permission objects
+        return userPermissions.some(
+          (p: any) =>
+            p.resource === permission.split(':')[1] &&
+            p.actions.includes(permission.split(':')[0])
+        );
+      }
+    });
 
     if (!hasAllPermissions) {
       return next(

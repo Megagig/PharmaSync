@@ -20,50 +20,49 @@ import {
   subMonths,
   format,
 } from 'date-fns';
+import { FilterQuery } from 'mongoose';
+
+interface QueryFilter {
+  [key: string]: string | number | boolean | Date | { $gte?: Date; $lte?: Date };
+}
+
+interface GroupByExpression {
+  _id: {
+    [key: string]: string | { $dateToString: { format: string; date: string } };
+  };
+  count: { $sum: number };
+  total?: { $sum: number };
+}
+
+interface AggregationOperator {
+  $match?: QueryFilter;
+  $group?: GroupByExpression;
+  $sort?: { [key: string]: number };
+  $project?: { [key: string]: number | boolean };
+}
 
 /**
  * Build a MongoDB query from report filters
  * @param filters Array of report filters
  * @returns MongoDB query object
  */
-export const buildQueryFromFilters = (filters: IReportFilter[] = []): any => {
-  if (!filters || filters.length === 0) {
+export const buildQueryFromFilters = (filters: IReportFilter[] = []): QueryFilter => {
+  if (!filters.length) {
     return {};
   }
 
-  const query: any = {};
+  const query: QueryFilter = {};
 
   filters.forEach((filter) => {
-    const { field, operator, value } = filter;
-
-    switch (operator) {
-      case 'equals':
-        query[field] = value;
-        break;
-      case 'notEquals':
-        query[field] = { $ne: value };
-        break;
-      case 'contains':
-        query[field] = { $regex: value, $options: 'i' };
-        break;
-      case 'greaterThan':
-        query[field] = { $gt: value };
-        break;
-      case 'lessThan':
-        query[field] = { $lt: value };
-        break;
-      case 'between':
-        if (Array.isArray(value) && value.length === 2) {
-          query[field] = { $gte: value[0], $lte: value[1] };
-        }
-        break;
-      case 'in':
-        if (Array.isArray(value)) {
-          query[field] = { $in: value };
-        }
-        break;
-      default:
-        break;
+    if (filter.field && filter.value) {
+      if (filter.operator === 'between' && Array.isArray(filter.value)) {
+        query[filter.field] = {
+          $gte: new Date(filter.value[0]),
+          $lte: new Date(filter.value[1]),
+        };
+      } else {
+        query[filter.field] = filter.value;
+      }
     }
   });
 
@@ -225,8 +224,8 @@ export const generateTimeSeries = async (
       interval === 'day'
         ? 'yyyy-MM-dd'
         : interval === 'week'
-        ? 'yyyy-[W]ww'
-        : 'yyyy-MM'
+          ? 'yyyy-[W]ww'
+          : 'yyyy-MM'
     ),
     value: item.value,
   }));
