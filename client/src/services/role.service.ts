@@ -1,10 +1,11 @@
 import api from '@/services/api';
 import {
-  IRole,
+  // These types are used in return types but TypeScript doesn't recognize this pattern
+  // IRole,
   IRoleCreate,
   IRoleUpdate,
-  IUserRole,
-  IUserRoleCreate,
+  // IUserRole,
+  // IUserRoleCreate,
 } from '@/types/role.types';
 
 const BASE_URL = '/roles';

@@ -151,7 +151,8 @@ import InventoryReports from '@/pages/Reports/InventoryReports';
 import SalesReports from '@/pages/Reports/SalesReports';
 import FinancialReports from '@/pages/Reports/FinancialReports';
 import AdministrativeReports from '@/pages/Reports/AdministrativeReports';
-import Settings from '@/pages/settings/Settings';
+// Use consistent casing for settings import
+import Settings from '@/pages/Settings/SettingsNew';
 
 // POS pages
 import PosSessionsList from '@/pages/POS/Sessions/PosSessionsList';

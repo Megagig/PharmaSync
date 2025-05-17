@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { ActivityLogsState, ActivityType } from '@/types/activityLog.types';
+import { ActivityLogsState } from '@/types/activityLog.types';
 import activityLogService from '@/api/services/activityLogs.service';
 
 const initialState: ActivityLogsState = {
@@ -49,7 +49,9 @@ export const fetchActivityLogs = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch activity logs');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch activity logs'
+      );
     }
   }
 );
@@ -61,7 +63,9 @@ export const fetchActivityLogById = createAsyncThunk(
       const activityLog = await activityLogService.getActivityLogById(id);
       return activityLog;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch activity log');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch activity log'
+      );
     }
   }
 );
@@ -97,7 +101,9 @@ export const fetchUserActivityLogs = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user activity logs');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch user activity logs'
+      );
     }
   }
 );
@@ -130,7 +136,9 @@ export const fetchMyActivityLogs = createAsyncThunk(
       );
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch my activity logs');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch my activity logs'
+      );
     }
   }
 );
@@ -142,7 +150,9 @@ export const fetchActivityTypes = createAsyncThunk(
       const activityTypes = await activityLogService.getActivityTypes();
       return activityTypes;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch activity types');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch activity types'
+      );
     }
   }
 );
@@ -154,10 +164,15 @@ export const fetchActivityStats = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const stats = await activityLogService.getActivityStats(startDate, endDate);
+      const stats = await activityLogService.getActivityStats(
+        startDate,
+        endDate
+      );
       return stats;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch activity stats');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch activity stats'
+      );
     }
   }
 );
@@ -191,7 +206,7 @@ const activityLogSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch activity log by ID
       .addCase(fetchActivityLogById.pending, (state) => {
         state.isLoading = true;
@@ -205,7 +220,7 @@ const activityLogSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch user activity logs
       .addCase(fetchUserActivityLogs.pending, (state) => {
         state.isLoading = true;
@@ -222,7 +237,7 @@ const activityLogSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch my activity logs
       .addCase(fetchMyActivityLogs.pending, (state) => {
         state.isLoading = true;
@@ -239,7 +254,7 @@ const activityLogSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch activity types
       .addCase(fetchActivityTypes.pending, (state) => {
         state.isLoading = true;
@@ -253,7 +268,7 @@ const activityLogSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch activity stats
       .addCase(fetchActivityStats.pending, (state) => {
         state.isLoading = true;

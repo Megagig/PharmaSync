@@ -33,6 +33,11 @@ const env = {
     10
   ), // 15 minutes
   RATE_LIMIT_MAX: parseInt(process.env.RATE_LIMIT_MAX || '100', 10), // limit each IP to 100 requests per windowMs
+
+  // Redis
+  REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD || '',
+  REDIS_TTL: parseInt(process.env.REDIS_TTL || '3600', 10), // Default TTL for cache items (1 hour)
 };
 
 export default env;

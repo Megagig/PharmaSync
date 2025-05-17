@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+import { RootState, AppDispatch } from '@/store/store';
 import { fetchUserProfile } from '@/store/slices/userSlice';
 import { fetchUserPermissions } from '@/store/slices/roleSlice';
 import LoadingScreen from '@/components/common/LoadingScreen/LoadingScreen';
 
 const PrivateRoute: React.FC = () => {
   const location = useLocation();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   // Use refs to track if we've already dispatched the actions
   const profileFetchedRef = useRef(false);
@@ -18,7 +18,7 @@ const PrivateRoute: React.FC = () => {
   const { user: currentUser, isLoading: authLoading } = useSelector(
     (state: RootState) => state.auth
   );
-  const { currentUser: userProfile, isLoading: userLoading } = useSelector(
+  const { currentUser: userProfile } = useSelector(
     (state: RootState) => state.users
   );
 

@@ -8,7 +8,9 @@ import LoadingScreen from '@/components/common/LoadingScreen/LoadingScreen';
 
 const AdminRoute: React.FC = () => {
   const location = useLocation();
-  const { currentUser, isLoading } = useSelector((state: RootState) => state.users);
+  const { currentUser, isLoading } = useSelector(
+    (state: RootState) => state.users
+  );
   const { userPermissions } = useSelector((state: RootState) => state.roles);
 
   // Show loading screen while checking authentication
@@ -26,14 +28,15 @@ const AdminRoute: React.FC = () => {
 
   // Check if user has admin role in new role system
   const hasAdminRoleNew = currentUser.roles?.some(
-    role => role.type === RoleType.ADMIN || role.type === RoleType.SUPER_ADMIN
+    (role) => role.type === RoleType.ADMIN || role.type === RoleType.SUPER_ADMIN
   );
 
   // Check if user has user management permissions
   const hasUserManagementPermission = userPermissions?.some(
-    permission => 
-      permission.resource === 'users' && 
-      (permission.actions.includes('manage') || permission.actions.includes('read'))
+    (permission: { resource: string; actions: string[] }) =>
+      permission.resource === 'users' &&
+      (permission.actions.includes('manage') ||
+        permission.actions.includes('read'))
   );
 
   // Allow access if user has admin role or user management permissions

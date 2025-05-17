@@ -7,6 +7,9 @@ export enum BudgetPeriod {
   CUSTOM = 'custom',
 }
 
+// String literal type for month-year format used in reports
+export type BudgetPeriodString = string;
+
 export enum BudgetStatus {
   DRAFT = 'draft',
   ACTIVE = 'active',
@@ -117,7 +120,7 @@ export interface BudgetSummary {
   totalSpent: number;
   budgetUtilization: number;
   budgetsByPeriod: {
-    period: BudgetPeriod;
+    period: BudgetPeriod | BudgetPeriodString;
     count: number;
     totalBudgeted: number;
   }[];

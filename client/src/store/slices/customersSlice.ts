@@ -1,5 +1,9 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Customer, CustomerFormData, CustomerUpdateData } from '@/types/customer.types';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import {
+  Customer,
+  CustomerFormData,
+  CustomerUpdateData,
+} from '@/types/customer.types';
 import customerService from '@/api/services/customers.service';
 
 interface CustomersState {
@@ -206,6 +210,7 @@ const customersSlice = createSlice({
   },
 });
 
-export const { clearCurrentCustomer, clearCustomersError } = customersSlice.actions;
+export const { clearCurrentCustomer, clearCustomersError } =
+  customersSlice.actions;
 
 export default customersSlice.reducer;

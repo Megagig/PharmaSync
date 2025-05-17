@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
-import { RootState } from '@/store/store';
-import { fetchPatientById } from '@/store/slices/patientSlice';
+import { RootState, AppDispatch } from '@/store/store';
+import {
+  fetchPatientById,
+  addMedicationHistory,
+} from '@/store/slices/patientSlice';
 import { fetchMedications } from '@/store/slices/medicationSlice';
-import { addMedication } from '@/store/slices/patientSlice';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import Select from '@/components/common/Select/Select';
@@ -12,17 +14,21 @@ import { Medication } from '@/types/medication.types';
 
 const AddPatientMedication = () => {
   const { id } = useParams<{ id: string }>();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  
-  const { currentPatient, isLoading: patientLoading, error: patientError } = useSelector(
-    (state: RootState) => state.patients
-  );
-  
-  const { medications, isLoading: medicationsLoading, error: medicationsError } = useSelector(
-    (state: RootState) => state.medications
-  );
-  
+
+  const {
+    // We'll use currentPatient later when implementing more features
+    isLoading: patientLoading,
+    error: patientError,
+  } = useSelector((state: RootState) => state.patients);
+
+  const {
+    medications,
+    isLoading: medicationsLoading,
+    error: medicationsError,
+  } = useSelector((state: RootState) => state.medications);
+
   const [selectedMedicationId, setSelectedMedicationId] = useState<string>('');
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -30,28 +36,36 @@ const AddPatientMedication = () => {
     if (id) {
       dispatch(fetchPatientById(id));
     }
-    dispatch(fetchMedications());
+    dispatch(fetchMedications({ page: 1, limit: 100 }));
   }, [dispatch, id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
-    
+
     if (!selectedMedicationId) {
       setFormError('Please select a medication');
       return;
     }
-    
+
     if (id) {
       try {
         const resultAction = await dispatch(
-          addMedication({
+          addMedicationHistory({
             patientId: id,
-            medicationId: selectedMedicationId,
+            medicationData: {
+              medication: selectedMedicationId,
+              startDate: new Date().toISOString(),
+              purpose: 'Treatment',
+              dosage: 'As prescribed',
+              frequency: 'As directed',
+              duration: 'As needed',
+              isCurrent: true,
+            },
           })
         );
-        
-        if (addMedication.fulfilled.match(resultAction)) {
+
+        if (addMedicationHistory.fulfilled.match(resultAction)) {
           navigate(`/patients/${id}`);
         }
       } catch (error) {
@@ -98,7 +112,9 @@ const AddPatientMedication = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Add Medication to Patient</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Add Medication to Patient
+        </h1>
       </div>
 
       {error && (
@@ -143,8 +159,9 @@ const AddPatientMedication = () => {
               >
                 <option value="">Select a medication</option>
                 {medications.map((medication: Medication) => (
-                  <option key={medication._id} value={medication._id}>
-                    {medication.name} {medication.strength} {medication.dosageForm}
+                  <option key={medication.id} value={medication.id}>
+                    {medication.name} {medication.strength}{' '}
+                    {medication.dosageForm}
                   </option>
                 ))}
               </Select>

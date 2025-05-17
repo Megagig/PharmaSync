@@ -27,6 +27,7 @@ const initialState: IRoleState = {
   roles: [],
   currentRole: null,
   userRoles: [],
+  userPermissions: null,
   isLoading: false,
   error: null,
   totalRoles: 0,
@@ -38,12 +39,24 @@ const initialState: IRoleState = {
 // Async thunks for roles
 export const fetchRoles = createAsyncThunk(
   'role/fetchRoles',
-  async (params: { page?: number; limit?: number; isActive?: boolean; isDefault?: boolean; type?: string; name?: string } = {}, { rejectWithValue }) => {
+  async (
+    params: {
+      page?: number;
+      limit?: number;
+      isActive?: boolean;
+      isDefault?: boolean;
+      type?: string;
+      name?: string;
+    } = {},
+    { rejectWithValue }
+  ) => {
     try {
       const response = await getRoles(params);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch roles');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch roles'
+      );
     }
   }
 );
@@ -55,7 +68,9 @@ export const fetchRoleById = createAsyncThunk(
       const response = await getRoleById(id);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch role');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch role'
+      );
     }
   }
 );
@@ -67,19 +82,26 @@ export const createNewRole = createAsyncThunk(
       const response = await createRole(data);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create role');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to create role'
+      );
     }
   }
 );
 
 export const updateRoleById = createAsyncThunk(
   'role/updateRole',
-  async ({ id, data }: { id: string; data: IRoleUpdate }, { rejectWithValue }) => {
+  async (
+    { id, data }: { id: string; data: IRoleUpdate },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await updateRole(id, data);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update role');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to update role'
+      );
     }
   }
 );
@@ -91,7 +113,9 @@ export const deleteRoleById = createAsyncThunk(
       await deleteRole(id);
       return id;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to delete role');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to delete role'
+      );
     }
   }
 );
@@ -103,7 +127,9 @@ export const resetRolePermissionsById = createAsyncThunk(
       const response = await resetRolePermissions(id);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to reset role permissions');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to reset role permissions'
+      );
     }
   }
 );
@@ -111,36 +137,51 @@ export const resetRolePermissionsById = createAsyncThunk(
 // Async thunks for role users
 export const fetchRoleUsers = createAsyncThunk(
   'role/fetchRoleUsers',
-  async ({ id, params }: { id: string; params?: { page?: number; limit?: number } }, { rejectWithValue }) => {
+  async (
+    { id, params }: { id: string; params?: { page?: number; limit?: number } },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await getRoleUsers(id, params);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch role users');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch role users'
+      );
     }
   }
 );
 
 export const assignUserToRole = createAsyncThunk(
   'role/assignUserToRole',
-  async ({ id, userId }: { id: string; userId: string }, { rejectWithValue }) => {
+  async (
+    { id, userId }: { id: string; userId: string },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await assignRoleToUser(id, userId);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to assign user to role');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to assign user to role'
+      );
     }
   }
 );
 
 export const removeUserFromRole = createAsyncThunk(
   'role/removeUserFromRole',
-  async ({ id, userId }: { id: string; userId: string }, { rejectWithValue }) => {
+  async (
+    { id, userId }: { id: string; userId: string },
+    { rejectWithValue }
+  ) => {
     try {
       await removeRoleFromUser(id, userId);
       return { roleId: id, userId };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to remove user from role');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to remove user from role'
+      );
     }
   }
 );
@@ -148,12 +189,23 @@ export const removeUserFromRole = createAsyncThunk(
 // Async thunks for user roles
 export const fetchUserRoles = createAsyncThunk(
   'role/fetchUserRoles',
-  async (params: { page?: number; limit?: number; user?: string; role?: string; assignedBy?: string } = {}, { rejectWithValue }) => {
+  async (
+    params: {
+      page?: number;
+      limit?: number;
+      user?: string;
+      role?: string;
+      assignedBy?: string;
+    } = {},
+    { rejectWithValue }
+  ) => {
     try {
       const response = await getUserRoles(params);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user roles');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch user roles'
+      );
     }
   }
 );
@@ -165,31 +217,43 @@ export const fetchUserRolesByUserId = createAsyncThunk(
       const response = await getUserRolesByUserId(userId);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user roles');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch user roles'
+      );
     }
   }
 );
 
 export const assignRoleToUserByIds = createAsyncThunk(
   'role/assignRoleToUserByIds',
-  async ({ userId, roleId }: { userId: string; roleId: string }, { rejectWithValue }) => {
+  async (
+    { userId, roleId }: { userId: string; roleId: string },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await assignRoleToUserById(userId, roleId);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to assign role to user');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to assign role to user'
+      );
     }
   }
 );
 
 export const removeRoleFromUserByIds = createAsyncThunk(
   'role/removeRoleFromUserByIds',
-  async ({ userId, roleId }: { userId: string; roleId: string }, { rejectWithValue }) => {
+  async (
+    { userId, roleId }: { userId: string; roleId: string },
+    { rejectWithValue }
+  ) => {
     try {
       await removeRoleFromUserById(userId, roleId);
       return { userId, roleId };
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to remove role from user');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to remove role from user'
+      );
     }
   }
 );
@@ -201,7 +265,9 @@ export const fetchUserPermissions = createAsyncThunk(
       const response = await getUserPermissions(userId);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch user permissions');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch user permissions'
+      );
     }
   }
 );
@@ -236,7 +302,7 @@ const roleSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch role by ID
       .addCase(fetchRoleById.pending, (state) => {
         state.isLoading = true;
@@ -250,7 +316,7 @@ const roleSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Create role
       .addCase(createNewRole.pending, (state) => {
         state.isLoading = true;
@@ -266,7 +332,7 @@ const roleSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Update role
       .addCase(updateRoleById.pending, (state) => {
         state.isLoading = true;
@@ -274,15 +340,20 @@ const roleSlice = createSlice({
       })
       .addCase(updateRoleById.fulfilled, (state, action) => {
         state.isLoading = false;
-        
+
         // Update in the list
-        const index = state.roles.findIndex(r => r.id === action.payload.data.id);
+        const index = state.roles.findIndex(
+          (r) => r.id === action.payload.data.id
+        );
         if (index !== -1) {
           state.roles[index] = action.payload.data;
         }
-        
+
         // Update current role if it's the same
-        if (state.currentRole && state.currentRole.id === action.payload.data.id) {
+        if (
+          state.currentRole &&
+          state.currentRole.id === action.payload.data.id
+        ) {
           state.currentRole = action.payload.data;
         }
       })
@@ -290,7 +361,7 @@ const roleSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Delete role
       .addCase(deleteRoleById.pending, (state) => {
         state.isLoading = true;
@@ -298,22 +369,22 @@ const roleSlice = createSlice({
       })
       .addCase(deleteRoleById.fulfilled, (state, action) => {
         state.isLoading = false;
-        
+
         // Remove from the list
-        state.roles = state.roles.filter(r => r.id !== action.payload);
-        
+        state.roles = state.roles.filter((r) => r.id !== action.payload);
+
         // Clear current role if it's the same
         if (state.currentRole && state.currentRole.id === action.payload) {
           state.currentRole = null;
         }
-        
+
         state.totalRoles -= 1;
       })
       .addCase(deleteRoleById.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Reset role permissions
       .addCase(resetRolePermissionsById.pending, (state) => {
         state.isLoading = true;
@@ -321,15 +392,20 @@ const roleSlice = createSlice({
       })
       .addCase(resetRolePermissionsById.fulfilled, (state, action) => {
         state.isLoading = false;
-        
+
         // Update in the list
-        const index = state.roles.findIndex(r => r.id === action.payload.data.id);
+        const index = state.roles.findIndex(
+          (r) => r.id === action.payload.data.id
+        );
         if (index !== -1) {
           state.roles[index] = action.payload.data;
         }
-        
+
         // Update current role if it's the same
-        if (state.currentRole && state.currentRole.id === action.payload.data.id) {
+        if (
+          state.currentRole &&
+          state.currentRole.id === action.payload.data.id
+        ) {
           state.currentRole = action.payload.data;
         }
       })
@@ -337,7 +413,7 @@ const roleSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch user roles
       .addCase(fetchUserRoles.pending, (state) => {
         state.isLoading = true;

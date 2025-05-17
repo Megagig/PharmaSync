@@ -45,24 +45,30 @@ export interface IRoleUpdate {
 
 export interface IUserRole {
   id: string;
-  user: string | {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  role: string | {
-    id: string;
-    name: string;
-    type: RoleType;
-    description?: string;
-  };
-  assignedBy: string | {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
+  user:
+    | string
+    | {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+      };
+  role:
+    | string
+    | {
+        id: string;
+        name: string;
+        type: RoleType;
+        description?: string;
+      };
+  assignedBy:
+    | string
+    | {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+      };
   assignedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -101,6 +107,7 @@ export interface IRoleState {
   roles: IRole[];
   currentRole: IRole | null;
   userRoles: IUserRole[];
+  userPermissions: IPermission[] | null;
   isLoading: boolean;
   error: string | null;
   totalRoles: number;
@@ -149,6 +156,6 @@ export const createPermission = (
 ): IPermission => {
   return {
     resource,
-    actions: actions.map(action => action.toString()),
+    actions: actions.map((action) => action.toString()),
   };
 };

@@ -18,24 +18,28 @@ const initialState: InventoryState = {
 // Async thunks
 export const fetchLowStockAlerts = createAsyncThunk(
   'inventory/fetchLowStockAlerts',
-  async (threshold = 10, { rejectWithValue }) => {
+  async (threshold: number | undefined = 10, { rejectWithValue }) => {
     try {
       const alerts = await inventoryService.getLowStockAlerts(threshold);
       return alerts;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch low stock alerts');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch low stock alerts'
+      );
     }
   }
 );
 
 export const fetchExpiringStockAlerts = createAsyncThunk(
   'inventory/fetchExpiringStockAlerts',
-  async (days = 90, { rejectWithValue }) => {
+  async (days: number | undefined = 90, { rejectWithValue }) => {
     try {
       const alerts = await inventoryService.getExpiringStockAlerts(days);
       return alerts;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch expiring stock alerts');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch expiring stock alerts'
+      );
     }
   }
 );
@@ -47,7 +51,9 @@ export const fetchInventoryValuation = createAsyncThunk(
       const valuation = await inventoryService.getInventoryValuation();
       return valuation;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch inventory valuation');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch inventory valuation'
+      );
     }
   }
 );
@@ -74,7 +80,9 @@ export const fetchInventoryMovement = createAsyncThunk(
       );
       return movements;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch inventory movement');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch inventory movement'
+      );
     }
   }
 );
@@ -86,7 +94,9 @@ export const adjustInventory = createAsyncThunk(
       const result = await inventoryService.adjustInventory(adjustmentData);
       return result;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to adjust inventory');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to adjust inventory'
+      );
     }
   }
 );
@@ -117,7 +127,7 @@ const inventorySlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch expiring stock alerts
       .addCase(fetchExpiringStockAlerts.pending, (state) => {
         state.isLoading = true;
@@ -131,7 +141,7 @@ const inventorySlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch inventory valuation
       .addCase(fetchInventoryValuation.pending, (state) => {
         state.isLoading = true;
@@ -145,7 +155,7 @@ const inventorySlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch inventory movement
       .addCase(fetchInventoryMovement.pending, (state) => {
         state.isLoading = true;
@@ -159,7 +169,7 @@ const inventorySlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Adjust inventory
       .addCase(adjustInventory.pending, (state) => {
         state.isLoading = true;

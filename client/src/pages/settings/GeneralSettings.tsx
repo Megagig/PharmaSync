@@ -1,30 +1,30 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import { useTheme } from '@/context/ThemeContext';
 import { toast } from 'react-toastify';
+// Removed unused imports
 
 const GeneralSettings: React.FC = () => {
-  const { user } = useSelector((state: RootState) => state.auth);
+  // We'll use the user state later when implementing user-specific settings
+  // const { user } = useSelector((state: RootState) => state.auth);
   const { theme, toggleTheme } = useTheme();
   const [currency, setCurrency] = useState('NGN');
   const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
   const [timeFormat, setTimeFormat] = useState('12h');
   const [language, setLanguage] = useState('en');
-  
+
   const handleSaveSettings = () => {
     // In a real app, this would save the settings to the server
     toast.success('Settings saved successfully');
   };
-  
+
   return (
     <div className="space-y-6">
       <Card>
         <div className="p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Appearance</h2>
-          
+
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
               <span className="text-sm font-medium text-gray-700">Theme</span>
@@ -53,14 +53,19 @@ const GeneralSettings: React.FC = () => {
           </div>
         </div>
       </Card>
-      
+
       <Card>
         <div className="p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Regional Settings</h2>
-          
+          <h2 className="text-lg font-medium text-gray-900 mb-4">
+            Regional Settings
+          </h2>
+
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-              <label htmlFor="currency" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="currency"
+                className="text-sm font-medium text-gray-700"
+              >
                 Currency
               </label>
               <div className="mt-2 sm:mt-0 sm:w-64">
@@ -78,9 +83,12 @@ const GeneralSettings: React.FC = () => {
                 </select>
               </div>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-              <label htmlFor="dateFormat" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="dateFormat"
+                className="text-sm font-medium text-gray-700"
+              >
                 Date Format
               </label>
               <div className="mt-2 sm:mt-0 sm:w-64">
@@ -97,9 +105,12 @@ const GeneralSettings: React.FC = () => {
                 </select>
               </div>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-              <label htmlFor="timeFormat" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="timeFormat"
+                className="text-sm font-medium text-gray-700"
+              >
                 Time Format
               </label>
               <div className="mt-2 sm:mt-0 sm:w-64">
@@ -115,9 +126,12 @@ const GeneralSettings: React.FC = () => {
                 </select>
               </div>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
-              <label htmlFor="language" className="text-sm font-medium text-gray-700">
+              <label
+                htmlFor="language"
+                className="text-sm font-medium text-gray-700"
+              >
                 Language
               </label>
               <div className="mt-2 sm:mt-0 sm:w-64">
@@ -137,12 +151,9 @@ const GeneralSettings: React.FC = () => {
           </div>
         </div>
       </Card>
-      
+
       <div className="flex justify-end">
-        <Button
-          variant="primary"
-          onClick={handleSaveSettings}
-        >
+        <Button variant="primary" onClick={handleSaveSettings}>
           Save Settings
         </Button>
       </div>

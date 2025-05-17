@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   getConversations,
   createConversation,
@@ -10,14 +10,13 @@ import {
   markMessageAsRead,
 } from '@/services/message.service';
 import {
-  Conversation,
   ConversationCreateData,
   ConversationFilters,
   ConversationUpdateData,
-  Message,
   MessageCreateData,
   MessageFilters,
   MessageState,
+  MessageStatusString,
 } from '@/types/message.types';
 
 const initialState: MessageState = {
@@ -40,7 +39,9 @@ export const fetchConversations = createAsyncThunk(
       const response = await getConversations(filters);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch conversations');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch conversations'
+      );
     }
   }
 );
@@ -52,7 +53,9 @@ export const createNewConversation = createAsyncThunk(
       const response = await createConversation(data);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create conversation');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to create conversation'
+      );
     }
   }
 );
@@ -64,43 +67,66 @@ export const fetchConversationById = createAsyncThunk(
       const response = await getConversationById(id);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch conversation');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch conversation'
+      );
     }
   }
 );
 
 export const updateConversationById = createAsyncThunk(
   'messages/updateConversation',
-  async ({ id, data }: { id: string; data: ConversationUpdateData }, { rejectWithValue }) => {
+  async (
+    { id, data }: { id: string; data: ConversationUpdateData },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await updateConversation(id, data);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update conversation');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to update conversation'
+      );
     }
   }
 );
 
 export const fetchMessages = createAsyncThunk(
   'messages/fetchMessages',
-  async ({ conversationId, filters }: { conversationId: string; filters?: MessageFilters }, { rejectWithValue }) => {
+  async (
+    {
+      conversationId,
+      filters,
+    }: { conversationId: string; filters?: MessageFilters },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await getConversationMessages(conversationId, filters);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch messages');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to fetch messages'
+      );
     }
   }
 );
 
 export const sendNewMessage = createAsyncThunk(
   'messages/sendMessage',
-  async ({ conversationId, data }: { conversationId: string; data: MessageCreateData }, { rejectWithValue }) => {
+  async (
+    {
+      conversationId,
+      data,
+    }: { conversationId: string; data: MessageCreateData },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await sendMessage(conversationId, data);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to send message');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to send message'
+      );
     }
   }
 );
@@ -112,7 +138,9 @@ export const markAsDelivered = createAsyncThunk(
       const response = await markMessageAsDelivered(id);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to mark message as delivered');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to mark message as delivered'
+      );
     }
   }
 );
@@ -124,7 +152,9 @@ export const markAsRead = createAsyncThunk(
       const response = await markMessageAsRead(id);
       return response;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to mark message as read');
+      return rejectWithValue(
+        error.response?.data?.message || 'Failed to mark message as read'
+      );
     }
   }
 );
@@ -140,6 +170,9 @@ const messageSlice = createSlice({
     },
     clearMessageError: (state) => {
       state.error = null;
+    },
+    setError: (state, action) => {
+      state.error = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -160,7 +193,7 @@ const messageSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Create conversation
       .addCase(createNewConversation.pending, (state) => {
         state.isLoading = true;
@@ -176,7 +209,7 @@ const messageSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch conversation by ID
       .addCase(fetchConversationById.pending, (state) => {
         state.isLoading = true;
@@ -185,9 +218,11 @@ const messageSlice = createSlice({
       .addCase(fetchConversationById.fulfilled, (state, action) => {
         state.isLoading = false;
         state.currentConversation = action.payload.data;
-        
+
         // Update conversation in the list if it exists
-        const index = state.conversations.findIndex(c => c.id === action.payload.data.id);
+        const index = state.conversations.findIndex(
+          (c) => c.id === action.payload.data.id
+        );
         if (index !== -1) {
           state.conversations[index] = action.payload.data;
         }
@@ -196,7 +231,7 @@ const messageSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Update conversation
       .addCase(updateConversationById.pending, (state) => {
         state.isLoading = true;
@@ -204,15 +239,20 @@ const messageSlice = createSlice({
       })
       .addCase(updateConversationById.fulfilled, (state, action) => {
         state.isLoading = false;
-        
+
         // Update conversation in the list
-        const index = state.conversations.findIndex(c => c.id === action.payload.data.id);
+        const index = state.conversations.findIndex(
+          (c) => c.id === action.payload.data.id
+        );
         if (index !== -1) {
           state.conversations[index] = action.payload.data;
         }
-        
+
         // Update current conversation if it's the same
-        if (state.currentConversation && state.currentConversation.id === action.payload.data.id) {
+        if (
+          state.currentConversation &&
+          state.currentConversation.id === action.payload.data.id
+        ) {
           state.currentConversation = action.payload.data;
         }
       })
@@ -220,7 +260,7 @@ const messageSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch messages
       .addCase(fetchMessages.pending, (state) => {
         state.isLoading = true;
@@ -232,13 +272,15 @@ const messageSlice = createSlice({
         state.totalMessages = action.payload.meta.total;
         state.totalPages = action.payload.meta.pages;
         state.currentPage = action.payload.meta.page;
-        
+
         // Update unread count in current conversation
         if (state.currentConversation) {
           state.currentConversation.unreadCount = 0;
-          
+
           // Also update in the conversations list
-          const index = state.conversations.findIndex(c => c.id === state.currentConversation?.id);
+          const index = state.conversations.findIndex(
+            (c) => c.id === state.currentConversation?.id
+          );
           if (index !== -1) {
             state.conversations[index].unreadCount = 0;
           }
@@ -248,7 +290,7 @@ const messageSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Send message
       .addCase(sendNewMessage.pending, (state) => {
         state.isLoading = true;
@@ -256,20 +298,22 @@ const messageSlice = createSlice({
       })
       .addCase(sendNewMessage.fulfilled, (state, action) => {
         state.isLoading = false;
-        
+
         // Add message to the list
         state.messages = [action.payload.data, ...state.messages];
         state.totalMessages += 1;
-        
+
         // Update last message in conversation
         if (state.currentConversation) {
           state.currentConversation.lastMessage = action.payload.data;
-          
+
           // Also update in the conversations list
-          const index = state.conversations.findIndex(c => c.id === state.currentConversation?.id);
+          const index = state.conversations.findIndex(
+            (c) => c.id === state.currentConversation?.id
+          );
           if (index !== -1) {
             state.conversations[index].lastMessage = action.payload.data;
-            
+
             // Move this conversation to the top of the list
             const conversation = state.conversations[index];
             state.conversations.splice(index, 1);
@@ -281,27 +325,27 @@ const messageSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
+
       // Mark as delivered
       .addCase(markAsDelivered.fulfilled, (state, action) => {
         // Update message status in the list
         const messageId = action.payload.data.message;
-        const index = state.messages.findIndex(m => m.id === messageId);
-        
+        const index = state.messages.findIndex((m) => m.id === messageId);
+
         if (index !== -1) {
           state.messages[index].status = 'delivered';
         }
       })
-      
+
       // Mark as read
       .addCase(markAsRead.fulfilled, (state, action) => {
         // Update message status in the list
         const messageId = action.payload.data.message;
-        const index = state.messages.findIndex(m => m.id === messageId);
-        
+        const index = state.messages.findIndex((m) => m.id === messageId);
+
         if (index !== -1) {
           state.messages[index].status = 'read';
-          
+
           // Add current user to readBy array if not already there
           const currentUserId = action.meta.arg; // This is the user ID who marked as read
           if (!state.messages[index].readBy.includes(currentUserId)) {
@@ -312,6 +356,7 @@ const messageSlice = createSlice({
   },
 });
 
-export const { clearCurrentConversation, clearMessageError } = messageSlice.actions;
+export const { clearCurrentConversation, clearMessageError, setError } =
+  messageSlice.actions;
 
 export default messageSlice.reducer;

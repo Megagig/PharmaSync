@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as medicationController from '../controllers/medication.controller';
 import { authenticate, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
+import { cacheMiddleware, clearCache } from '../middleware/cache';
 import {
   createMedicationSchema,
   updateMedicationSchema,
@@ -19,35 +20,82 @@ const router = Router();
 router.use(authenticate);
 
 // Get all medications
-router.get('/', medicationController.getAllMedications);
+router.get(
+  '/',
+  cacheMiddleware({ expiration: 300 }), // Cache for 5 minutes
+  medicationController.getAllMedications
+);
 
 // Get low stock medications
-router.get('/low-stock', medicationController.getLowStockMedications);
+router.get(
+  '/low-stock',
+  cacheMiddleware({ expiration: 300 }), // Cache for 5 minutes
+  medicationController.getLowStockMedications
+);
 
 // Get expiring medications
-router.get('/expiring', medicationController.getExpiringMedications);
+router.get(
+  '/expiring',
+  cacheMiddleware({ expiration: 300 }), // Cache for 5 minutes
+  medicationController.getExpiringMedications
+);
 
 // Medication database endpoint
-router.get('/database', medicationController.getMedicationDatabase);
+router.get(
+  '/database',
+  cacheMiddleware({ expiration: 3600 }), // Cache for 1 hour
+  medicationController.getMedicationDatabase
+);
 
 // Create medication (only admin and pharmacist)
 router.post(
   '/',
   restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   validate(createMedicationSchema),
+  async (req, res, next) => {
+    // Clear medication caches when a new medication is created
+    await clearCache('GET:/medications');
+    await clearCache('GET:/medications/low-stock');
+    await clearCache('GET:/medications/expiring');
+    next();
+  },
   medicationController.createMedication
 );
 
 // Get, update, and delete medication by ID
 router
   .route('/:id')
-  .get(medicationController.getMedicationById)
+  .get(
+    cacheMiddleware({ expiration: 600 }), // Cache for 10 minutes
+    medicationController.getMedicationById
+  )
   .patch(
     restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
     validate(updateMedicationSchema),
+    async (req, res, next) => {
+      // Clear specific medication cache when updated
+      await clearCache(`GET:/medications/${req.params.id}`);
+      // Also clear the all medications list cache
+      await clearCache('GET:/medications');
+      await clearCache('GET:/medications/low-stock');
+      await clearCache('GET:/medications/expiring');
+      next();
+    },
     medicationController.updateMedication
   )
-  .delete(restrictTo([RoleType.ADMIN]), medicationController.deleteMedication);
+  .delete(
+    restrictTo([RoleType.ADMIN]),
+    async (req, res, next) => {
+      // Clear specific medication cache when deleted
+      await clearCache(`GET:/medications/${req.params.id}`);
+      // Also clear the all medications list cache
+      await clearCache('GET:/medications');
+      await clearCache('GET:/medications/low-stock');
+      await clearCache('GET:/medications/expiring');
+      next();
+    },
+    medicationController.deleteMedication
+  );
 
 // Inventory management
 router.post(

@@ -11,6 +11,7 @@ import {
 } from './middleware/logger.middleware';
 import env from './config/env.config';
 import { scheduleFollowUpNotificationsJob } from './jobs/followUpNotifications.job';
+import { logger } from './utils/logger';
 
 const app: Express = express();
 
@@ -40,6 +41,16 @@ app.use(requestLogger);
 
 // API routes
 app.use('/api', routes);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: env.NODE_ENV,
+  });
+});
 
 // Error handling
 app.use(notFoundHandler);

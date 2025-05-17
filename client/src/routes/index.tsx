@@ -14,9 +14,9 @@ const ResetPassword = lazy(() => import('@/pages/auth/ResetPassword'));
 const VerifyEmail = lazy(() => import('@/pages/auth/VerifyEmail'));
 
 // Dashboard Pages
-const Dashboard = lazy(() => import('@/pages/dashboard/Dashboard'));
+const Dashboard = lazy(() => import('@/pages/Dashboard/Dashboard'));
 const ComprehensiveDashboard = lazy(
-  () => import('@/pages/dashboard/ComprehensiveDashboard')
+  () => import('@/pages/Dashboard/ComprehensiveDashboard')
 );
 
 // Patient Pages
@@ -113,6 +113,11 @@ const PurchaseOrderDetail = lazy(
 // Report Pages
 const ReportList = lazy(() => import('@/pages/reports/ReportList'));
 const ReportDetail = lazy(() => import('@/pages/reports/ReportDetail'));
+const PatientReports = lazy(() => import('@/pages/reports/PatientReports'));
+const MedicationReports = lazy(
+  () => import('@/pages/reports/MedicationReports')
+);
+const CustomReports = lazy(() => import('@/pages/reports/CustomReports'));
 const ReportingDashboard = lazy(
   () => import('@/pages/Reports/ReportingDashboard')
 );
@@ -164,7 +169,8 @@ const CreateBudget = lazy(() => import('@/pages/Budgets/CreateBudget'));
 const FinanceDashboard = lazy(() => import('@/pages/Finance/FinanceDashboard'));
 
 // Settings Pages
-const Settings = lazy(() => import('@/pages/settings/Settings'));
+// Use consistent casing for settings import
+const Settings = lazy(() => import('@/pages/Settings/SettingsNew'));
 
 // Error Pages
 const NotFound = lazy(() => import('@/pages/errors/NotFound'));
@@ -333,6 +339,12 @@ const AppRoutes: React.FC = () => {
 
             {/* Report Routes */}
             <Route path="/reports" element={<ReportList />} />
+            <Route path="/reports/patients" element={<PatientReports />} />
+            <Route
+              path="/reports/medications"
+              element={<MedicationReports />}
+            />
+            <Route path="/reports/custom" element={<CustomReports />} />
             <Route path="/reports/:id" element={<ReportDetail />} />
             <Route path="/reporting" element={<ReportingDashboard />} />
 

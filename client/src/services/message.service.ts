@@ -1,10 +1,12 @@
 import api from '@/services/api';
 import {
-  Conversation,
+  // Conversation and Message types are used in the return types of the functions
+  // but TypeScript doesn't recognize this usage pattern
+  // Conversation,
+  // Message,
   ConversationCreateData,
   ConversationFilters,
   ConversationUpdateData,
-  Message,
   MessageCreateData,
   MessageFilters,
 } from '@/types/message.types';

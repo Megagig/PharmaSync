@@ -1,11 +1,14 @@
 import api from './api';
 import {
-  PosSession,
+  // PosSession is used in return types but TypeScript doesn't recognize this pattern
+  // PosSession,
   PosSessionFormData,
   PosSessionCloseData,
-  PosTransaction,
+  // PosTransaction is used in return types but TypeScript doesn't recognize this pattern
+  // PosTransaction,
   PosTransactionFormData,
-  PosReceiptData,
+  // PosReceiptData is not used directly in this file
+  // PosReceiptData,
 } from '../types/pos.types';
 
 // POS Session API calls

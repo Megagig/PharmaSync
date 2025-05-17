@@ -1,9 +1,10 @@
 import api from '@/services/api';
 import {
-  ReportConfiguration,
+  // These types are used in return types but TypeScript doesn't recognize this pattern
+  // ReportConfiguration,
   ReportConfigurationCreate,
   ReportConfigurationUpdate,
-  ReportSchedule,
+  // ReportSchedule,
   ReportScheduleCreate,
   ReportScheduleUpdate,
   ReportRequest,

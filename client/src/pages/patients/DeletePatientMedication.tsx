@@ -1,26 +1,38 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
-import { RootState } from '@/store/store';
-import { fetchPatientById, removeMedication, setError } from '@/store/slices/patientSlice';
+import { RootState, AppDispatch } from '@/store/store';
+import {
+  fetchPatientById,
+  removeMedicationHistory,
+  setError,
+} from '@/store/slices/patientSlice';
 import { fetchMedicationById } from '@/store/slices/medicationSlice';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
-import { Medication } from '@/types/medication.types';
+// We'll use this type later when implementing more features
+// import { Medication } from '@/types/medication.types';
 
 const DeletePatientMedication = () => {
-  const { id, medicationId } = useParams<{ id: string; medicationId: string }>();
-  const dispatch = useDispatch();
+  const { id, medicationId } = useParams<{
+    id: string;
+    medicationId: string;
+  }>();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  
-  const { currentPatient, isLoading: patientLoading, error: patientError } = useSelector(
-    (state: RootState) => state.patients
-  );
-  
-  const { currentMedication, isLoading: medicationLoading, error: medicationError } = useSelector(
-    (state: RootState) => state.medications
-  );
-  
+
+  const {
+    currentPatient,
+    isLoading: patientLoading,
+    error: patientError,
+  } = useSelector((state: RootState) => state.patients);
+
+  const {
+    currentMedication,
+    isLoading: medicationLoading,
+    error: medicationError,
+  } = useSelector((state: RootState) => state.medications);
+
   const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,7 +42,7 @@ const DeletePatientMedication = () => {
     if (medicationId) {
       dispatch(fetchMedicationById(medicationId));
     }
-    
+
     // Clear any previous errors when component mounts
     dispatch(setError(null));
   }, [dispatch, id, medicationId]);
@@ -39,13 +51,13 @@ const DeletePatientMedication = () => {
     if (id && medicationId) {
       try {
         const resultAction = await dispatch(
-          removeMedication({
+          removeMedicationHistory({
             patientId: id,
             medicationId,
           })
         );
-        
-        if (removeMedication.fulfilled.match(resultAction)) {
+
+        if (removeMedicationHistory.fulfilled.match(resultAction)) {
           navigate(`/patients/${id}`);
         }
       } catch (error) {
@@ -92,7 +104,9 @@ const DeletePatientMedication = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold text-gray-900">Remove Medication from Patient</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          Remove Medication from Patient
+        </h1>
       </div>
 
       {error && (
@@ -126,27 +140,47 @@ const DeletePatientMedication = () => {
           </h2>
           <div className="space-y-3 mb-6">
             <div className="flex justify-between">
-              <span className="text-sm font-medium text-gray-500">Medication Name</span>
-              <span className="text-sm text-gray-900">{currentMedication.name}</span>
+              <span className="text-sm font-medium text-gray-500">
+                Medication Name
+              </span>
+              <span className="text-sm text-gray-900">
+                {currentMedication.name}
+              </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm font-medium text-gray-500">Strength</span>
-              <span className="text-sm text-gray-900">{currentMedication.strength}</span>
+              <span className="text-sm font-medium text-gray-500">
+                Strength
+              </span>
+              <span className="text-sm text-gray-900">
+                {currentMedication.strength}
+              </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm font-medium text-gray-500">Dosage Form</span>
-              <span className="text-sm text-gray-900">{currentMedication.dosageForm}</span>
+              <span className="text-sm font-medium text-gray-500">
+                Dosage Form
+              </span>
+              <span className="text-sm text-gray-900">
+                {currentMedication.dosageForm}
+              </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-sm font-medium text-gray-500">Manufacturer</span>
-              <span className="text-sm text-gray-900">{currentMedication.manufacturer}</span>
+              <span className="text-sm font-medium text-gray-500">
+                Manufacturer
+              </span>
+              <span className="text-sm text-gray-900">
+                {currentMedication.manufacturer}
+              </span>
             </div>
           </div>
           <div className="flex justify-end space-x-3">
             <Button variant="outline" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button variant="danger" onClick={handleDelete} isLoading={isLoading}>
+            <Button
+              variant="danger"
+              onClick={handleDelete}
+              isLoading={isLoading}
+            >
               Remove
             </Button>
           </div>

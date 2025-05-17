@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as patientController from '../controllers/patient.controller';
 import { authenticate, authorize } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
+import { cacheMiddleware, clearCache } from '../middleware/cache';
 import {
   createPatientSchema,
   updatePatientSchema,
@@ -32,16 +33,47 @@ router.use(authenticate);
 // Get all patients and create patient
 router
   .route('/')
-  .get(patientController.getAllPatients)
-  .post(validate(createPatientSchema), patientController.createPatient);
+  .get(
+    cacheMiddleware({ expiration: 300 }), // Cache for 5 minutes
+    patientController.getAllPatients
+  )
+  .post(
+    validate(createPatientSchema),
+    async (req, res, next) => {
+      // Clear patient cache when a new patient is created
+      await clearCache('GET:/patients');
+      next();
+    },
+    patientController.createPatient
+  );
 
 // Get, update, and delete patient by ID
 router
   .route('/:id')
-  .get(patientController.getPatientById)
-  .patch(validate(updatePatientSchema), patientController.updatePatient)
+  .get(
+    cacheMiddleware({ expiration: 600 }), // Cache for 10 minutes
+    patientController.getPatientById
+  )
+  .patch(
+    validate(updatePatientSchema),
+    async (req, res, next) => {
+      // Clear specific patient cache when updated
+      await clearCache(`GET:/patients/${req.params.id}`);
+      // Also clear the all patients list cache
+      await clearCache('GET:/patients');
+      next();
+    },
+    patientController.updatePatient
+  )
   .delete(
-    authorize(UserRole.ADMIN, UserRole.PHARMACIST),
+    authorize([UserRole.ADMIN, UserRole.PHARMACIST]),
+    async (req, res, next) => {
+      // Clear specific patient cache when deleted
+      await clearCache(`GET:/patients/${req.params.id}`);
+      // Also clear the all patients list cache
+      await clearCache('GET:/patients');
+      next();
+    },
     patientController.deletePatient
   );
 

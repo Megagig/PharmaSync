@@ -373,7 +373,7 @@ export const getInventoryMovements = async (req: Request, res: Response) => {
     }
 
     // Since we don't have an InventoryMovement model yet, we'll return an empty array
-    const movements = [];
+    const movements: any[] = [];
 
     res.status(200).json({
       success: true,

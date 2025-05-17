@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Tab } from '@headlessui/react';
-import GeneralSettings from './GeneralSettings';
-import IntegrationSettings from './IntegrationSettings';
-import NotificationSettings from './NotificationSettings';
+import GeneralSettings from './components/GeneralSettings';
+import IntegrationSettings from './components/IntegrationSettings';
+import NotificationSettings from './components/NotificationSettings';
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
@@ -20,7 +20,7 @@ const Settings: React.FC = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">Settings</h1>
       </div>
-      
+
       <div className="bg-white shadow rounded-lg">
         <Tab.Group selectedIndex={selectedTab} onChange={handleTabChange}>
           <Tab.List className="flex p-1 space-x-1 bg-gray-100 rounded-t-lg">

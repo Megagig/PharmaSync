@@ -6,6 +6,9 @@ export enum MessageStatus {
   READ = 'read',
 }
 
+// String literal type for message status
+export type MessageStatusString = 'sent' | 'delivered' | 'read';
+
 export interface Attachment {
   fileName: string;
   fileType: string;
@@ -19,7 +22,7 @@ export interface Message {
   sender: string | User;
   content: string;
   attachments?: Attachment[];
-  status: MessageStatus;
+  status: MessageStatus | MessageStatusString;
   readBy: string[];
   createdAt: string;
   updatedAt: string;

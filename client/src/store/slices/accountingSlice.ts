@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   Account,
   AccountFormData,
@@ -693,7 +693,7 @@ const accountingSlice = createSlice({
         (action) =>
           action.type.startsWith('accounting/') &&
           action.type.endsWith('/rejected'),
-        (state, action) => {
+        (state, action: any) => {
           state.isLoading = false;
           state.error = action.error.message || 'An error occurred';
         }

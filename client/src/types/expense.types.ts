@@ -14,6 +14,8 @@ export enum ExpenseCategory {
   SOFTWARE = 'software',
   MISCELLANEOUS = 'miscellaneous',
   OTHER = 'other',
+  INVENTORY = 'inventory',
+  SALARY = 'salary',
 }
 
 export enum ExpenseStatus {
@@ -64,40 +66,52 @@ export interface Expense {
   paymentMethod?: PaymentMethod;
   paymentDate?: string;
   paymentReference?: string;
-  supplier?: string | {
-    _id: string;
-    name: string;
-    supplierCode: string;
-  };
-  location?: string | {
-    _id: string;
-    name: string;
-  };
+  supplier?:
+    | string
+    | {
+        _id: string;
+        name: string;
+        supplierCode: string;
+      };
+  location?:
+    | string
+    | {
+        _id: string;
+        name: string;
+      };
   attachments?: ExpenseAttachment[];
   notes?: string;
   isRecurring: boolean;
   recurrenceInterval?: RecurrenceInterval;
   recurrenceEndDate?: string;
-  parentExpense?: string | {
-    _id: string;
-    expenseNumber: string;
-  };
-  createdBy: string | {
-    _id: string;
-    firstName: string;
-    lastName: string;
-  };
-  approvedBy?: string | {
-    _id: string;
-    firstName: string;
-    lastName: string;
-  };
+  parentExpense?:
+    | string
+    | {
+        _id: string;
+        expenseNumber: string;
+      };
+  createdBy:
+    | string
+    | {
+        _id: string;
+        firstName: string;
+        lastName: string;
+      };
+  approvedBy?:
+    | string
+    | {
+        _id: string;
+        firstName: string;
+        lastName: string;
+      };
   approvedAt?: string;
-  rejectedBy?: string | {
-    _id: string;
-    firstName: string;
-    lastName: string;
-  };
+  rejectedBy?:
+    | string
+    | {
+        _id: string;
+        firstName: string;
+        lastName: string;
+      };
   rejectedAt?: string;
   rejectionReason?: string;
   createdAt: string;
@@ -150,7 +164,7 @@ export interface ExpenseSummary {
   pendingExpenses: number;
   paidExpenses: number;
   expensesByCategory: {
-    category: ExpenseCategory;
+    category: ExpenseCategory | string;
     amount: number;
     percentage: number;
   }[];

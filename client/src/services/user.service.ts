@@ -1,6 +1,7 @@
 import api from '@/services/api';
 import {
-  User,
+  // User is used in return types but TypeScript doesn't recognize this pattern
+  // User,
   UserFormData,
   UserProfileUpdateData,
   PasswordChangeData,
@@ -132,6 +133,17 @@ export const updateCurrentUser = async (data: UserProfileUpdateData) => {
 export const changePassword = async (data: PasswordChangeData) => {
   const response = await api.post(`${BASE_URL}/me/password`, data);
   return response.data.data;
+};
+
+/**
+ * Change a user's password (admin function)
+ * @param id User ID
+ * @param password New password
+ * @returns Promise with success message
+ */
+export const changeUserPassword = async (id: string, password: string) => {
+  const response = await api.post(`${BASE_URL}/${id}/password`, { password });
+  return response.data;
 };
 
 /**

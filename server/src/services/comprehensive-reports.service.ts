@@ -10,6 +10,14 @@ import User from '../models/user.model';
 import ActivityLog from '../models/activityLog.model';
 import { ReportFormat } from '../interfaces/report.interface';
 import {
+  InventoryReportData,
+  SalesByPeriod,
+  ProductSale,
+  CategorySale,
+  DailyActivity,
+  UserActivity,
+} from '../types/report.types';
+import {
   generatePDF,
   generateExcel,
   generateCSV,
@@ -434,37 +442,6 @@ export const generateInventoryComprehensiveReport = async (
   });
 
   // Compile the report data
-  interface InventoryReportData {
-    summary: {
-      totalMedications: number;
-      totalStock: number;
-      totalValue: number;
-      lowStockCount: number;
-    };
-    stockByCategory: any[];
-    expiryBreakdown: {
-      expiryPeriod: string;
-      count: number;
-      totalStock: number;
-      totalValue: number;
-    }[];
-    lowStockItems: {
-      medicationId: any;
-      medicationName: string;
-      currentStock: number;
-      minimumLevel: number;
-      reorderQuantity: number;
-    }[];
-    movementAnalysis?: {
-      purchases: number;
-      sales: number;
-      transfers: number;
-      adjustments: number;
-      returns: number;
-      other: number;
-    };
-    recentMovements?: any[];
-  }
 
   const reportData: InventoryReportData = {
     summary: {
@@ -589,12 +566,6 @@ export const generateSalesComprehensiveReport = async (
   const salesByPeriod = [];
   const allTransactions = [...sales, ...posTransactions];
 
-  interface SalesByPeriod {
-    period: string;
-    sales: number;
-    count: number;
-  }
-
   if (groupBy === 'day') {
     const dailySales: Record<string, SalesByPeriod> = {};
     allTransactions.forEach((transaction) => {
@@ -626,18 +597,6 @@ export const generateSalesComprehensiveReport = async (
   }
 
   // Get top products
-  interface ProductSale {
-    productId: string;
-    productName: string;
-    quantity: number;
-    totalSales: number;
-  }
-
-  interface CategorySale {
-    category: string;
-    value: number;
-  }
-
   const productSales: Record<string, ProductSale> = {};
   allTransactions.forEach((transaction) => {
     transaction.items.forEach((item) => {

@@ -1,13 +1,15 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import {
   UsersState,
-  User,
+  // User is used in return types but TypeScript doesn't recognize this pattern
+  // User,
   UserFormData,
   UserProfileUpdateData,
   PasswordChangeData,
-  TwoFactorSetupData,
-  TwoFactorVerifyData,
-  EmailVerificationData,
+  // These types are not used directly in this file
+  // TwoFactorSetupData,
+  // TwoFactorVerifyData,
+  // EmailVerificationData,
 } from '@/types/user.types';
 import {
   getUsers,
@@ -18,14 +20,16 @@ import {
   getCurrentUser,
   updateCurrentUser,
   changePassword,
-  verifyEmail,
-  resendEmailVerification,
-  setupTwoFactor,
-  verifyTwoFactor,
-  getTwoFactorBackupCodes,
-  generateTwoFactorBackupCodes,
-  disableTwoFactor,
-  getUserActivityLogs,
+  // These functions are not used directly in this file
+  // verifyEmail,
+  // resendEmailVerification,
+  // setupTwoFactor,
+  // verifyTwoFactor,
+  // getTwoFactorBackupCodes,
+  // generateTwoFactorBackupCodes,
+  // disableTwoFactor,
+  // getUserActivityLogs,
+  changeUserPassword as changeUserPasswordApi,
 } from '@/services/user.service';
 import { getUserPermissions } from '@/services/role.service';
 
@@ -138,7 +142,7 @@ export const changeUserPassword = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      await userService.changeUserPassword(id, password);
+      await changeUserPasswordApi(id, password);
       return id;
     } catch (error: any) {
       return rejectWithValue(

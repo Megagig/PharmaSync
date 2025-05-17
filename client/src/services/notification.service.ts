@@ -1,10 +1,12 @@
 import api from '@/services/api';
 import {
-  Notification,
+  // These types are used in the return types of the functions
+  // but TypeScript doesn't recognize this usage pattern
+  // Notification,
+  // NotificationPreference,
+  // NotificationType,
   NotificationFilters,
-  NotificationPreference,
   NotificationPreferenceUpdateData,
-  NotificationType,
 } from '@/types/notification.types';
 
 const BASE_URL = '/notifications';

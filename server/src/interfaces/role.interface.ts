@@ -1,4 +1,4 @@
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export enum RoleType {
   SUPER_ADMIN = 'super_admin',
@@ -23,7 +23,7 @@ export interface IRole extends Document {
   permissions: IPermission[];
   isActive: boolean;
   isDefault: boolean;
-  parentRole?: string; // Reference to parent role for inheritance
+  parentRole?: Types.ObjectId | null; // Reference to parent role for inheritance
   level: number; // Role hierarchy level (0 is highest)
   createdAt: Date;
   updatedAt: Date;
@@ -39,7 +39,7 @@ export interface IRoleCreate {
   permissions: IPermission[];
   isActive?: boolean;
   isDefault?: boolean;
-  parentRole?: string; // Reference to parent role for inheritance
+  parentRole?: Types.ObjectId | string | null; // Reference to parent role for inheritance
   level?: number; // Role hierarchy level (0 is highest)
 }
 
@@ -49,7 +49,7 @@ export interface IRoleUpdate {
   permissions?: IPermission[];
   isActive?: boolean;
   isDefault?: boolean;
-  parentRole?: string; // Reference to parent role for inheritance
+  parentRole?: Types.ObjectId | string | null; // Reference to parent role for inheritance
   level?: number; // Role hierarchy level (0 is highest)
 }
 
