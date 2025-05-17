@@ -229,9 +229,18 @@ const CustomerSearch = ({
       if (!showDropdown && !searchTerm) {
         // Just set a display name, not an actual search term
         console.log('Setting display name for selected customer:', value);
+
+        // Make sure this customer is in our customers list
+        if (Array.isArray(customers) && customers.length > 0) {
+          const customerExists = customers.some((c) => c._id === value._id);
+          if (!customerExists) {
+            console.log('Adding selected customer to customers list:', value);
+            setCustomers((prev) => [...prev, value]);
+          }
+        }
       }
     }
-  }, [value, showDropdown, searchTerm]);
+  }, [value, showDropdown, searchTerm, customers]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);

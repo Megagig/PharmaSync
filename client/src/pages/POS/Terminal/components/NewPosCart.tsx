@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Button from '@/components/common/Button/Button';
 import Input from '@/components/common/Input/Input';
 import { formatCurrency } from '@/utils/formatters';
@@ -14,53 +14,61 @@ const PosCart = ({ items, onRemoveItem, onUpdateItem }: PosCartProps) => {
   const [editQuantity, setEditQuantity] = useState(0);
   const [editUnitPrice, setEditUnitPrice] = useState(0);
   const [editDiscount, setEditDiscount] = useState(0);
-  const [cartItems, setCartItems] = useState<any[]>([]);
-
-  // Update local state when props change
-  useEffect(() => {
-    console.log('PosCart - Items prop changed:', items);
-    setCartItems(items);
-  }, [items]);
 
   // Log cart items for debugging
-  console.log('PosCart - Rendering with items:', cartItems);
+  useEffect(() => {
+    console.log('PosCart - Items prop changed:', items);
+  }, [items]);
 
-  const handleEdit = (index: number) => {
+  // Set up edit form when an item is selected for editing
+  const handleEdit = useCallback((index: number) => {
     if (index < 0 || index >= items.length) {
       console.error(`Invalid index: ${index}, items length: ${items.length}`);
       return;
     }
-
+    
     const item = items[index];
     console.log('PosCart - Editing item:', item);
     setEditQuantity(item.quantity);
     setEditUnitPrice(item.unitPrice);
     setEditDiscount(item.discount || 0);
     setEditingIndex(index);
-  };
+  }, [items]);
 
-  const handleSaveEdit = () => {
-    if (editingIndex !== null) {
-      onUpdateItem(editingIndex, 'quantity', editQuantity);
-      onUpdateItem(editingIndex, 'unitPrice', editUnitPrice);
-      onUpdateItem(editingIndex, 'discount', editDiscount);
-      setEditingIndex(null);
-    }
-  };
-
-  const handleCancelEdit = () => {
+  // Save edited item
+  const handleSaveEdit = useCallback(() => {
+    if (editingIndex === null) return;
+    
+    console.log(`Saving edits for item at index ${editingIndex}`);
+    console.log(`New values: quantity=${editQuantity}, unitPrice=${editUnitPrice}, discount=${editDiscount}`);
+    
+    onUpdateItem(editingIndex, 'quantity', editQuantity);
+    onUpdateItem(editingIndex, 'unitPrice', editUnitPrice);
+    onUpdateItem(editingIndex, 'discount', editDiscount);
+    
     setEditingIndex(null);
-  };
+  }, [editingIndex, editQuantity, editUnitPrice, editDiscount, onUpdateItem]);
+
+  // Cancel editing
+  const handleCancelEdit = useCallback(() => {
+    setEditingIndex(null);
+  }, []);
+
+  // Handle remove item with confirmation
+  const handleRemoveItem = useCallback((index: number) => {
+    console.log(`Removing item at index ${index}`);
+    onRemoveItem(index);
+  }, [onRemoveItem]);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-lg font-medium">Cart Items</h2>
-        <span className="text-sm text-gray-600">{cartItems.length} items</span>
+        <span className="text-sm text-gray-600">{items.length} items</span>
       </div>
 
       <div className="flex-1 overflow-auto">
-        {cartItems.length === 0 ? (
+        {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -81,9 +89,9 @@ const PosCart = ({ items, onRemoveItem, onUpdateItem }: PosCartProps) => {
           </div>
         ) : (
           <div className="space-y-2">
-            {cartItems.map((item, index) => (
+            {items.map((item, index) => (
               <div
-                key={`cart-item-${index}`}
+                key={`cart-item-${index}-${item.product}`}
                 className="border rounded-md p-3 bg-gray-50 relative"
               >
                 {editingIndex === index ? (
@@ -96,9 +104,7 @@ const PosCart = ({ items, onRemoveItem, onUpdateItem }: PosCartProps) => {
                         type="number"
                         label="Quantity"
                         value={editQuantity}
-                        onChange={(e) =>
-                          setEditQuantity(Number(e.target.value))
-                        }
+                        onChange={(e) => setEditQuantity(Number(e.target.value))}
                         min="0.01"
                         step="0.01"
                       />
@@ -106,9 +112,7 @@ const PosCart = ({ items, onRemoveItem, onUpdateItem }: PosCartProps) => {
                         type="number"
                         label="Unit Price (₦)"
                         value={editUnitPrice}
-                        onChange={(e) =>
-                          setEditUnitPrice(Number(e.target.value))
-                        }
+                        onChange={(e) => setEditUnitPrice(Number(e.target.value))}
                         min="0"
                         step="0.01"
                       />
@@ -116,9 +120,7 @@ const PosCart = ({ items, onRemoveItem, onUpdateItem }: PosCartProps) => {
                         type="number"
                         label="Discount (₦)"
                         value={editDiscount}
-                        onChange={(e) =>
-                          setEditDiscount(Number(e.target.value))
-                        }
+                        onChange={(e) => setEditDiscount(Number(e.target.value))}
                         min="0"
                         step="0.01"
                       />
@@ -144,10 +146,9 @@ const PosCart = ({ items, onRemoveItem, onUpdateItem }: PosCartProps) => {
                   <>
                     <button
                       className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                      onClick={() => {
-                        console.log('Remove button clicked for index:', index);
-                        onRemoveItem(index);
-                      }}
+                      onClick={() => handleRemoveItem(index)}
+                      aria-label="Remove item"
+                      title="Remove item"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"

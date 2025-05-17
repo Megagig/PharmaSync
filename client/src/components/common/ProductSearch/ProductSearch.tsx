@@ -4,7 +4,9 @@ import Input from '@/components/common/Input/Input';
 import api from '@/services/api';
 
 interface ProductSearchProps {
-  onSelect: (product: Product) => void;
+  onSelect?: (product: Product) => void;
+  onChange?: (product: Product) => void;
+  value?: Product | null;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -12,6 +14,8 @@ interface ProductSearchProps {
 
 const ProductSearch = ({
   onSelect,
+  onChange,
+  value,
   placeholder = 'Search products by name, SKU, or barcode',
   className = '',
   disabled = false,
@@ -155,7 +159,13 @@ const ProductSearch = ({
       totalStock: product.totalStock || 0,
     };
 
-    onSelect(processedProduct);
+    // Call the appropriate callback
+    if (onChange) {
+      onChange(processedProduct);
+    } else if (onSelect) {
+      onSelect(processedProduct);
+    }
+
     setSearchTerm('');
     setShowDropdown(false);
   };

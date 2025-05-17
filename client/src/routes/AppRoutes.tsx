@@ -159,6 +159,7 @@ import PosSessionsList from '@/pages/POS/Sessions/PosSessionsList';
 import CreatePosSession from '@/pages/POS/Sessions/CreatePosSession';
 import PosSessionDetail from '@/pages/POS/Sessions/PosSessionDetail';
 import PosTerminal from '@/pages/POS/Terminal/PosTerminal';
+import NewPosTerminal from '@/pages/POS/Terminal/NewPosTerminal';
 import PosTransactionsList from '@/pages/POS/Transactions/PosTransactionsList';
 import PosTransactionDetail from '@/pages/POS/Transactions/PosTransactionDetail';
 import PosTransactionReceipt from '@/pages/POS/Transactions/PosTransactionReceipt';
@@ -430,7 +431,7 @@ const AppRoutes = () => {
           <Route path="/pos/sessions" element={<PosSessionsList />} />
           <Route path="/pos/sessions/new" element={<CreatePosSession />} />
           <Route path="/pos/sessions/:id" element={<PosSessionDetail />} />
-          <Route path="/pos/terminal" element={<PosTerminal />} />
+          <Route path="/pos/terminal" element={<NewPosTerminal />} />
           <Route path="/pos/transactions" element={<PosTransactionsList />} />
           <Route
             path="/pos/transactions/:id"

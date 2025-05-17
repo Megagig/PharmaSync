@@ -138,7 +138,7 @@ const PosTerminal = () => {
 
   useEffect(() => {
     // If product is selected, fetch available batches
-    if (selectedProduct) {
+    if (selectedProduct && selectedProduct._id) {
       console.log('Product selected in PosTerminal:', selectedProduct);
       fetchProductBatches();
     }
@@ -226,114 +226,169 @@ const PosTerminal = () => {
   };
 
   const handleAddToCart = () => {
-    console.log(
-      'Adding to cart. Product:',
-      selectedProduct,
-      'Quantity:',
-      quantity
-    );
-
-    // Validate inputs
-    if (!selectedProduct) {
-      showToast('Please select a product', 'error');
-      return;
-    }
-
-    // Ensure product has an _id
-    if (!selectedProduct._id) {
-      console.error('Product is missing _id:', selectedProduct);
-      showToast('Invalid product data. Please try another product.', 'error');
-      return;
-    }
-
-    // If no expiry dates are available, show an error
-    if (availableExpiryDates.length === 0) {
-      showToast(
-        'This product has no inventory. Please add inventory first.',
-        'error'
+    try {
+      console.log(
+        'Adding to cart. Product:',
+        selectedProduct,
+        'Quantity:',
+        quantity
       );
-      return;
+
+      // Validate inputs
+      if (!selectedProduct) {
+        showToast('Please select a product', 'error');
+        return;
+      }
+
+      // Ensure product has an _id
+      if (!selectedProduct._id) {
+        console.error('Product is missing _id:', selectedProduct);
+        showToast('Invalid product data. Please try another product.', 'error');
+        return;
+      }
+
+      // If no expiry dates are available, show an error
+      if (!availableExpiryDates || availableExpiryDates.length === 0) {
+        showToast(
+          'This product has no inventory. Please add inventory first.',
+          'error'
+        );
+        return;
+      }
+
+      // Validate quantity
+      if (quantity <= 0) {
+        showToast('Please enter a valid quantity', 'error');
+        return;
+      }
+
+      // Always use the earliest expiry date (FIFO)
+      // The availableExpiryDates array is already sorted by date in fetchProductBatches
+      const expiryDateGroup = availableExpiryDates[0];
+      console.log('Using expiry date group:', expiryDateGroup);
+
+      // Check stock quantity
+      if (quantity > expiryDateGroup.totalQuantity) {
+        showToast(
+          `Insufficient stock. Available: ${expiryDateGroup.totalQuantity}`,
+          'error'
+        );
+        return;
+      }
+
+      // Calculate subtotal
+      const itemSubtotal = quantity * unitPrice - productDiscount;
+
+      // Use the first batch from the earliest expiry date group
+      const firstBatch = expiryDateGroup.batches[0];
+      console.log('Using batch:', firstBatch);
+
+      // Create cart item
+      const newItem = {
+        product: selectedProduct._id,
+        productDetails: {
+          _id: selectedProduct._id,
+          name: selectedProduct.name || 'Unknown Product',
+          sku: selectedProduct.sku || 'No SKU',
+          defaultPrice: selectedProduct.defaultPrice || unitPrice,
+        },
+        quantity,
+        unitPrice,
+        discount: productDiscount,
+        subtotal: itemSubtotal,
+        batchNumber: firstBatch.batchNumber,
+        expiryDate: expiryDateGroup.expiryDate,
+      };
+
+      console.log('New cart item created:', newItem);
+
+      // Create a new array with the new item to ensure state update
+      const updatedCartItems = [...cartItems, newItem];
+      console.log('Setting cart items to:', updatedCartItems);
+
+      // Force a state update with a new array
+      setCartItems([...updatedCartItems]);
+
+      console.log('Cart items after update:', updatedCartItems);
+      showToast(`Added ${quantity} ${selectedProduct.name} to cart`, 'success');
+
+      // Reset product selection
+      setSelectedProduct(null);
+      setSelectedExpiryDate('');
+      setQuantity(1);
+      setUnitPrice(0);
+      setProductDiscount(0);
+      setAvailableExpiryDates([]);
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+      showToast('Failed to add item to cart. Please try again.', 'error');
     }
-
-    // Validate quantity
-    if (quantity <= 0) {
-      showToast('Please enter a valid quantity', 'error');
-      return;
-    }
-
-    // Always use the earliest expiry date (FIFO)
-    // The availableExpiryDates array is already sorted by date in fetchProductBatches
-    const expiryDateGroup = availableExpiryDates[0];
-
-    // Check stock quantity
-    if (quantity > expiryDateGroup.totalQuantity) {
-      showToast(
-        `Insufficient stock. Available: ${expiryDateGroup.totalQuantity}`,
-        'error'
-      );
-      return;
-    }
-
-    // Calculate subtotal
-    const itemSubtotal = quantity * unitPrice - productDiscount;
-
-    // Use the first batch from the earliest expiry date group
-    const firstBatch = expiryDateGroup.batches[0];
-
-    // Create cart item
-    const newItem = {
-      product: selectedProduct._id,
-      productDetails: {
-        _id: selectedProduct._id,
-        name: selectedProduct.name || 'Unknown Product',
-        sku: selectedProduct.sku || 'No SKU',
-        defaultPrice: selectedProduct.defaultPrice || unitPrice,
-        // Include any other needed fields
-      },
-      quantity,
-      unitPrice,
-      discount: productDiscount,
-      subtotal: itemSubtotal,
-      batchNumber: firstBatch.batchNumber,
-      expiryDate: selectedExpiryDate,
-    };
-
-    console.log('Adding item to cart:', newItem);
-    setCartItems([...cartItems, newItem]);
-    showToast(`Added ${quantity} ${selectedProduct.name} to cart`, 'success');
-
-    // Reset product selection
-    setSelectedProduct(null);
-    setSelectedExpiryDate('');
-    setQuantity(1);
-    setUnitPrice(0);
-    setProductDiscount(0);
-    setAvailableExpiryDates([]);
   };
 
   const handleRemoveFromCart = (index: number) => {
-    const newCartItems = [...cartItems];
-    newCartItems.splice(index, 1);
-    setCartItems(newCartItems);
+    try {
+      console.log('Removing item at index:', index);
+      console.log('Current cart items:', cartItems);
+
+      // Create a new array without the item at the specified index
+      const newCartItems = [...cartItems];
+      newCartItems.splice(index, 1);
+
+      console.log('New cart items after removal:', newCartItems);
+
+      // Update the state with the new array
+      setCartItems([...newCartItems]);
+
+      showToast('Item removed from cart', 'success');
+    } catch (error) {
+      console.error('Error removing item from cart:', error);
+      showToast('Failed to remove item from cart', 'error');
+    }
   };
 
   const handleUpdateCartItem = (index: number, field: string, value: any) => {
-    const newCartItems = [...cartItems];
-    const item = { ...newCartItems[index] };
+    try {
+      console.log(
+        `Updating item at index ${index}, field: ${field}, value: ${value}`
+      );
+      console.log('Current cart items:', cartItems);
 
-    if (field === 'quantity') {
-      item.quantity = value;
-      item.subtotal = item.quantity * item.unitPrice - item.discount;
-    } else if (field === 'unitPrice') {
-      item.unitPrice = value;
-      item.subtotal = item.quantity * item.unitPrice - item.discount;
-    } else if (field === 'discount') {
-      item.discount = value;
-      item.subtotal = item.quantity * item.unitPrice - item.discount;
+      if (index < 0 || index >= cartItems.length) {
+        console.error(
+          `Invalid index: ${index}, cart length: ${cartItems.length}`
+        );
+        showToast('Invalid item index', 'error');
+        return;
+      }
+
+      // Create a deep copy of the cart items
+      const newCartItems = [...cartItems];
+      const item = { ...newCartItems[index] };
+
+      if (field === 'quantity') {
+        item.quantity = value;
+        item.subtotal = item.quantity * item.unitPrice - item.discount;
+      } else if (field === 'unitPrice') {
+        item.unitPrice = value;
+        item.subtotal = item.quantity * item.unitPrice - item.discount;
+      } else if (field === 'discount') {
+        item.discount = value;
+        item.subtotal = item.quantity * item.unitPrice - item.discount;
+      }
+
+      // Update the item in the array
+      newCartItems[index] = item;
+
+      console.log('Updated cart items:', newCartItems);
+
+      // Update the state with the new array
+      setCartItems([...newCartItems]);
+
+      showToast('Item updated', 'success');
+    } catch (error) {
+      console.error('Error updating cart item:', error);
+      showToast('Failed to update item', 'error');
     }
-
-    newCartItems[index] = item;
-    setCartItems(newCartItems);
   };
 
   const handleProceedToPayment = () => {
@@ -483,7 +538,22 @@ const PosTerminal = () => {
                 value={selectedCustomer}
                 onChange={(customer) => {
                   console.log('Customer selected in POS Terminal:', customer);
-                  setSelectedCustomer(customer);
+                  if (customer && customer._id) {
+                    // Make a deep copy to ensure state update is recognized
+                    const customerCopy = {
+                      _id: customer._id,
+                      firstName: customer.firstName || '',
+                      lastName: customer.lastName || '',
+                      customerNumber: customer.customerNumber || '',
+                      phone: customer.phone || '',
+                      email: customer.email || '',
+                    };
+                    setSelectedCustomer(customerCopy);
+                    showToast(
+                      `Customer ${customerCopy.firstName} ${customerCopy.lastName} selected`,
+                      'success'
+                    );
+                  }
                 }}
                 placeholder="Search for customer..."
                 allowCreate
@@ -492,7 +562,14 @@ const PosTerminal = () => {
             <div className="w-1/2">
               <ProductSearch
                 value={selectedProduct}
-                onChange={setSelectedProduct}
+                onChange={(product) => {
+                  console.log('Product selected in POS Terminal:', product);
+                  if (product && product._id) {
+                    setSelectedProduct(product);
+                    // Trigger the fetch of product batches
+                    fetchProductBatches();
+                  }
+                }}
                 placeholder="Search for product..."
               />
             </div>
