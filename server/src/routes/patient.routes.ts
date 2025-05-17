@@ -66,7 +66,7 @@ router
     patientController.updatePatient
   )
   .delete(
-    authorize([UserRole.ADMIN, UserRole.PHARMACIST]),
+    authorize(UserRole.ADMIN), // Only allow admin to delete patients
     async (req, res, next) => {
       // Clear specific patient cache when deleted
       await clearCache(`GET:/patients/${req.params.id}`);

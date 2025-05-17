@@ -1,5 +1,5 @@
 import { redisClient } from '../config/redis';
-import { logger } from './logger';
+import logger from './logger';
 import axios from 'axios';
 import env from '../config/env.config';
 
@@ -61,29 +61,31 @@ const warmEndpoint = async (
 ): Promise<void> => {
   try {
     const url = `http://localhost:${env.PORT}${endpoint.path}`;
-    
+
     logger.debug(`Warming cache for endpoint: ${endpoint.path}`);
-    
+
     const response = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
       params: endpoint.params,
     });
-    
+
     if (response.status === 200) {
       const cacheKey = `cache:${endpoint.path}`;
-      
+
       await redisClient.setEx(
         cacheKey,
         endpoint.expiration,
         JSON.stringify(response.data)
       );
-      
+
       logger.debug(`Cache warmed for endpoint: ${endpoint.path}`);
     }
   } catch (error) {
-    logger.error(`Failed to warm cache for endpoint ${endpoint.path}: ${error}`);
+    logger.error(
+      `Failed to warm cache for endpoint ${endpoint.path}: ${error}`
+    );
   }
 };
 
@@ -96,16 +98,16 @@ const getAdminToken = async (): Promise<string> => {
     // This is a simplified example. In a real application, you would use a service account
     // or a dedicated admin account for cache warming.
     const url = `http://localhost:${env.PORT}/api/auth/login`;
-    
+
     const response = await axios.post(url, {
       email: process.env.CACHE_WARMER_EMAIL || 'admin@example.com',
       password: process.env.CACHE_WARMER_PASSWORD || 'password',
     });
-    
+
     if (response.status === 200 && response.data.token) {
       return response.data.token;
     }
-    
+
     throw new Error('Failed to get admin token');
   } catch (error) {
     logger.error(`Failed to get admin token for cache warming: ${error}`);
@@ -120,16 +122,18 @@ export const warmCache = async (): Promise<void> => {
   if (!cacheWarmingConfig.enabled) {
     return;
   }
-  
+
   try {
     logger.info('Starting cache warming...');
-    
+
     const token = await getAdminToken();
-    
+
     await Promise.all(
-      cacheWarmingConfig.endpoints.map((endpoint) => warmEndpoint(endpoint, token))
+      cacheWarmingConfig.endpoints.map((endpoint) =>
+        warmEndpoint(endpoint, token)
+      )
     );
-    
+
     logger.info('Cache warming completed');
   } catch (error) {
     logger.error(`Cache warming failed: ${error}`);
@@ -144,12 +148,14 @@ export const startCacheWarmingJob = (): NodeJS.Timeout => {
     logger.info('Cache warming is disabled');
     return null as unknown as NodeJS.Timeout;
   }
-  
-  logger.info(`Starting cache warming job with interval: ${cacheWarmingConfig.interval}ms`);
-  
+
+  logger.info(
+    `Starting cache warming job with interval: ${cacheWarmingConfig.interval}ms`
+  );
+
   // Warm cache immediately
   warmCache();
-  
+
   // Schedule periodic cache warming
   return setInterval(warmCache, cacheWarmingConfig.interval);
 };

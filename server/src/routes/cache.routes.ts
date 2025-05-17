@@ -18,7 +18,7 @@ import {
   getResourceCacheVersion,
   incrementResourceCacheVersion,
 } from '../utils/cacheVersion';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 const router = Router();
 

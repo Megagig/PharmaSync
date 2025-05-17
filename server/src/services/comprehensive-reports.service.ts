@@ -789,14 +789,15 @@ export const generateAdministrativeComprehensiveReport = async (
     ([name, value]) => ({ name, value })
   );
 
-  interface DailyActivity {
-    day: string;
-    logins: number;
-    actions: number;
-  }
-
   // Calculate daily activity
-  const dailyActivity: Record<string, DailyActivity> = {};
+  const dailyActivity: Record<
+    string,
+    {
+      day: string;
+      logins: number;
+      actions: number;
+    }
+  > = {};
   const now = new Date();
   for (let i = 6; i >= 0; i--) {
     const date = new Date(now);
@@ -817,17 +818,18 @@ export const generateAdministrativeComprehensiveReport = async (
     }
   });
 
-  interface UserActivity {
-    userId: string;
-    userName: string;
-    role: string;
-    logins: number;
-    actions: number;
-    lastActive: Date;
-  }
-
   // Get top active users
-  const userActivity: Record<string, UserActivity> = {};
+  const userActivity: Record<
+    string,
+    {
+      userId: string;
+      userName: string;
+      role: string;
+      logins: number;
+      actions: number;
+      lastActive: Date;
+    }
+  > = {};
   activityLogs.forEach((log) => {
     // Type assertion for populated user field
     const user = log.user as any;
@@ -854,7 +856,7 @@ export const generateAdministrativeComprehensiveReport = async (
   });
 
   const topActiveUsers = Object.values(userActivity)
-    .sort((a: UserActivity, b: UserActivity) => b.actions - a.actions)
+    .sort((a, b) => b.actions - a.actions)
     .slice(0, 10);
 
   // Compile the report data

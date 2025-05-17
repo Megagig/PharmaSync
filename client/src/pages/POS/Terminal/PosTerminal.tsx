@@ -179,18 +179,21 @@ const PosTerminal = () => {
             {}
           );
 
-          // Convert to array format for dropdown
-          const expiryDates = Object.keys(batchesByExpiryDate).map((date) => ({
-            expiryDate: date,
-            batches: batchesByExpiryDate[date],
-            totalQuantity: batchesByExpiryDate[date].reduce(
-              (sum: number, b: any) => sum + b.quantity,
-              0
-            ),
-          }));
+          // Convert to array format and sort by expiry date (earliest first - FIFO)
+          const expiryDates = Object.keys(batchesByExpiryDate)
+            .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
+            .map((date) => ({
+              expiryDate: date,
+              batches: batchesByExpiryDate[date],
+              totalQuantity: batchesByExpiryDate[date].reduce(
+                (sum: number, b: any) => sum + b.quantity,
+                0
+              ),
+            }));
 
           setAvailableExpiryDates(expiryDates);
 
+          // Automatically select the earliest expiry date (FIFO)
           if (expiryDates.length > 0) {
             setSelectedExpiryDate(expiryDates[0].expiryDate);
           }
@@ -226,8 +229,6 @@ const PosTerminal = () => {
     console.log(
       'Adding to cart. Product:',
       selectedProduct,
-      'Expiry Date:',
-      selectedExpiryDate,
       'Quantity:',
       quantity
     );
@@ -245,16 +246,6 @@ const PosTerminal = () => {
       return;
     }
 
-    // If no expiry date is selected but we have dates, select the first one
-    if (!selectedExpiryDate && availableExpiryDates.length > 0) {
-      setSelectedExpiryDate(availableExpiryDates[0].expiryDate);
-      showToast(
-        'Automatically selected the first available expiry date',
-        'info'
-      );
-      return; // Return and let the effect trigger again with the selected expiry date
-    }
-
     // If no expiry dates are available, show an error
     if (availableExpiryDates.length === 0) {
       showToast(
@@ -270,35 +261,9 @@ const PosTerminal = () => {
       return;
     }
 
-    // Find the selected expiry date group
-    const expiryDateGroup = availableExpiryDates.find(
-      (ed) => ed.expiryDate === selectedExpiryDate
-    );
-
-    if (!expiryDateGroup) {
-      console.error(
-        'Selected expiry date not found:',
-        selectedExpiryDate,
-        'Available expiry dates:',
-        availableExpiryDates
-      );
-
-      // If expiry date not found but we have dates, select the first one
-      if (availableExpiryDates.length > 0) {
-        setSelectedExpiryDate(availableExpiryDates[0].expiryDate);
-        showToast(
-          'Selected expiry date not found. Automatically selected the first available date',
-          'warning'
-        );
-        return; // Return and let the effect trigger again with the selected expiry date
-      } else {
-        showToast(
-          'Please select a valid expiry date for this product',
-          'error'
-        );
-        return;
-      }
-    }
+    // Always use the earliest expiry date (FIFO)
+    // The availableExpiryDates array is already sorted by date in fetchProductBatches
+    const expiryDateGroup = availableExpiryDates[0];
 
     // Check stock quantity
     if (quantity > expiryDateGroup.totalQuantity) {
@@ -312,7 +277,7 @@ const PosTerminal = () => {
     // Calculate subtotal
     const itemSubtotal = quantity * unitPrice - productDiscount;
 
-    // Use the first batch from the expiry date group
+    // Use the first batch from the earliest expiry date group
     const firstBatch = expiryDateGroup.batches[0];
 
     // Create cart item
@@ -451,14 +416,17 @@ const PosTerminal = () => {
         navigate(`/pos/transactions/${resultAction.payload._id}/receipt`);
 
         // Reset form
-        setSelectedCustomer({
+        const walkInCustomer = {
           _id: 'walk-in-customer',
           firstName: 'Walk-in',
           lastName: 'Customer',
           customerNumber: 'WALK-IN',
           phone: '',
           email: '',
-        });
+        };
+
+        console.log('Resetting customer to walk-in after transaction');
+        setSelectedCustomer(walkInCustomer);
         setCartItems([]);
         setDiscount(0);
         setTax(0);
@@ -513,7 +481,10 @@ const PosTerminal = () => {
             <div className="w-1/2">
               <CustomerSearch
                 value={selectedCustomer}
-                onChange={setSelectedCustomer}
+                onChange={(customer) => {
+                  console.log('Customer selected in POS Terminal:', customer);
+                  setSelectedCustomer(customer);
+                }}
                 placeholder="Search for customer..."
                 allowCreate
               />
@@ -529,26 +500,19 @@ const PosTerminal = () => {
 
           {selectedProduct && (
             <Card className="mb-4">
-              <div className="p-4 grid grid-cols-5 gap-4">
-                <div className="col-span-2">
-                  <Select
-                    label="Expiry Date"
-                    value={selectedExpiryDate}
-                    onChange={(e) => setSelectedExpiryDate(e.target.value)}
-                  >
-                    <option value="">Select Expiry Date</option>
-                    {availableExpiryDates.map((expiryGroup) => (
-                      <option
-                        key={expiryGroup.expiryDate}
-                        value={expiryGroup.expiryDate}
-                      >
-                        Expires:{' '}
-                        {new Date(expiryGroup.expiryDate).toLocaleDateString()}{' '}
-                        - Stock: {expiryGroup.totalQuantity}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
+              <div className="p-4 grid grid-cols-4 gap-4">
+                {availableExpiryDates.length > 0 && (
+                  <div className="col-span-4 mb-2">
+                    <div className="text-sm text-gray-600">
+                      Available Stock: {availableExpiryDates[0].totalQuantity}{' '}
+                      units (Expires:{' '}
+                      {new Date(
+                        availableExpiryDates[0].expiryDate
+                      ).toLocaleDateString()}
+                      )
+                    </div>
+                  </div>
+                )}
                 <div>
                   <Input
                     type="number"
@@ -579,8 +543,12 @@ const PosTerminal = () => {
                     step="0.01"
                   />
                 </div>
-                <div className="col-span-5 flex justify-end">
-                  <Button variant="primary" onClick={handleAddToCart}>
+                <div className="flex items-end">
+                  <Button
+                    variant="primary"
+                    onClick={handleAddToCart}
+                    className="w-full"
+                  >
                     Add to Cart
                   </Button>
                 </div>

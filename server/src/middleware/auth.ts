@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { User } from '../models/User';
+import User from '../models/user.model';
 import { AppError } from '../utils/appError';
 import config from '../config';
 
@@ -65,15 +65,18 @@ export const authenticate = async (
 /**
  * Role-based authorization middleware
  * Checks if user has required roles
- * @param roles Array of allowed roles
+ * @param roles Single role or array of allowed roles
  */
-export const authorize = (roles: string[]) => {
+export const authorize = (roles: string | string[]) => {
+  // Convert single role to array for consistent handling
+  const allowedRoles = Array.isArray(roles) ? roles : [roles];
+
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return next(new AppError('User not authenticated', 401));
     }
 
-    if (!roles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.role)) {
       return next(
         new AppError(
           `Role (${req.user.role}) is not authorized to access this resource`,

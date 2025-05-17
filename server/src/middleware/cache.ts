@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { redisClient } from '../config/redis';
-import { logger } from '../utils/logger';
+import { redisClient, isRedisAvailable } from '../config/redis';
+import logger from '../utils/logger';
 import { getVersionedCacheKey } from '../utils/cacheVersion';
 import { recordCacheHit, recordCacheMiss } from '../utils/cacheAnalytics';
 
@@ -52,6 +52,11 @@ export const cacheMiddleware = (options: CacheOptions = {}) => {
   const useVersioning = options.useVersioning !== false; // Default to true
 
   return async (req: Request, res: Response, next: NextFunction) => {
+    // Skip caching if Redis is not available
+    if (!isRedisAvailable()) {
+      return next();
+    }
+
     // Skip caching for non-GET requests unless explicitly configured
     if (req.method !== 'GET' && !options.keyGenerator) {
       return next();
@@ -77,7 +82,7 @@ export const cacheMiddleware = (options: CacheOptions = {}) => {
 
       if (cachedData) {
         // Data found in cache, parse and send response
-        const data = JSON.parse(cachedData);
+        const data = JSON.parse(cachedData.toString());
         logger.debug(`Cache hit for key: ${cacheKey}`);
 
         // Add cache header for debugging
@@ -144,6 +149,14 @@ export const cacheMiddleware = (options: CacheOptions = {}) => {
  * @param pattern Cache key pattern to clear
  */
 export const clearCache = async (pattern: string): Promise<void> => {
+  // Skip if Redis is not available
+  if (!isRedisAvailable()) {
+    logger.debug(
+      `Redis not available, skipping cache clear for pattern: ${pattern}`
+    );
+    return;
+  }
+
   try {
     // Get all keys matching the pattern
     const keys = await redisClient.keys(`cache:${pattern}*`);
@@ -164,6 +177,12 @@ export const clearCache = async (pattern: string): Promise<void> => {
  * Clear all cache
  */
 export const clearAllCache = async (): Promise<void> => {
+  // Skip if Redis is not available
+  if (!isRedisAvailable()) {
+    logger.debug('Redis not available, skipping clear all cache');
+    return;
+  }
+
   try {
     // Get all cache keys
     const keys = await redisClient.keys('cache:*');

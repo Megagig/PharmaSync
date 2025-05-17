@@ -1,6 +1,6 @@
 import { createCluster } from 'redis';
 import env from './env.config';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 /**
  * Redis cluster configuration
@@ -33,24 +33,24 @@ const createRedisCluster = () => {
     logger.info('Redis cluster is disabled, using standalone Redis');
     return null;
   }
-  
+
   try {
     // Create Redis cluster client
     const redisCluster = createCluster(redisClusterConfig);
-    
+
     // Redis cluster event handlers
     redisCluster.on('connect', () => {
       logger.info('Redis cluster client connected');
     });
-    
+
     redisCluster.on('error', (err) => {
       logger.error(`Redis cluster client error: ${err}`);
     });
-    
+
     redisCluster.on('reconnecting', () => {
       logger.info('Redis cluster client reconnecting');
     });
-    
+
     return redisCluster;
   } catch (error) {
     logger.error(`Failed to create Redis cluster client: ${error}`);

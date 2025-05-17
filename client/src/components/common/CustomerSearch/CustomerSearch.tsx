@@ -222,6 +222,17 @@ const CustomerSearch = ({
     };
   }, []);
 
+  // Display the selected customer's name in the input when value prop changes
+  useEffect(() => {
+    if (value && value._id) {
+      // Don't update the search term if the dropdown is open or if there's text being typed
+      if (!showDropdown && !searchTerm) {
+        // Just set a display name, not an actual search term
+        console.log('Setting display name for selected customer:', value);
+      }
+    }
+  }, [value, showDropdown, searchTerm]);
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
     setShowDropdown(true);
@@ -351,6 +362,18 @@ const CustomerSearch = ({
     <div className={`relative ${className}`}>
       <div className="flex space-x-2">
         <div className="flex-1 relative">
+          {value && !searchTerm && (
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700 flex items-center pointer-events-none">
+              <span className="font-medium">
+                {value.firstName} {value.lastName}
+              </span>
+              {value.customerNumber && (
+                <span className="ml-2 text-xs text-gray-500">
+                  ({value.customerNumber})
+                </span>
+              )}
+            </div>
+          )}
           <Input
             ref={inputRef}
             placeholder={placeholder}
@@ -358,6 +381,7 @@ const CustomerSearch = ({
             onChange={handleSearch}
             onFocus={() => setShowDropdown(true)}
             disabled={disabled}
+            className={value && !searchTerm ? 'pl-40' : ''}
           />
           {isLoading && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">

@@ -1,6 +1,6 @@
 import { createClient } from 'redis';
 import env from './env.config';
-import { logger } from '../utils/logger';
+import logger from '../utils/logger';
 
 // Redis client configuration
 const redisConfig = {
@@ -32,14 +32,20 @@ redisClient.on('reconnecting', () => {
   logger.info('Redis client reconnecting');
 });
 
+// Flag to track if Redis is available
+let redisAvailable = false;
+
 // Connect to Redis
 const connectRedis = async () => {
   try {
     if (!redisClient.isOpen) {
       await redisClient.connect();
+      redisAvailable = true;
+      logger.info('Redis connected successfully');
     }
   } catch (error) {
-    logger.error(`Failed to connect to Redis: ${error}`);
+    redisAvailable = false;
+    logger.warn(`Redis not available: ${error}. Caching will be disabled.`);
   }
 };
 
@@ -48,10 +54,14 @@ const disconnectRedis = async () => {
   try {
     if (redisClient.isOpen) {
       await redisClient.disconnect();
+      redisAvailable = false;
     }
   } catch (error) {
     logger.error(`Failed to disconnect from Redis: ${error}`);
   }
 };
 
-export { redisClient, connectRedis, disconnectRedis };
+// Check if Redis is available
+const isRedisAvailable = () => redisAvailable;
+
+export { redisClient, connectRedis, disconnectRedis, isRedisAvailable };

@@ -1,5 +1,5 @@
-import { redisClient } from '../config/redis';
-import { logger } from './logger';
+import { redisClient, isRedisAvailable } from '../config/redis';
+import logger from './logger';
 
 /**
  * Cache version key in Redis
@@ -21,9 +21,14 @@ const DEFAULT_CACHE_VERSION = '1.0.0';
  * @returns Promise with the cache version
  */
 export const getCacheVersion = async (): Promise<string> => {
+  // Return default version if Redis is not available
+  if (!isRedisAvailable()) {
+    return DEFAULT_CACHE_VERSION;
+  }
+
   try {
     const version = await redisClient.get(CACHE_VERSION_KEY);
-    return version || DEFAULT_CACHE_VERSION;
+    return version ? version.toString() : DEFAULT_CACHE_VERSION;
   } catch (error) {
     logger.error(`Failed to get cache version: ${error}`);
     return DEFAULT_CACHE_VERSION;
@@ -36,6 +41,14 @@ export const getCacheVersion = async (): Promise<string> => {
  * @returns Promise with success status
  */
 export const setCacheVersion = async (version: string): Promise<boolean> => {
+  // Return false if Redis is not available
+  if (!isRedisAvailable()) {
+    logger.debug(
+      `Redis not available, skipping set cache version to ${version}`
+    );
+    return false;
+  }
+
   try {
     await redisClient.set(CACHE_VERSION_KEY, version);
     logger.info(`Cache version updated to ${version}`);
@@ -51,16 +64,22 @@ export const setCacheVersion = async (version: string): Promise<boolean> => {
  * @returns Promise with the new cache version
  */
 export const incrementCacheVersion = async (): Promise<string> => {
+  // Return default version if Redis is not available
+  if (!isRedisAvailable()) {
+    logger.debug('Redis not available, skipping increment cache version');
+    return DEFAULT_CACHE_VERSION;
+  }
+
   try {
     const currentVersion = await getCacheVersion();
     const [major, minor, patch] = currentVersion.split('.').map(Number);
-    
+
     // Increment patch version
     const newVersion = `${major}.${minor}.${patch + 1}`;
-    
+
     await setCacheVersion(newVersion);
     logger.info(`Cache version incremented to ${newVersion}`);
-    
+
     return newVersion;
   } catch (error) {
     logger.error(`Failed to increment cache version: ${error}`);
@@ -73,13 +92,22 @@ export const incrementCacheVersion = async (): Promise<string> => {
  * @param resource Resource name
  * @returns Promise with the resource cache version
  */
-export const getResourceCacheVersion = async (resource: string): Promise<string> => {
+export const getResourceCacheVersion = async (
+  resource: string
+): Promise<string> => {
+  // Return default version if Redis is not available
+  if (!isRedisAvailable()) {
+    return DEFAULT_CACHE_VERSION;
+  }
+
   try {
     const key = `${CACHE_RESOURCE_VERSION_PREFIX}${resource}`;
     const version = await redisClient.get(key);
-    return version || DEFAULT_CACHE_VERSION;
+    return version ? version.toString() : DEFAULT_CACHE_VERSION;
   } catch (error) {
-    logger.error(`Failed to get cache version for resource ${resource}: ${error}`);
+    logger.error(
+      `Failed to get cache version for resource ${resource}: ${error}`
+    );
     return DEFAULT_CACHE_VERSION;
   }
 };
@@ -94,13 +122,23 @@ export const setResourceCacheVersion = async (
   resource: string,
   version: string
 ): Promise<boolean> => {
+  // Return false if Redis is not available
+  if (!isRedisAvailable()) {
+    logger.debug(
+      `Redis not available, skipping set cache version for resource ${resource}`
+    );
+    return false;
+  }
+
   try {
     const key = `${CACHE_RESOURCE_VERSION_PREFIX}${resource}`;
     await redisClient.set(key, version);
     logger.info(`Cache version for resource ${resource} updated to ${version}`);
     return true;
   } catch (error) {
-    logger.error(`Failed to set cache version for resource ${resource}: ${error}`);
+    logger.error(
+      `Failed to set cache version for resource ${resource}: ${error}`
+    );
     return false;
   }
 };
@@ -110,20 +148,34 @@ export const setResourceCacheVersion = async (
  * @param resource Resource name
  * @returns Promise with the new cache version
  */
-export const incrementResourceCacheVersion = async (resource: string): Promise<string> => {
+export const incrementResourceCacheVersion = async (
+  resource: string
+): Promise<string> => {
+  // Return default version if Redis is not available
+  if (!isRedisAvailable()) {
+    logger.debug(
+      `Redis not available, skipping increment cache version for resource ${resource}`
+    );
+    return DEFAULT_CACHE_VERSION;
+  }
+
   try {
     const currentVersion = await getResourceCacheVersion(resource);
     const [major, minor, patch] = currentVersion.split('.').map(Number);
-    
+
     // Increment patch version
     const newVersion = `${major}.${minor}.${patch + 1}`;
-    
+
     await setResourceCacheVersion(resource, newVersion);
-    logger.info(`Cache version for resource ${resource} incremented to ${newVersion}`);
-    
+    logger.info(
+      `Cache version for resource ${resource} incremented to ${newVersion}`
+    );
+
     return newVersion;
   } catch (error) {
-    logger.error(`Failed to increment cache version for resource ${resource}: ${error}`);
+    logger.error(
+      `Failed to increment cache version for resource ${resource}: ${error}`
+    );
     return DEFAULT_CACHE_VERSION;
   }
 };
@@ -138,9 +190,14 @@ export const getVersionedCacheKey = async (
   key: string,
   resource?: string
 ): Promise<string> => {
+  // Return default versioned key if Redis is not available
+  if (!isRedisAvailable()) {
+    return `${key}:v${DEFAULT_CACHE_VERSION}`;
+  }
+
   try {
     let version: string;
-    
+
     if (resource) {
       // Get resource-specific version
       version = await getResourceCacheVersion(resource);
@@ -148,7 +205,7 @@ export const getVersionedCacheKey = async (
       // Get global version
       version = await getCacheVersion();
     }
-    
+
     return `${key}:v${version}`;
   } catch (error) {
     logger.error(`Failed to generate versioned cache key: ${error}`);
