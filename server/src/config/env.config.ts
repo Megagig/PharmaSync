@@ -38,6 +38,13 @@ const env = {
   REDIS_URL: process.env.REDIS_URL || 'redis://localhost:6379',
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || '',
   REDIS_TTL: parseInt(process.env.REDIS_TTL || '3600', 10), // Default TTL for cache items (1 hour)
+
+  // Redis Cluster
+  REDIS_CLUSTER_ENABLED: process.env.REDIS_CLUSTER_ENABLED === 'true',
+  REDIS_CLUSTER_URL: process.env.REDIS_CLUSTER_URL || 'redis://localhost:6379',
+  REDIS_CLUSTER_NODES: process.env.REDIS_CLUSTER_NODES
+    ? process.env.REDIS_CLUSTER_NODES.split(',')
+    : [],
 };
 
 export default env;

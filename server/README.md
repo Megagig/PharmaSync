@@ -105,6 +105,32 @@ The application includes a cache warming utility that pre-populates the cache wi
 - It warms up critical endpoints like medication lists, inventory alerts, and dashboard statistics
 - This reduces the initial load time for users and improves overall performance
 
+### Cache Versioning
+
+The application includes a cache versioning system to handle schema changes:
+
+- Global cache version for application-wide changes
+- Resource-specific cache versions for targeted invalidation
+- Versioned cache keys to avoid stale data after schema changes
+
+### Cache Analytics
+
+The application includes a cache analytics system to track cache performance:
+
+- Hit rate tracking (global and per-resource)
+- Response time tracking
+- Resource-specific analytics
+- Analytics API for monitoring and optimization
+
+### Redis Cluster Support
+
+The application supports Redis Cluster for high availability and scalability:
+
+- Configurable cluster mode
+- Automatic failover
+- Distributed caching across multiple nodes
+- Suitable for production environments with high traffic
+
 ## API Documentation
 
 API documentation is available at `/api-docs` when the server is running.

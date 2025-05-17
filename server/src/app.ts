@@ -11,7 +11,7 @@ import {
 } from './middleware/logger.middleware';
 import env from './config/env.config';
 import { scheduleFollowUpNotificationsJob } from './jobs/followUpNotifications.job';
-import { logger } from './utils/logger';
+import logger from './utils/logger';
 
 const app: Express = express();
 
