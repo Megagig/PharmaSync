@@ -7,6 +7,9 @@ import {
   updateLocation,
   deleteLocation,
   setLocationAsDefault,
+  transferInventory,
+  getInventoryByLocation,
+  getSalesByLocation,
 } from '../controllers/location.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
@@ -53,6 +56,27 @@ router.patch(
   '/:id/set-default',
   restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
   setLocationAsDefault
+);
+
+// Transfer inventory between locations
+router.post(
+  '/transfer-inventory',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.INVENTORY_MANAGER]),
+  transferInventory
+);
+
+// Get inventory by location
+router.get(
+  '/:id/inventory',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.INVENTORY_MANAGER, RoleType.CASHIER]),
+  getInventoryByLocation
+);
+
+// Get sales by location
+router.get(
+  '/:id/sales',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST, RoleType.INVENTORY_MANAGER]),
+  getSalesByLocation
 );
 
 export default router;

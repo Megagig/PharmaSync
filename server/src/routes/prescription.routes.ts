@@ -9,6 +9,9 @@ import {
   removePrescriptionItem,
   dispenseMedication,
   cancelPrescription,
+  processPrescriptionRefill,
+  getPrescriptionsDueForRefill,
+  sendRefillReminders,
 } from '../controllers/prescription.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { validate } from '../middleware/validation.middleware';
@@ -88,6 +91,36 @@ router.post(
   ]),
   validate(dispenseMedicationSchema),
   dispenseMedication
+);
+
+// Process prescription refill
+router.post(
+  '/:id/refill',
+  restrictTo([
+    RoleType.ADMIN,
+    RoleType.PHARMACIST,
+    RoleType.PHARMACY_TECHNICIAN,
+    RoleType.CASHIER,
+  ]),
+  processPrescriptionRefill
+);
+
+// Get prescriptions due for refill
+router.get(
+  '/due-for-refill',
+  restrictTo([
+    RoleType.ADMIN,
+    RoleType.PHARMACIST,
+    RoleType.PHARMACY_TECHNICIAN,
+  ]),
+  getPrescriptionsDueForRefill
+);
+
+// Send refill reminders
+router.post(
+  '/send-refill-reminders',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  sendRefillReminders
 );
 
 export default router;

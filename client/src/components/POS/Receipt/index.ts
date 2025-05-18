@@ -1,3 +1,4 @@
 import ReceiptViewer from './ReceiptViewer';
+import MobileReceiptViewer from './MobileReceiptViewer';
 
-export { ReceiptViewer };
+export { ReceiptViewer, MobileReceiptViewer };
