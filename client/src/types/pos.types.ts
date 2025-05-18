@@ -3,7 +3,7 @@ import { Product } from './product.types';
 export enum PosTransactionType {
   SALE = 'sale',
   RETURN = 'return',
-  TRANSFER = 'transfer',
+  EXCHANGE = 'exchange',
   VOID = 'void'
 }
 
@@ -41,6 +41,7 @@ export interface PosCartItem {
   expiryDate?: string;
   batchNumber?: string;
   unit?: string;
+  barcodeScanned?: boolean;
 }
 
 export interface PosTransaction {
@@ -64,8 +65,19 @@ export interface PosTransaction {
     method: string;
     amount: number;
     reference?: string;
+    transactionId?: string;
+    provider?: string;
   }[];
   change?: number;
+  prescription?: string;
+  doctor?: string;
+  barcodeScanned?: boolean;
+  emailReceipt?: boolean;
+  emailSent?: boolean;
+  refillReminder?: boolean;
+  refillReminderDate?: Date;
+  loyaltyPointsEarned?: number;
+  loyaltyPointsRedeemed?: number;
 }
 
 export interface PosSession {
@@ -76,9 +88,103 @@ export interface PosSession {
   endDate?: Date;
   cashier: string;
   location: string;
+  register: string;
   openingBalance?: number;
   closingBalance?: number;
+  expectedClosingBalance?: number;
+  actualClosingBalance?: number;
+  cashVariance?: number;
   totalSales?: number;
   totalReturns?: number;
   totalPayments?: number;
+}
+
+export interface PosSessionFormData {
+  openingBalance: number;
+  location: string;
+  register: string;
+  notes?: string;
+}
+
+export interface PosSessionCloseData {
+  actualClosingBalance: number;
+  notes?: string;
+}
+
+export interface PosTransactionFormData {
+  customer: string;
+  transactionType: PosTransactionType;
+  posSession: string;
+  register: string;
+  items: {
+    product: string;
+    quantity: number;
+    unitPrice: number;
+    discount?: number;
+    batchNumber?: string;
+    expiryDate?: string;
+    barcodeScanned?: boolean;
+  }[];
+  discount?: number;
+  tax?: number;
+  paymentMethods: {
+    method: string;
+    amount: number;
+    reference?: string;
+    transactionId?: string;
+    provider?: string;
+  }[];
+  notes?: string;
+  location: string;
+  returnReason?: string;
+  originalSale?: string;
+  prescription?: string;
+  doctor?: string;
+  barcodeScanned?: boolean;
+  emailReceipt?: boolean;
+  refillReminder?: boolean;
+  refillReminderDate?: string;
+}
+
+export interface PosReceiptData {
+  transactionNumber: string;
+  date: Date;
+  customer: {
+    name: string;
+    id: string;
+    email?: string;
+    phone?: string;
+  };
+  cashier: string;
+  location: string;
+  address?: string;
+  items: {
+    product: string;
+    sku: string;
+    quantity: number;
+    unitPrice: number;
+    discount?: number;
+    subtotal: number;
+    batchNumber?: string;
+    expiryDate?: string;
+  }[];
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  paymentMethods: {
+    method: string;
+    amount: number;
+    reference?: string;
+  }[];
+  changeDue: number;
+  transactionType: PosTransactionType;
+  notes?: string;
+  prescription?: {
+    number: string;
+    date: Date;
+  };
+  doctor?: {
+    name: string;
+  };
 }

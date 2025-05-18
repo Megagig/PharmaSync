@@ -10,11 +10,15 @@ import { PosTransactionType } from '@/types/pos.types';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import Input from '@/components/common/Input/Input';
+import Select from '@/components/common/Select/Select';
+import Checkbox from '@/components/common/Checkbox/Checkbox';
+import Modal from '@/components/common/Modal/Modal';
 import { useToast } from '@/hooks/useToast';
 import api from '@/services/api';
-import { formatCurrency } from '@/utils/formatters';
+import { formatCurrency, formatDate } from '@/utils/formatters';
 import ProductSearch from '@/components/common/ProductSearch/ProductSearch';
 import CustomerSearch from '@/components/common/CustomerSearch/CustomerSearch';
+import BarcodeScanner from '@/components/common/BarcodeScanner';
 import PosCart from './components/NewPosCart';
 import PosPayment from './components/PosPayment';
 import PosProductGrid from './components/PosProductGrid';
@@ -54,11 +58,22 @@ const NewPosTerminal = () => {
     email: '',
   });
 
+  // Prescription and doctor state
+  const [prescription, setPrescription] = useState<any>(null);
+  const [doctor, setDoctor] = useState<any>(null);
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+
+  // Email and refill reminder state
+  const [emailReceipt, setEmailReceipt] = useState(false);
+  const [refillReminder, setRefillReminder] = useState(false);
+  const [refillReminderDate, setRefillReminderDate] = useState<Date | null>(null);
+
   // Cart state
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
   const [notes, setNotes] = useState('');
+  const [barcodeScanned, setBarcodeScanned] = useState(false);
 
   // Payment state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -71,6 +86,8 @@ const NewPosTerminal = () => {
   const [productDiscount, setProductDiscount] = useState(0);
   const [availableStock, setAvailableStock] = useState(0);
   const [earliestBatch, setEarliestBatch] = useState<any>(null);
+  const [selectedBatch, setSelectedBatch] = useState<any>(null);
+  const [availableBatches, setAvailableBatches] = useState<any[]>([]);
 
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
@@ -199,6 +216,78 @@ const NewPosTerminal = () => {
     [showToast]
   );
 
+  // Handle barcode scanning
+  const handleBarcodeDetected = useCallback(
+    async (barcode: string) => {
+      try {
+        // Search for product by barcode
+        const response = await api.get(`/products?barcode=${barcode}`);
+
+        if (response.data.data && response.data.data.length > 0) {
+          const product = response.data.data[0];
+          setSelectedProduct(product);
+          setUnitPrice(product.defaultPrice);
+          setBarcodeScanned(true);
+
+          // Get product inventory
+          if (product.inventory && product.inventory.length > 0) {
+            // Sort inventory by expiry date
+            const sortedInventory = [...product.inventory].sort(
+              (a, b) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()
+            );
+
+            setAvailableBatches(sortedInventory);
+            setEarliestBatch(sortedInventory[0]);
+            setSelectedBatch(sortedInventory[0]);
+            setAvailableStock(sortedInventory[0].quantity);
+          }
+
+          showToast(`Product found: ${product.name}`, 'success');
+        } else {
+          showToast(`No product found with barcode: ${barcode}`, 'error');
+        }
+      } catch (error) {
+        console.error('Error searching for product by barcode:', error);
+        showToast('Failed to search for product by barcode', 'error');
+      }
+    },
+    [showToast]
+  );
+
+  // Handle prescription selection
+  const handlePrescriptionSelect = useCallback(
+    async (prescriptionId: string) => {
+      try {
+        const response = await api.get(`/prescriptions/${prescriptionId}`);
+        if (response.data.data) {
+          setPrescription(response.data.data);
+
+          // If prescription has a doctor, set it
+          if (response.data.data.doctor) {
+            setDoctor(response.data.data.doctor);
+          }
+
+          // If prescription has a patient, set as customer
+          if (response.data.data.patient) {
+            const patientResponse = await api.get(`/patients/${response.data.data.patient}`);
+            if (patientResponse.data.data && patientResponse.data.data.customer) {
+              const customerResponse = await api.get(`/customers/${patientResponse.data.data.customer}`);
+              if (customerResponse.data.data) {
+                handleCustomerSelect(customerResponse.data.data);
+              }
+            }
+          }
+
+          showToast(`Prescription #${response.data.data.prescriptionNumber} selected`, 'success');
+        }
+      } catch (error) {
+        console.error('Error fetching prescription:', error);
+        showToast('Failed to fetch prescription details', 'error');
+      }
+    },
+    [showToast, handleCustomerSelect]
+  );
+
   // Add product to cart
   const handleAddToCart = useCallback(() => {
     try {
@@ -208,10 +297,12 @@ const NewPosTerminal = () => {
         return;
       }
 
-      if (!earliestBatch) {
+      if (!earliestBatch && !selectedBatch) {
         showToast('No inventory available for this product', 'error');
         return;
       }
+
+      const batchToUse = selectedBatch || earliestBatch;
 
       if (quantity <= 0) {
         showToast('Please enter a valid quantity', 'error');
@@ -233,14 +324,16 @@ const NewPosTerminal = () => {
           _id: selectedProduct._id,
           name: selectedProduct.name || 'Unknown Product',
           sku: selectedProduct.sku || 'No SKU',
+          barcode: selectedProduct.barcode || '',
           defaultPrice: selectedProduct.defaultPrice || unitPrice,
         },
         quantity,
         unitPrice,
         discount: productDiscount,
         subtotal: itemSubtotal,
-        batchNumber: earliestBatch.batchNumber,
-        expiryDate: earliestBatch.expiryDate,
+        batchNumber: batchToUse.batchNumber,
+        expiryDate: batchToUse.expiryDate,
+        barcodeScanned: barcodeScanned,
       };
 
       console.log('Adding item to cart:', newItem);
@@ -257,6 +350,9 @@ const NewPosTerminal = () => {
       setQuantity(1);
       setAvailableStock(0);
       setEarliestBatch(null);
+      setSelectedBatch(null);
+      setAvailableBatches([]);
+      setBarcodeScanned(false);
     } catch (error) {
       console.error('Error adding item to cart:', error);
       showToast('Failed to add item to cart', 'error');
@@ -264,10 +360,12 @@ const NewPosTerminal = () => {
   }, [
     selectedProduct,
     earliestBatch,
+    selectedBatch,
     quantity,
     availableStock,
     unitPrice,
     productDiscount,
+    barcodeScanned,
     showToast,
   ]);
 
@@ -370,12 +468,19 @@ const NewPosTerminal = () => {
           discount: item.discount,
           batchNumber: item.batchNumber,
           expiryDate: item.expiryDate,
+          barcodeScanned: item.barcodeScanned || false,
         })),
         discount,
         tax,
         paymentMethods: paymentData,
         notes,
         location: activeSession.location._id || activeSession.location,
+        prescription: prescription?._id,
+        doctor: doctor?._id,
+        barcodeScanned: cartItems.some(item => item.barcodeScanned),
+        emailReceipt,
+        refillReminder,
+        refillReminderDate: refillReminderDate ? refillReminderDate.toISOString() : undefined,
       };
 
       try {
@@ -400,6 +505,12 @@ const NewPosTerminal = () => {
           setDiscount(0);
           setTax(0);
           setNotes('');
+          setPrescription(null);
+          setDoctor(null);
+          setEmailReceipt(false);
+          setRefillReminder(false);
+          setRefillReminderDate(null);
+          setBarcodeScanned(false);
           setPaymentMethods([]);
           setShowPaymentModal(false);
         } else if (resultAction.error) {
@@ -420,6 +531,11 @@ const NewPosTerminal = () => {
       discount,
       tax,
       notes,
+      prescription,
+      doctor,
+      emailReceipt,
+      refillReminder,
+      refillReminderDate,
       dispatch,
       navigate,
       showToast,
@@ -477,6 +593,71 @@ const NewPosTerminal = () => {
             </div>
           </div>
 
+          <div className="mb-4">
+            <BarcodeScanner
+              onBarcodeDetected={handleBarcodeDetected}
+              placeholder="Scan barcode or enter manually"
+              buttonText="Scan Barcode"
+            />
+          </div>
+
+          <div className="mb-4 flex space-x-4">
+            <div className="w-1/2">
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => setShowPrescriptionModal(true)}
+              >
+                Link Prescription
+              </Button>
+            </div>
+            <div className="w-1/2 flex space-x-2">
+              <Checkbox
+                id="emailReceipt"
+                checked={emailReceipt}
+                onChange={(e) => setEmailReceipt(e.target.checked)}
+                label="Email Receipt"
+              />
+              <Checkbox
+                id="refillReminder"
+                checked={refillReminder}
+                onChange={(e) => setRefillReminder(e.target.checked)}
+                label="Refill Reminder"
+              />
+            </div>
+          </div>
+
+          {refillReminder && (
+            <div className="mb-4">
+              <Input
+                type="date"
+                label="Refill Reminder Date"
+                value={refillReminderDate ? refillReminderDate.toISOString().split('T')[0] : ''}
+                onChange={(e) => setRefillReminderDate(e.target.value ? new Date(e.target.value) : null)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+          )}
+
+          {prescription && (
+            <div className="mb-4 p-3 bg-blue-50 rounded-md">
+              <h3 className="font-medium">Linked Prescription</h3>
+              <p>Prescription #: {prescription.prescriptionNumber}</p>
+              <p>Date: {new Date(prescription.issueDate).toLocaleDateString()}</p>
+              {doctor && <p>Doctor: Dr. {doctor.firstName} {doctor.lastName}</p>}
+              <Button
+                variant="text"
+                className="text-red-500 mt-2"
+                onClick={() => {
+                  setPrescription(null);
+                  setDoctor(null);
+                }}
+              >
+                Remove Link
+              </Button>
+            </div>
+          )}
+
           {selectedProduct && (
             <Card className="mb-4">
               <div className="p-4 grid grid-cols-4 gap-4">
@@ -524,6 +705,30 @@ const NewPosTerminal = () => {
                     step="0.01"
                   />
                 </div>
+                {availableBatches.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Select Batch
+                    </label>
+                    <Select
+                      value={selectedBatch?.batchNumber || ''}
+                      onChange={(e) => {
+                        const batch = availableBatches.find(b => b.batchNumber === e.target.value);
+                        if (batch) {
+                          setSelectedBatch(batch);
+                          setAvailableStock(batch.quantity);
+                        }
+                      }}
+                    >
+                      <option value="">Select a batch</option>
+                      {availableBatches.map((batch) => (
+                        <option key={batch.batchNumber} value={batch.batchNumber}>
+                          {batch.batchNumber} - Exp: {new Date(batch.expiryDate).toLocaleDateString()} - Qty: {batch.quantity}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                )}
                 <div className="flex items-end">
                   <Button
                     variant="primary"
@@ -620,6 +825,50 @@ const NewPosTerminal = () => {
         total={total}
         onComplete={handlePaymentComplete}
       />
+
+      {/* Prescription Modal */}
+      <Modal
+        isOpen={showPrescriptionModal}
+        onClose={() => setShowPrescriptionModal(false)}
+        title="Link Prescription"
+      >
+        <div className="p-4">
+          <div className="mb-4">
+            <Input
+              type="text"
+              label="Prescription Number"
+              placeholder="Enter prescription number"
+              onChange={(e) => {
+                if (e.target.value.trim()) {
+                  // Search for prescription by number
+                  api.get(`/prescriptions?prescriptionNumber=${e.target.value.trim()}`)
+                    .then(response => {
+                      if (response.data.data && response.data.data.length > 0) {
+                        handlePrescriptionSelect(response.data.data[0]._id);
+                        setShowPrescriptionModal(false);
+                      } else {
+                        showToast('No prescription found with that number', 'error');
+                      }
+                    })
+                    .catch(error => {
+                      console.error('Error searching for prescription:', error);
+                      showToast('Error searching for prescription', 'error');
+                    });
+                }
+              }}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowPrescriptionModal(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

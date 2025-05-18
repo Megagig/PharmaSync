@@ -5,6 +5,7 @@ export enum PosTransactionType {
   SALE = 'sale',
   RETURN = 'return',
   EXCHANGE = 'exchange',
+  VOID = 'void',
 }
 
 export interface IPosPaymentMethod {
@@ -14,11 +15,14 @@ export interface IPosPaymentMethod {
     | 'transfer'
     | 'credit'
     | 'gift_card'
-    | 'store_credit';
+    | 'store_credit'
+    | 'mobile_money';
   amount: number;
   reference?: string;
   cardType?: string;
   cardLast4?: string;
+  transactionId?: string;
+  provider?: string; // For mobile money or transfer
   _id?: Types.ObjectId;
 }
 
@@ -38,6 +42,15 @@ export interface IPosTransaction extends ISale {
   giftCardNumber?: string;
   storeCreditIssued?: boolean;
   storeCreditAmount?: number;
+  prescription?: Types.ObjectId; // Link to prescription if applicable
+  doctor?: Types.ObjectId; // Link to doctor if applicable
+  barcodeScanned?: boolean; // Whether the product was added via barcode scan
+  loyaltyPointsEarned?: number; // Loyalty points earned from this transaction
+  loyaltyPointsRedeemed?: number; // Loyalty points redeemed in this transaction
+  emailReceipt?: boolean; // Whether to send receipt via email
+  emailSent?: boolean; // Whether receipt email was sent
+  refillReminder?: boolean; // Whether to send refill reminder
+  refillReminderDate?: Date; // When to send refill reminder
 }
 
 export interface IPosTransactionCreate {
@@ -63,11 +76,14 @@ export interface IPosTransactionCreate {
       | 'transfer'
       | 'credit'
       | 'gift_card'
-      | 'store_credit';
+      | 'store_credit'
+      | 'mobile_money';
     amount: number;
     reference?: string;
     cardType?: string;
     cardLast4?: string;
+    transactionId?: string;
+    provider?: string;
   }[];
   notes?: string;
   location: string;
@@ -78,4 +94,12 @@ export interface IPosTransactionCreate {
   giftCardNumber?: string;
   storeCreditIssued?: boolean;
   storeCreditAmount?: number;
+  prescription?: string; // ID of linked prescription
+  doctor?: string; // ID of doctor
+  barcodeScanned?: boolean;
+  loyaltyPointsEarned?: number;
+  loyaltyPointsRedeemed?: number;
+  emailReceipt?: boolean;
+  refillReminder?: boolean;
+  refillReminderDate?: Date;
 }

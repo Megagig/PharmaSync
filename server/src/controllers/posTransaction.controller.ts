@@ -5,12 +5,14 @@ import PosSession from '../models/posSession.model';
 import Customer from '../models/customer.model';
 import Product from '../models/product.model';
 import Location from '../models/location.model';
+import Prescription from '../models/prescription.model';
 import { PosTransactionType } from '../interfaces/posTransaction.interface';
 import { PaymentStatus } from '../interfaces/sale.interface';
 import { MovementType } from '../interfaces/inventoryMovement.interface';
 import { AppError } from '../utils/error';
 import { toObjectId } from '../utils/idConverter';
 import InventoryMovement from '../models/inventoryMovement.model';
+import * as posService from '../services/pos.service';
 
 /**
  * @desc    Get all POS transactions
@@ -116,7 +118,9 @@ export const getPosTransactionById = asyncHandler(
       .populate('cashier', 'firstName lastName')
       .populate('posSession', 'sessionNumber')
       .populate('items.product', 'name sku barcode')
-      .populate('originalSale', 'saleNumber saleDate total');
+      .populate('originalSale', 'saleNumber saleDate total')
+      .populate('prescription', 'prescriptionNumber issueDate')
+      .populate('doctor', 'firstName lastName');
 
     if (!transaction) {
       throw new AppError('POS transaction not found', 404);
@@ -140,117 +144,77 @@ export const createPosTransaction = asyncHandler(
       customer,
       transactionType,
       location,
-      cashier,
+      register,
       posSession,
-      cartItems,
+      items,
       subtotal,
       discount,
       tax,
       total,
       notes,
-      payments,
+      paymentMethods,
+      returnReason,
+      originalSale,
+      prescription,
+      doctor,
+      barcodeScanned,
+      emailReceipt,
+      refillReminder,
+      refillReminderDate,
     } = req.body;
 
     // Validate required fields
-    if (!customer || !transactionType || !location || !cashier || !posSession) {
+    if (!transactionType || !location || !posSession || !register) {
       throw new AppError('Missing required fields', 400);
     }
 
-    // Validate cart items
-    if (!Array.isArray(cartItems) || cartItems.length === 0) {
-      throw new AppError('Cart items are required', 400);
+    // Validate items
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new AppError('Items are required', 400);
     }
 
-    // Validate payments
-    if (!Array.isArray(payments) || payments.length === 0) {
+    // Validate payment methods
+    if (!Array.isArray(paymentMethods) || paymentMethods.length === 0) {
       throw new AppError('At least one payment method is required', 400);
     }
 
-    // Calculate total from cart items
-    const calculatedTotal = cartItems.reduce(
-      (sum, item) => sum + (item.quantity * item.unitPrice - item.discount),
-      0
-    );
+    try {
+      // Use the service to create the transaction
+      const transaction = await posService.createPosTransaction({
+        customer,
+        transactionType,
+        location,
+        register,
+        posSession,
+        items,
+        discount,
+        tax,
+        paymentMethods,
+        notes,
+        returnReason,
+        originalSale,
+        prescription,
+        doctor,
+        barcodeScanned,
+        emailReceipt,
+        refillReminder,
+        refillReminderDate,
+        userId: req.user._id,
+      });
 
-    if (calculatedTotal !== total) {
-      throw new AppError('Total amount does not match cart items', 400);
-    }
+      // Update inventory for transaction
+      await updateInventoryForTransaction(transaction);
 
-    // Validate session
-    const session = await PosSession.findById(posSession);
-    if (!session) {
-      throw new AppError('POS session not found', 404);
-    }
-
-    if (session.status !== 'open') {
-      throw new AppError('POS session is not open', 400);
-    }
-
-    // Generate sale number
-    const lastTransaction = await PosTransaction.findOne()
-      .sort({ createdAt: -1 })
-      .select('saleNumber');
-
-    const saleNumber = lastTransaction
-      ? `POS-${parseInt(lastTransaction.saleNumber.split('-')[1]) + 1}`
-      : 'POS-1';
-
-    // Create transaction
-    const transaction = await PosTransaction.create({
-      customer,
-      transactionType,
-      location,
-      cashier,
-      posSession,
-      cartItems,
-      subtotal,
-      discount,
-      tax,
-      total,
-      notes,
-      saleNumber,
-      saleDate: new Date(),
-      status: 'completed',
-      paymentStatus: 'pending',
-      payments,
-    });
-
-    // Update payment status
-    const totalPaid = payments.reduce(
-      (sum, payment) => sum + payment.amount,
-      0
-    );
-    let paymentStatus: PaymentStatus;
-
-    if (totalPaid < total) {
-      paymentStatus = PaymentStatus.PARTIAL;
-    } else if (totalPaid === total) {
-      paymentStatus = PaymentStatus.PAID;
-    } else {
-      paymentStatus = PaymentStatus.OVERPAID;
-    }
-
-    transaction.paymentStatus = paymentStatus;
-    transaction.changeDue = Math.max(0, totalPaid - total);
-
-    // Update inventory for each cart item
-    await updateInventoryForTransaction(transaction);
-
-    // Update session totals
-    await PosSession.updateOne(
-      { _id: posSession },
-      {
-        $inc: {
-          totalSales: total,
-          totalPayments: totalPaid,
-        },
+      res.status(201).json({
+        status: 'success',
+        data: transaction,
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
       }
-    );
-
-    res.status(201).json({
-      status: 'success',
-      data: transaction,
-    });
+      throw new AppError(error.message || 'Error creating transaction', 500);
+    }
   }
 );
 
@@ -265,7 +229,9 @@ export const generatePosReceipt = asyncHandler(
       .populate('customer', 'firstName lastName customerNumber email phone')
       .populate('location', 'name address')
       .populate('cashier', 'firstName lastName')
-      .populate('items.product', 'name sku');
+      .populate('items.product', 'name sku')
+      .populate('prescription', 'prescriptionNumber issueDate')
+      .populate('doctor', 'firstName lastName');
 
     if (!transaction) {
       throw new AppError('POS transaction not found', 404);
@@ -302,6 +268,8 @@ export const generatePosReceipt = asyncHandler(
           unitPrice: item.unitPrice,
           discount: item.discount,
           subtotal: item.subtotal,
+          batchNumber: item.batchNumber,
+          expiryDate: item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : null,
         };
       }),
       subtotal: transaction.subtotal,
@@ -312,6 +280,18 @@ export const generatePosReceipt = asyncHandler(
       changeDue: transaction.changeDue,
       transactionType: transaction.transactionType,
       notes: transaction.notes,
+      prescription: transaction.prescription ? {
+        number: transaction.prescription.prescriptionNumber,
+        date: transaction.prescription.issueDate,
+      } : null,
+      doctor: transaction.doctor ? {
+        name: `${transaction.doctor.firstName} ${transaction.doctor.lastName}`,
+      } : null,
+      barcodeScanned: transaction.barcodeScanned,
+      emailReceipt: transaction.emailReceipt,
+      emailSent: transaction.emailSent,
+      refillReminder: transaction.refillReminder,
+      refillReminderDate: transaction.refillReminderDate,
     };
 
     res.status(200).json({

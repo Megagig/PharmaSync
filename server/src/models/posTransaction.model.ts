@@ -7,7 +7,7 @@ const posPaymentMethodSchema = new Schema(
   {
     method: {
       type: String,
-      enum: ['cash', 'card', 'transfer', 'credit', 'gift_card', 'store_credit'],
+      enum: ['cash', 'card', 'transfer', 'credit', 'gift_card', 'store_credit', 'mobile_money'],
       required: true,
     },
     amount: {
@@ -24,6 +24,14 @@ const posPaymentMethodSchema = new Schema(
       trim: true,
     },
     cardLast4: {
+      type: String,
+      trim: true,
+    },
+    transactionId: {
+      type: String,
+      trim: true,
+    },
+    provider: {
       type: String,
       trim: true,
     },
@@ -123,7 +131,7 @@ const posTransactionSchema = new Schema<IPosTransaction>(
     },
     paymentMethod: {
       type: String,
-      enum: ['cash', 'card', 'transfer', 'credit', 'multiple'],
+      enum: ['cash', 'card', 'transfer', 'credit', 'gift_card', 'store_credit', 'mobile_money', 'multiple'],
       default: 'multiple',
     },
     notes: {
@@ -199,6 +207,43 @@ const posTransactionSchema = new Schema<IPosTransaction>(
       type: Number,
       min: 0,
     },
+    prescription: {
+      type: Schema.Types.ObjectId,
+      ref: 'Prescription',
+    },
+    doctor: {
+      type: Schema.Types.ObjectId,
+      ref: 'Customer', // Assuming doctors are stored as customers with type HEALTHCARE_PROFESSIONAL
+    },
+    barcodeScanned: {
+      type: Boolean,
+      default: false,
+    },
+    loyaltyPointsEarned: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    loyaltyPointsRedeemed: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    emailReceipt: {
+      type: Boolean,
+      default: false,
+    },
+    emailSent: {
+      type: Boolean,
+      default: false,
+    },
+    refillReminder: {
+      type: Boolean,
+      default: false,
+    },
+    refillReminderDate: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -214,6 +259,11 @@ posTransactionSchema.index({ location: 1 });
 posTransactionSchema.index({ posSession: 1 });
 posTransactionSchema.index({ transactionType: 1 });
 posTransactionSchema.index({ cashier: 1 });
+posTransactionSchema.index({ prescription: 1 });
+posTransactionSchema.index({ doctor: 1 });
+posTransactionSchema.index({ 'items.product': 1 });
+posTransactionSchema.index({ emailSent: 1 });
+posTransactionSchema.index({ refillReminder: 1, refillReminderDate: 1 });
 
 // Generate sale number before saving
 posTransactionSchema.pre('save', function (next) {
@@ -221,8 +271,9 @@ posTransactionSchema.pre('save', function (next) {
     // Format: POS-YYYYMMDD-XXXXX (where XXXXX is a random alphanumeric string)
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    const prefix = this.transactionType === PosTransactionType.SALE ? 'POS' : 
-                  this.transactionType === PosTransactionType.RETURN ? 'RET' : 'EXC';
+    const prefix = this.transactionType === PosTransactionType.SALE ? 'POS' :
+                  this.transactionType === PosTransactionType.RETURN ? 'RET' :
+                  this.transactionType === PosTransactionType.EXCHANGE ? 'EXC' : 'VOID';
     this.saleNumber = `${prefix}-${dateStr}-${generateRandomString(5).toUpperCase()}`;
   }
 
