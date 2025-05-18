@@ -57,6 +57,7 @@ export const registerSchema = z.object({
         UserRole.PHARMACIST,
         UserRole.TECHNICIAN,
         UserRole.STAFF,
+        UserRole.PATIENT,
       ]),
       phoneNumber: z.string().optional(),
       licenseNumber: z.string().optional(),

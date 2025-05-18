@@ -15,9 +15,24 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    if (token) {
+
+    // Skip adding token for refresh token requests to avoid sending expired tokens
+    const isRefreshRequest = config.url === '/auth/refresh-token';
+
+    if (token && !isRefreshRequest) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log(
+        `Request to ${config.url}: Token added to Authorization header`
+      );
+    } else if (!token && !isRefreshRequest) {
+      console.warn(
+        `Request to ${config.url}: No token available in localStorage`
+      );
     }
+
+    // Always include credentials for cookie-based auth
+    config.withCredentials = true;
+
     return config;
   },
   (error) => {
@@ -38,6 +53,16 @@ axiosInstance.interceptors.response.use(
       throw new Error('Network error. Please check your internet connection.');
     }
 
+    // Log detailed information about the failed request for debugging
+    console.log('Request failed:', {
+      url: originalRequest.url,
+      method: originalRequest.method,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      headers: originalRequest.headers,
+      hasToken: !!originalRequest.headers.Authorization,
+    });
+
     // If the error is 401 (Unauthorized) and we haven't tried to refresh the token yet
     if (
       error.response.status === 401 &&
@@ -45,6 +70,7 @@ axiosInstance.interceptors.response.use(
       originalRequest.url !== '/auth/refresh-token' && // Prevent infinite loop
       originalRequest.url !== '/auth/login' // Don't retry login requests
     ) {
+      console.log('Attempting to refresh token...');
       originalRequest._retry = true;
 
       try {
@@ -57,10 +83,19 @@ axiosInstance.interceptors.response.use(
         const { accessToken } = await authService.refreshToken();
 
         if (accessToken) {
+          console.log('Token refreshed successfully');
+
+          // Update token in localStorage
+          localStorage.setItem('token', accessToken);
+
           // Update the original request with the new token
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+
+          // Retry the original request with the new token
           return axiosInstance(originalRequest);
         } else {
+          console.error('No access token received from refresh');
+
           // If no token received, clear auth state and redirect to login
           localStorage.removeItem('token');
           localStorage.removeItem('refreshToken');
@@ -71,14 +106,14 @@ axiosInstance.interceptors.response.use(
           throw new Error('Authentication failed. Please login again.');
         }
       } catch (refreshError: any) {
+        console.error('Error refreshing token:', refreshError);
+
         // Clear tokens on refresh failure
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
 
         // Dispatch an event that can be caught by the app to show a login prompt
         window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
-
-        console.error('Error refreshing token:', refreshError);
 
         // Provide a meaningful error message
         const errorMessage =

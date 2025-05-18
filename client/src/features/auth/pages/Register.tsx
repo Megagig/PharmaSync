@@ -65,10 +65,25 @@ const Register = () => {
     try {
       // Send the complete form data including confirmPassword
       await dispatch(registerUser(data));
+
+      // Set success state
       setRegistrationSuccess(true);
+
+      // Show success toast
       toast.success(
-        'Registration successful! Your account is pending approval.'
+        'Registration successful! Your account is pending approval by an administrator. You will receive an email notification once your account is approved.'
       );
+
+      // Navigate to login page after a short delay to allow the user to see the success message
+      setTimeout(() => {
+        navigate('/login', {
+          state: {
+            registrationSuccess: true,
+            message:
+              'Registration successful! Your account is pending approval by an administrator. You will receive an email notification once your account is approved.',
+          },
+        });
+      }, 3000);
     } catch (error) {
       console.error('Registration failed:', error);
       toast.error('Registration failed. Please try again.');

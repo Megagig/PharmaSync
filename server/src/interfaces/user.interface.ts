@@ -120,7 +120,20 @@ export interface IUserSettings {
 export enum ApprovalStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
-  REJECTED = 'rejected'
+  REJECTED = 'rejected',
+}
+
+export interface IPendingEmail {
+  type:
+    | 'registration_confirmation'
+    | 'account_approval'
+    | 'account_rejection'
+    | 'password_reset'
+    | 'welcome';
+  createdAt: Date;
+  attempts: number;
+  lastAttempt: Date;
+  data?: Record<string, any>; // Additional data needed for the email
 }
 
 export interface IUser extends Document {
@@ -174,6 +187,8 @@ export interface IUser extends Document {
   // Token management
   tokenVersion?: number; // Incremented when refresh tokens need to be invalidated
   refreshToken?: string; // Store the current refresh token hash
+  // Email tracking
+  pendingEmails?: IPendingEmail[]; // Track emails that failed to send
   refreshTokenExpires?: Date; // When the refresh token expires
   // Security and audit
   lastPasswordChange?: Date; // When the password was last changed

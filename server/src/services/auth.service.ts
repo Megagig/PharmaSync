@@ -98,12 +98,40 @@ export const register = async (
 
   // Send registration confirmation email
   try {
-    await emailService.sendRegistrationConfirmationEmail(
+    const emailSent = await emailService.sendRegistrationConfirmationEmail(
       user.email,
       `${user.firstName} ${user.lastName}`
     );
+
+    if (!emailSent) {
+      console.warn(
+        `Registration confirmation email could not be sent to ${user.email}. Will be sent later.`
+      );
+
+      // Mark user for email retry
+      user.pendingEmails = user.pendingEmails || [];
+      user.pendingEmails.push({
+        type: 'registration_confirmation',
+        createdAt: new Date(),
+        attempts: 1,
+        lastAttempt: new Date(),
+      });
+
+      await user.save();
+    }
   } catch (error) {
     console.error('Failed to send registration confirmation email:', error);
+
+    // Mark user for email retry
+    user.pendingEmails = user.pendingEmails || [];
+    user.pendingEmails.push({
+      type: 'registration_confirmation',
+      createdAt: new Date(),
+      attempts: 1,
+      lastAttempt: new Date(),
+    });
+
+    await user.save();
     // Don't throw error, continue with registration process
   }
 

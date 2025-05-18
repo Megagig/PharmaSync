@@ -19,6 +19,9 @@ const Login = () => {
   const location = useLocation();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] =
+    useState<boolean>(false);
+  const [registrationMessage, setRegistrationMessage] = useState<string>('');
 
   const {
     register,
@@ -27,6 +30,20 @@ const Login = () => {
   } = useForm<LoginFormData>();
 
   const from = location.state?.from?.pathname || '/dashboard';
+
+  // Check for registration success message from location state
+  useEffect(() => {
+    if (location.state?.registrationSuccess) {
+      setRegistrationSuccess(true);
+      setRegistrationMessage(
+        location.state.message ||
+          'Registration successful! Your account is pending approval.'
+      );
+
+      // Clear the location state after reading it
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Parse error message to display specific messages for different error types
   const parseErrorMessage = (errorMsg: string) => {
@@ -43,11 +60,19 @@ const Login = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await dispatch(login({
-        email: data.email,
-        password: data.password,
-        rememberMe: data.rememberMe
-      }));
+      // Dispatch login action
+      const result = await dispatch(
+        login({
+          email: data.email,
+          password: data.password,
+          rememberMe: data.rememberMe,
+        })
+      );
+
+      // Show success message
+      toast.success('Login successful! Redirecting to dashboard...');
+
+      // Immediately navigate to dashboard
       navigate(from, { replace: true });
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -74,6 +99,30 @@ const Login = () => {
           </p>
         </div>
 
+        {registrationSuccess && (
+          <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-green-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-green-700">{registrationMessage}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="bg-red-50 border-l-4 border-red-500 p-4">
             <div className="flex">
@@ -92,7 +141,9 @@ const Login = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm text-red-700">{parseErrorMessage(error)}</p>
+                <p className="text-sm text-red-700">
+                  {parseErrorMessage(error)}
+                </p>
               </div>
             </div>
           </div>
@@ -121,7 +172,9 @@ const Login = () => {
                 })}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
               )}
             </div>
             <div>
@@ -182,7 +235,9 @@ const Login = () => {
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
               )}
             </div>
           </div>
@@ -195,7 +250,10 @@ const Login = () => {
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
                 {...register('rememberMe')}
               />
-              <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">
+              <label
+                htmlFor="rememberMe"
+                className="ml-2 block text-sm text-gray-900"
+              >
                 Remember me
               </label>
             </div>

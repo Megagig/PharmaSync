@@ -44,12 +44,14 @@ const env = cleanEnv(process.env, {
   BREVO_API_KEY: str({ default: '' }),
   EMAIL_FROM: str(),
   EMAIL_FROM_NAME: str({ default: 'PharmaSync' }),
+  MOCK_EMAILS: bool({ default: false }),
 
-  // Legacy Email Configuration (kept for backward compatibility)
-  SMTP_HOST: str({ default: 'smtp.example.com' }),
+  // Email Fallback Configuration
+  SMTP_HOST: str({ default: 'smtp.gmail.com' }),
   SMTP_PORT: num({ default: 587 }),
   SMTP_USER: str({ default: '' }),
   SMTP_PASS: str({ default: '' }),
+  SMTP_SECURE: bool({ default: false }),
 
   // Storage Configuration
   STORAGE_TYPE: str({ choices: ['local', 's3'], default: 'local' }),

@@ -73,6 +73,38 @@ const securityEventSchema = new Schema(
   { _id: false }
 );
 
+const pendingEmailSchema = new Schema(
+  {
+    type: {
+      type: String,
+      enum: [
+        'registration_confirmation',
+        'account_approval',
+        'account_rejection',
+        'password_reset',
+        'welcome',
+      ],
+      required: true,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    attempts: {
+      type: Number,
+      default: 1,
+    },
+    lastAttempt: {
+      type: Date,
+      default: Date.now,
+    },
+    data: {
+      type: Schema.Types.Mixed,
+    },
+  },
+  { _id: false }
+);
+
 const userSchema = new Schema<IUser>(
   {
     email: {
@@ -258,6 +290,9 @@ const userSchema = new Schema<IUser>(
       type: String,
     },
     securityEvents: [securityEventSchema],
+
+    // Email tracking
+    pendingEmails: [pendingEmailSchema],
   },
   {
     timestamps: true,
