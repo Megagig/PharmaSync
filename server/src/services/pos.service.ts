@@ -10,6 +10,7 @@ import Prescription from '../models/prescription.model';
 import { SaleStatus, PaymentStatus } from '../interfaces/sale.interface';
 import { PosTransactionType } from '../interfaces/posTransaction.interface';
 import { sendEmail } from './email.service';
+import * as loyaltyService from './loyalty.service';
 import logger from '../utils/logger';
 import { toObjectId } from '../utils/idConverter';
 
@@ -440,6 +441,7 @@ export const createPosTransaction = async ({
   emailReceipt = false,
   refillReminder = false,
   refillReminderDate,
+  loyaltyPointsRedeemed = 0,
   userId,
 }) => {
   const session = await mongoose.startSession();
@@ -544,7 +546,23 @@ export const createPosTransaction = async ({
       0
     );
 
-    const total = subtotal - discount + tax;
+    // Get active loyalty program for points valuation
+    let loyaltyDiscount = 0;
+    if (loyaltyPointsRedeemed > 0 && customer) {
+      try {
+        const redemptionResult = await loyaltyService.redeemLoyaltyPoints(
+          customer,
+          loyaltyPointsRedeemed,
+          userId
+        );
+        loyaltyDiscount = redemptionResult.value;
+      } catch (error) {
+        logger.error('Error redeeming loyalty points:', error);
+        // Continue without loyalty discount if there's an error
+      }
+    }
+
+    const total = subtotal - discount - loyaltyDiscount + tax;
 
     // Validate payment methods
     const totalPaid = paymentMethods.reduce((sum, method) => sum + method.amount, 0);
@@ -579,6 +597,7 @@ export const createPosTransaction = async ({
           subtotal,
           discount,
           tax,
+          loyaltyDiscount,
           total,
           paymentMethods,
           paymentStatus,
@@ -596,6 +615,7 @@ export const createPosTransaction = async ({
           emailReceipt,
           refillReminder,
           refillReminderDate,
+          loyaltyPointsRedeemed,
         },
       ],
       { session }
@@ -671,6 +691,24 @@ export const createPosTransaction = async ({
     if (customerDoc) {
       if (transactionType === PosTransactionType.SALE) {
         customerDoc.totalPurchases = (customerDoc.totalPurchases || 0) + total;
+
+        // Award loyalty points for purchase
+        try {
+          const pointsResult = await loyaltyService.calculatePurchasePoints(
+            customerDoc._id.toString(),
+            total,
+            userId,
+            transaction[0]._id.toString()
+          );
+
+          if (pointsResult.awarded) {
+            transaction[0].loyaltyPointsEarned = pointsResult.points;
+            await transaction[0].save({ session });
+          }
+        } catch (error) {
+          logger.error('Error calculating loyalty points:', error);
+          // Continue without awarding points if there's an error
+        }
       } else if (transactionType === PosTransactionType.RETURN) {
         customerDoc.totalPurchases = Math.max(0, (customerDoc.totalPurchases || 0) - total);
       }

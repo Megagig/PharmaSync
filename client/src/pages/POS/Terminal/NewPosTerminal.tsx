@@ -19,6 +19,7 @@ import { formatCurrency, formatDate } from '@/utils/formatters';
 import ProductSearch from '@/components/common/ProductSearch/ProductSearch';
 import CustomerSearch from '@/components/common/CustomerSearch/CustomerSearch';
 import BarcodeScanner from '@/components/common/BarcodeScanner';
+import LoyaltyPointsPanel from '@/components/POS/LoyaltyPoints';
 import PosCart from './components/NewPosCart';
 import PosPayment from './components/PosPayment';
 import PosProductGrid from './components/PosProductGrid';
@@ -68,6 +69,10 @@ const NewPosTerminal = () => {
   const [refillReminder, setRefillReminder] = useState(false);
   const [refillReminderDate, setRefillReminderDate] = useState<Date | null>(null);
 
+  // Loyalty state
+  const [loyaltyPointsRedeemed, setLoyaltyPointsRedeemed] = useState(0);
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
+
   // Cart state
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [discount, setDiscount] = useState(0);
@@ -91,7 +96,7 @@ const NewPosTerminal = () => {
 
   // Calculate totals
   const subtotal = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
-  const total = subtotal - discount + tax;
+  const total = subtotal - discount - loyaltyDiscount + tax;
 
   // Fetch locations on component mount
   useEffect(() => {
@@ -197,6 +202,10 @@ const NewPosTerminal = () => {
       if (!customer || !customer._id) return;
 
       console.log('Customer selected:', customer);
+      // Reset loyalty when customer changes
+      setLoyaltyPointsRedeemed(0);
+      setLoyaltyDiscount(0);
+
       // Create a deep copy to ensure state update is recognized
       const customerCopy = {
         _id: customer._id,
@@ -438,6 +447,13 @@ const NewPosTerminal = () => {
     handleCompleteTransaction(paymentData);
   }, []);
 
+  // Handle loyalty points redemption
+  const handleRedeemPoints = useCallback((points: number, value: number) => {
+    setLoyaltyPointsRedeemed(points);
+    setLoyaltyDiscount(value);
+    showToast(`Redeemed ${points} points for ${formatCurrency(value)}`, 'success');
+  }, [showToast]);
+
   // Complete transaction
   const handleCompleteTransaction = useCallback(
     async (paymentData: any[]) => {
@@ -481,6 +497,7 @@ const NewPosTerminal = () => {
         emailReceipt,
         refillReminder,
         refillReminderDate: refillReminderDate ? refillReminderDate.toISOString() : undefined,
+        loyaltyPointsRedeemed,
       };
 
       try {
@@ -511,6 +528,8 @@ const NewPosTerminal = () => {
           setRefillReminder(false);
           setRefillReminderDate(null);
           setBarcodeScanned(false);
+          setLoyaltyPointsRedeemed(0);
+          setLoyaltyDiscount(0);
           setPaymentMethods([]);
           setShowPaymentModal(false);
         } else if (resultAction.error) {
@@ -536,6 +555,8 @@ const NewPosTerminal = () => {
       emailReceipt,
       refillReminder,
       refillReminderDate,
+      loyaltyPointsRedeemed,
+      loyaltyDiscount,
       dispatch,
       navigate,
       showToast,
@@ -756,6 +777,14 @@ const NewPosTerminal = () => {
             onUpdateItem={handleUpdateCartItem}
           />
 
+          {selectedCustomer._id !== 'walk-in-customer' && (
+            <LoyaltyPointsPanel
+              customerId={selectedCustomer._id}
+              onRedeemPoints={handleRedeemPoints}
+              disabled={cartItems.length === 0}
+            />
+          )}
+
           <div className="mt-4 space-y-2">
             <div className="flex justify-between">
               <span>Subtotal:</span>
@@ -775,6 +804,12 @@ const NewPosTerminal = () => {
                 <span className="ml-2">{formatCurrency(discount)}</span>
               </div>
             </div>
+            {loyaltyDiscount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>Loyalty Discount:</span>
+                <span>{formatCurrency(loyaltyDiscount)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <span>Tax:</span>
               <div className="flex items-center">

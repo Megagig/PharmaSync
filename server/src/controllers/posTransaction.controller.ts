@@ -161,6 +161,7 @@ export const createPosTransaction = asyncHandler(
       emailReceipt,
       refillReminder,
       refillReminderDate,
+      loyaltyPointsRedeemed,
     } = req.body;
 
     // Validate required fields
@@ -199,6 +200,7 @@ export const createPosTransaction = asyncHandler(
         emailReceipt,
         refillReminder,
         refillReminderDate,
+        loyaltyPointsRedeemed,
         userId: req.user._id,
       });
 

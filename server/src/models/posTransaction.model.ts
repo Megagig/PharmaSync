@@ -244,6 +244,21 @@ const posTransactionSchema = new Schema<IPosTransaction>(
     refillReminderDate: {
       type: Date,
     },
+    loyaltyPointsEarned: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    loyaltyPointsRedeemed: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    loyaltyDiscount: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
   },
   {
     timestamps: true,
