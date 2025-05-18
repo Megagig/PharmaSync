@@ -41,6 +41,8 @@ import accountingRoutes from './accounting.routes';
 import cacheRoutes from './cache.routes';
 import loyaltyRoutes from './loyalty.routes';
 import receiptRoutes from './receipt.routes';
+import insuranceRoutes from './insurance.routes';
+import advancedAnalyticsRoutes from './advancedAnalytics.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -96,5 +98,7 @@ router.use('/accounting', accountingRoutes);
 router.use('/cache', cacheRoutes);
 router.use('/loyalty', loyaltyRoutes);
 router.use('/receipts', receiptRoutes);
+router.use('/insurance', insuranceRoutes);
+router.use('/analytics/advanced', advancedAnalyticsRoutes);
 
 export default router;
