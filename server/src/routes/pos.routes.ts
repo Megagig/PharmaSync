@@ -14,6 +14,8 @@ import { Permission } from '../interfaces/user.interface';
 import * as posSessionController from '../controllers/posSession.controller';
 import * as posTransactionController from '../controllers/posTransaction.controller';
 import posReturnRoutes from './posReturn.routes';
+import posReportRoutes from './posReport.routes';
+import posAnalyticsRoutes from './posAnalytics.routes';
 
 const router = express.Router();
 
@@ -22,6 +24,12 @@ router.use(protect);
 
 // Mount POS return routes
 router.use('/returns', posReturnRoutes);
+
+// Mount POS report routes
+router.use('/reports', posReportRoutes);
+
+// Mount POS analytics routes
+router.use('/analytics', posAnalyticsRoutes);
 
 // POS Session routes
 router.get(
