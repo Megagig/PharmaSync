@@ -31,6 +31,21 @@ const PosTransactionDetail = () => {
     }
   };
 
+  const handleViewReceipt = () => {
+    if (id) {
+      navigate(`/pos/receipts/${id}`);
+    }
+  };
+
+  const handleProcessReturn = () => {
+    if (currentTransaction &&
+        currentTransaction.transactionType === PosTransactionType.SALE) {
+      navigate('/pos/returns/process', {
+        state: { transactionId: id }
+      });
+    }
+  };
+
   const itemColumns = [
     {
       header: 'Product',
@@ -144,9 +159,17 @@ const PosTransactionDetail = () => {
           >
             Back to Transactions
           </Button>
-          <Button variant="primary" onClick={handleGenerateReceipt}>
+          <Button variant="secondary" onClick={handleViewReceipt}>
             View Receipt
           </Button>
+          <Button variant="primary" onClick={handleGenerateReceipt}>
+            Generate Receipt
+          </Button>
+          {currentTransaction.transactionType === PosTransactionType.SALE && (
+            <Button variant="danger" onClick={handleProcessReturn}>
+              Process Return
+            </Button>
+          )}
         </div>
       </div>
 

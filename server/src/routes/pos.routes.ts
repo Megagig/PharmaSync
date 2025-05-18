@@ -13,11 +13,15 @@ import { RoleType } from '../interfaces/role.interface';
 import { Permission } from '../interfaces/user.interface';
 import * as posSessionController from '../controllers/posSession.controller';
 import * as posTransactionController from '../controllers/posTransaction.controller';
+import posReturnRoutes from './posReturn.routes';
 
 const router = express.Router();
 
 // Protect all routes
 router.use(protect);
+
+// Mount POS return routes
+router.use('/returns', posReturnRoutes);
 
 // POS Session routes
 router.get(

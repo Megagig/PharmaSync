@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Medication Refill Reminder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 5px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .logo {
+      max-width: 150px;
+      margin-bottom: 10px;
+    }
+    .greeting {
+      margin-bottom: 20px;
+    }
+    .medications {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .medications th, .medications td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    .medications th {
+      background-color: #f2f2f2;
+    }
+    .cta {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      text-decoration: none;
+      border-radius: 5px;
+      display: inline-block;
+      margin-top: 10px;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Medication Refill Reminder</h1>
+      <p>{{store.name}}</p>
+    </div>
+
+    <div class="greeting">
+      <p>Dear {{customer.firstName}} {{customer.lastName}},</p>
+      <p>This is a friendly reminder that it's time to refill your medication(s). According to our records, you're due for a refill today.</p>
+    </div>
+
+    <div class="medications-section">
+      <h3>Your Medications</h3>
+      <table class="medications">
+        <thead>
+          <tr>
+            <th>Medication</th>
+            <th>Last Filled</th>
+            <th>Quantity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each transaction.items}}
+            <tr>
+              <td>{{this.product.name}}</td>
+              <td>{{formatDateShort ../transaction.saleDate}}</td>
+              <td>{{this.quantity}}</td>
+            </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="action">
+      <p>You can refill your prescription by:</p>
+      <ul>
+        <li>Calling us at {{store.phone}}</li>
+        <li>Visiting our pharmacy in person</li>
+        <li>Replying to this email</li>
+        <li>Using our mobile app or website</li>
+      </ul>
+      <a href="{{store.website}}" class="cta">Refill Online Now</a>
+    </div>
+
+    <div class="additional-info">
+      <p>Your original prescription number: {{transaction.saleNumber}}</p>
+      {{#if transaction.prescription}}
+        <p>Prescription #: {{transaction.prescription.prescriptionNumber}}</p>
+      {{/if}}
+      <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
+    </div>
+
+    <div class="footer">
+      <p>{{store.name}}</p>
+      <p>Phone: {{store.phone}} | Email: {{store.email}}</p>
+      <p>Website: {{store.website}}</p>
+      <p>This reminder was sent on {{formatDate date}}</p>
+      <p>If you wish to unsubscribe from these reminders, please contact us.</p>
+    </div>
+  </div>
+</body>
+</html>

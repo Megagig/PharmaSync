@@ -6,6 +6,8 @@ export enum PosTransactionType {
   RETURN = 'return',
   EXCHANGE = 'exchange',
   VOID = 'void',
+  REFUND = 'refund',
+  PARTIAL_RETURN = 'partial_return',
 }
 
 export interface IPosPaymentMethod {
@@ -26,6 +28,16 @@ export interface IPosPaymentMethod {
   _id?: Types.ObjectId;
 }
 
+export enum ReturnReason {
+  DAMAGED = 'damaged',
+  EXPIRED = 'expired',
+  WRONG_ITEM = 'wrong_item',
+  CUSTOMER_DISSATISFIED = 'customer_dissatisfied',
+  ADVERSE_REACTION = 'adverse_reaction',
+  PRESCRIPTION_CHANGE = 'prescription_change',
+  OTHER = 'other',
+}
+
 export interface IPosTransaction extends ISale {
   transactionType: PosTransactionType;
   posSession: Types.ObjectId;
@@ -35,8 +47,10 @@ export interface IPosTransaction extends ISale {
   changeDue: number;
   discount: number;
   tax: number;
-  returnReason?: string;
+  returnReason?: ReturnReason;
+  returnReasonDetails?: string; // Additional details for return reason
   originalSale?: Types.ObjectId; // For returns/exchanges, reference to the original sale
+  returnedItems?: Types.ObjectId[]; // For partial returns, references to returned items
   giftCardIssued?: boolean;
   giftCardAmount?: number;
   giftCardNumber?: string;
@@ -47,10 +61,14 @@ export interface IPosTransaction extends ISale {
   barcodeScanned?: boolean; // Whether the product was added via barcode scan
   loyaltyPointsEarned?: number; // Loyalty points earned from this transaction
   loyaltyPointsRedeemed?: number; // Loyalty points redeemed in this transaction
+  loyaltyPointsReturned?: number; // Loyalty points returned in this transaction
   emailReceipt?: boolean; // Whether to send receipt via email
   emailSent?: boolean; // Whether receipt email was sent
   refillReminder?: boolean; // Whether to send refill reminder
   refillReminderDate?: Date; // When to send refill reminder
+  returnPolicy?: string; // Return policy applied to this transaction
+  returnPeriod?: number; // Number of days items can be returned
+  returnDeadline?: Date; // Last date items can be returned
 }
 
 export interface IPosTransactionCreate {
@@ -66,6 +84,7 @@ export interface IPosTransactionCreate {
     batchNumber: string;
     expiryDate?: Date;
     notes?: string;
+    originalItemId?: string; // For returns, reference to original item
   }[];
   discount?: number;
   tax?: number;
@@ -87,8 +106,10 @@ export interface IPosTransactionCreate {
   }[];
   notes?: string;
   location: string;
-  returnReason?: string;
+  returnReason?: ReturnReason;
+  returnReasonDetails?: string;
   originalSale?: string;
+  returnedItems?: string[];
   giftCardIssued?: boolean;
   giftCardAmount?: number;
   giftCardNumber?: string;
@@ -99,7 +120,11 @@ export interface IPosTransactionCreate {
   barcodeScanned?: boolean;
   loyaltyPointsEarned?: number;
   loyaltyPointsRedeemed?: number;
+  loyaltyPointsReturned?: number;
   emailReceipt?: boolean;
   refillReminder?: boolean;
   refillReminderDate?: Date;
+  returnPolicy?: string;
+  returnPeriod?: number;
+  returnDeadline?: Date;
 }

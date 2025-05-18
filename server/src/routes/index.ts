@@ -40,6 +40,7 @@ import budgetRoutes from './budget.routes';
 import accountingRoutes from './accounting.routes';
 import cacheRoutes from './cache.routes';
 import loyaltyRoutes from './loyalty.routes';
+import receiptRoutes from './receipt.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -94,5 +95,6 @@ router.use('/budgets', budgetRoutes);
 router.use('/accounting', accountingRoutes);
 router.use('/cache', cacheRoutes);
 router.use('/loyalty', loyaltyRoutes);
+router.use('/receipts', receiptRoutes);
 
 export default router;

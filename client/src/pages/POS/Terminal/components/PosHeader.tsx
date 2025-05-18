@@ -21,7 +21,7 @@ const PosHeader = ({ activeSession, onExitTerminal }: PosHeaderProps) => {
         <h1 className="text-xl font-bold">PharmaSync POS</h1>
         <div className="text-sm">
           <span className="opacity-80">Session:</span>{' '}
-          <button 
+          <button
             className="font-medium underline"
             onClick={() => setShowSessionInfo(true)}
           >
@@ -41,7 +41,7 @@ const PosHeader = ({ activeSession, onExitTerminal }: PosHeaderProps) => {
           </span>
         </div>
       </div>
-      
+
       <div className="flex items-center space-x-4">
         <Button
           variant="outline"
@@ -50,6 +50,14 @@ const PosHeader = ({ activeSession, onExitTerminal }: PosHeaderProps) => {
           className="text-white border-white hover:bg-white hover:text-primary"
         >
           Transactions
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate('/pos/returns/process')}
+          className="text-white border-white hover:bg-white hover:text-primary"
+        >
+          Process Return
         </Button>
         <Button
           variant="outline"
@@ -67,7 +75,7 @@ const PosHeader = ({ activeSession, onExitTerminal }: PosHeaderProps) => {
           Exit Terminal
         </Button>
       </div>
-      
+
       {/* Session Info Modal */}
       <Modal
         isOpen={showSessionInfo}
@@ -79,7 +87,7 @@ const PosHeader = ({ activeSession, onExitTerminal }: PosHeaderProps) => {
             <span className="block text-gray-600 mb-1">Session Number:</span>
             <span className="font-medium">{activeSession.sessionNumber}</span>
           </div>
-          
+
           <div>
             <span className="block text-gray-600 mb-1">Location:</span>
             <span className="font-medium">
@@ -88,12 +96,12 @@ const PosHeader = ({ activeSession, onExitTerminal }: PosHeaderProps) => {
                 : 'Unknown'}
             </span>
           </div>
-          
+
           <div>
             <span className="block text-gray-600 mb-1">Register:</span>
             <span className="font-medium">{activeSession.register}</span>
           </div>
-          
+
           <div>
             <span className="block text-gray-600 mb-1">Opened By:</span>
             <span className="font-medium">
@@ -102,28 +110,28 @@ const PosHeader = ({ activeSession, onExitTerminal }: PosHeaderProps) => {
                 : 'Unknown'}
             </span>
           </div>
-          
+
           <div>
             <span className="block text-gray-600 mb-1">Opening Time:</span>
             <span className="font-medium">
               {formatDateTime(activeSession.openingTime)}
             </span>
           </div>
-          
+
           <div>
             <span className="block text-gray-600 mb-1">Opening Balance:</span>
             <span className="font-medium">
               {formatCurrency(activeSession.openingBalance)}
             </span>
           </div>
-          
+
           <div>
             <span className="block text-gray-600 mb-1">Current Balance:</span>
             <span className="font-medium">
               {formatCurrency(activeSession.expectedClosingBalance)}
             </span>
           </div>
-          
+
           <div className="flex justify-end mt-4">
             <Button
               variant="primary"

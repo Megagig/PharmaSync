@@ -181,12 +181,29 @@ const posTransactionSchema = new Schema<IPosTransaction>(
     },
     returnReason: {
       type: String,
+      enum: [
+        'damaged',
+        'expired',
+        'wrong_item',
+        'customer_dissatisfied',
+        'adverse_reaction',
+        'prescription_change',
+        'other',
+      ],
+      trim: true,
+    },
+    returnReasonDetails: {
+      type: String,
       trim: true,
     },
     originalSale: {
       type: Schema.Types.ObjectId,
-      ref: 'Sale',
+      ref: 'PosTransaction',
     },
+    returnedItems: [{
+      type: Schema.Types.ObjectId,
+      ref: 'SaleItem',
+    }],
     giftCardIssued: {
       type: Boolean,
       default: false,
@@ -254,10 +271,26 @@ const posTransactionSchema = new Schema<IPosTransaction>(
       min: 0,
       default: 0,
     },
+    loyaltyPointsReturned: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
     loyaltyDiscount: {
       type: Number,
       min: 0,
       default: 0,
+    },
+    returnPolicy: {
+      type: String,
+      trim: true,
+    },
+    returnPeriod: {
+      type: Number,
+      min: 0,
+    },
+    returnDeadline: {
+      type: Date,
     },
   },
   {
@@ -286,9 +319,29 @@ posTransactionSchema.pre('save', function (next) {
     // Format: POS-YYYYMMDD-XXXXX (where XXXXX is a random alphanumeric string)
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
-    const prefix = this.transactionType === PosTransactionType.SALE ? 'POS' :
-                  this.transactionType === PosTransactionType.RETURN ? 'RET' :
-                  this.transactionType === PosTransactionType.EXCHANGE ? 'EXC' : 'VOID';
+    let prefix;
+    switch (this.transactionType) {
+      case PosTransactionType.SALE:
+        prefix = 'POS';
+        break;
+      case PosTransactionType.RETURN:
+        prefix = 'RET';
+        break;
+      case PosTransactionType.EXCHANGE:
+        prefix = 'EXC';
+        break;
+      case PosTransactionType.VOID:
+        prefix = 'VOID';
+        break;
+      case PosTransactionType.REFUND:
+        prefix = 'REF';
+        break;
+      case PosTransactionType.PARTIAL_RETURN:
+        prefix = 'PRET';
+        break;
+      default:
+        prefix = 'POS';
+    }
     this.saleNumber = `${prefix}-${dateStr}-${generateRandomString(5).toUpperCase()}`;
   }
 
