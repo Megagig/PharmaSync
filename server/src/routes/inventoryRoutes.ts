@@ -6,7 +6,7 @@ import {
   getInventoryByLocation,
   getInventoryMovements,
 } from '../controllers/inventoryController';
-import { authenticate } from '../middleware/auth';
+import { authenticate } from '../middleware/auth.middleware';
 
 const router = express.Router();
 

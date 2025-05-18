@@ -11,6 +11,7 @@ export enum PaymentStatus {
   UNPAID = 'unpaid',
   PARTIAL = 'partial',
   OVERPAID = 'overpaid',
+  REFUNDED = 'refunded',
 }
 
 export interface SaleItem {

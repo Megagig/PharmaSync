@@ -1,6 +1,6 @@
 import express from 'express';
 import * as posReportController from '../controllers/posReport.controller';
-import { protect, restrictTo } from '../middleware/auth';
+import { protect, restrictTo } from '../middleware/auth.middleware';
 import { RoleType } from '../interfaces/role.interface';
 
 const router = express.Router();

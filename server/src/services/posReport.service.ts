@@ -30,7 +30,7 @@ export const generateSalesReport = async ({
   try {
     // Build query
     const query: any = {};
-    
+
     if (startDate && endDate) {
       query.saleDate = {
         $gte: new Date(startDate),
@@ -41,32 +41,32 @@ export const generateSalesReport = async ({
     } else if (endDate) {
       query.saleDate = { $lte: new Date(endDate) };
     }
-    
+
     if (location) {
       query.location = new mongoose.Types.ObjectId(location);
     }
-    
+
     if (cashier) {
       query.cashier = new mongoose.Types.ObjectId(cashier);
     }
-    
+
     if (customer) {
       query.customer = new mongoose.Types.ObjectId(customer);
     }
-    
+
     if (transactionType) {
       query.transactionType = transactionType;
     }
-    
+
     if (paymentMethod) {
       query.paymentMethod = paymentMethod;
     }
-    
+
     // Build aggregation pipeline
     const pipeline: any[] = [
       { $match: query },
     ];
-    
+
     // Add grouping if specified
     if (groupBy) {
       const groupStage: any = {
@@ -77,7 +77,7 @@ export const generateSalesReport = async ({
         discount: { $sum: '$discount' },
         tax: { $sum: '$tax' },
       };
-      
+
       if (Array.isArray(groupBy)) {
         groupBy.forEach(field => {
           groupStage._id[field] = `$${field}`;
@@ -85,9 +85,9 @@ export const generateSalesReport = async ({
       } else {
         groupStage._id[groupBy] = `$${groupBy}`;
       }
-      
+
       pipeline.push({ $group: groupStage });
-      
+
       // Add lookup for grouped fields if needed
       if (groupBy.includes('location') || Array.isArray(groupBy) && groupBy.includes('location')) {
         pipeline.push({
@@ -104,7 +104,7 @@ export const generateSalesReport = async ({
           },
         });
       }
-      
+
       if (groupBy.includes('cashier') || Array.isArray(groupBy) && groupBy.includes('cashier')) {
         pipeline.push({
           $lookup: {
@@ -126,7 +126,7 @@ export const generateSalesReport = async ({
           },
         });
       }
-      
+
       if (groupBy.includes('customer') || Array.isArray(groupBy) && groupBy.includes('customer')) {
         pipeline.push({
           $lookup: {
@@ -148,28 +148,28 @@ export const generateSalesReport = async ({
           },
         });
       }
-      
+
       // Sort by total descending
       pipeline.push({ $sort: { total: -1 } });
     } else {
       // If no grouping, just sort by date
       pipeline.push({ $sort: { saleDate: -1 } });
     }
-    
+
     // Execute aggregation
     const results = await PosTransaction.aggregate(pipeline);
-    
+
     // Calculate summary
     const summary = {
       totalSales: results.reduce((sum, item) => sum + (groupBy ? item.total : item.total), 0),
       totalTransactions: results.length,
-      averageSale: results.length > 0 
-        ? results.reduce((sum, item) => sum + (groupBy ? item.total : item.total), 0) / results.length 
+      averageSale: results.length > 0
+        ? results.reduce((sum, item) => sum + (groupBy ? item.total : item.total), 0) / results.length
         : 0,
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
     };
-    
+
     // Format the report based on the requested format
     const reportData = {
       title: 'Sales Report',
@@ -180,7 +180,7 @@ export const generateSalesReport = async ({
       data: results,
       summary,
     };
-    
+
     return formatReport(reportData, format);
   } catch (error) {
     logger.error('Error generating sales report:', error);
@@ -203,29 +203,29 @@ export const generateInventoryReport = async ({
   try {
     // Build query
     const query: any = {};
-    
+
     if (location) {
       query['inventory.location'] = location;
     }
-    
+
     if (category) {
       query.category = category;
     }
-    
+
     if (lowStock) {
       query.totalStock = { $lt: lowStock };
     }
-    
+
     // Build aggregation pipeline
     const pipeline: any[] = [
       { $match: query },
     ];
-    
+
     // Add expiry date filter if needed
     if (expiringSoon) {
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + daysToExpiry);
-      
+
       pipeline.push({
         $addFields: {
           expiringInventory: {
@@ -242,14 +242,14 @@ export const generateInventoryReport = async ({
           },
         },
       });
-      
+
       pipeline.push({
         $match: {
           expiringInventory: { $ne: [] },
         },
       });
     }
-    
+
     // Add grouping if specified
     if (groupBy) {
       const groupStage: any = {
@@ -258,7 +258,7 @@ export const generateInventoryReport = async ({
         totalStock: { $sum: '$totalStock' },
         totalValue: { $sum: { $multiply: ['$totalStock', '$costPrice'] } },
       };
-      
+
       if (Array.isArray(groupBy)) {
         groupBy.forEach(field => {
           groupStage._id[field] = `$${field}`;
@@ -266,9 +266,9 @@ export const generateInventoryReport = async ({
       } else {
         groupStage._id[groupBy] = `$${groupBy}`;
       }
-      
+
       pipeline.push({ $group: groupStage });
-      
+
       // Add lookup for grouped fields if needed
       if (groupBy.includes('category') || Array.isArray(groupBy) && groupBy.includes('category')) {
         pipeline.push({
@@ -285,7 +285,7 @@ export const generateInventoryReport = async ({
           },
         });
       }
-      
+
       // Sort by total stock descending
       pipeline.push({ $sort: { totalStock: -1 } });
     } else {
@@ -305,13 +305,13 @@ export const generateInventoryReport = async ({
           totalValue: { $multiply: ['$totalStock', '$costPrice'] },
         },
       });
-      
+
       pipeline.push({ $sort: { totalStock: 1 } });
     }
-    
+
     // Execute aggregation
     const results = await Product.aggregate(pipeline);
-    
+
     // Calculate summary
     const summary = {
       totalProducts: results.length,
@@ -320,7 +320,7 @@ export const generateInventoryReport = async ({
       lowStockCount: results.filter(item => (groupBy ? item.totalStock : item.totalStock) < (lowStock || 10)).length,
       expiringCount: expiringSoon ? results.length : 0,
     };
-    
+
     // Format the report based on the requested format
     const reportData = {
       title: 'Inventory Report',
@@ -329,7 +329,7 @@ export const generateInventoryReport = async ({
       data: results,
       summary,
     };
-    
+
     return formatReport(reportData, format);
   } catch (error) {
     logger.error('Error generating inventory report:', error);
@@ -352,28 +352,28 @@ export const generateCustomerReport = async ({
   try {
     // Build query
     const query: any = {};
-    
+
     if (loyaltyTier) {
       query['loyalty.tier'] = loyaltyTier;
     }
-    
+
     if (minPurchases || maxPurchases) {
       query.totalPurchases = {};
-      
+
       if (minPurchases) {
         query.totalPurchases.$gte = minPurchases;
       }
-      
+
       if (maxPurchases) {
         query.totalPurchases.$lte = maxPurchases;
       }
     }
-    
+
     // Build aggregation pipeline
     const pipeline: any[] = [
       { $match: query },
     ];
-    
+
     // Add lookup for loyalty information
     pipeline.push({
       $lookup: {
@@ -383,17 +383,17 @@ export const generateCustomerReport = async ({
         as: 'loyalty',
       },
     });
-    
+
     pipeline.push({
       $addFields: {
         loyaltyInfo: { $arrayElemAt: ['$loyalty', 0] },
       },
     });
-    
+
     // Add lookup for transactions if date range is specified
     if (startDate || endDate) {
       const transactionMatch: any = {};
-      
+
       if (startDate && endDate) {
         transactionMatch.saleDate = {
           $gte: new Date(startDate),
@@ -404,7 +404,7 @@ export const generateCustomerReport = async ({
       } else if (endDate) {
         transactionMatch.saleDate = { $lte: new Date(endDate) };
       }
-      
+
       pipeline.push({
         $lookup: {
           from: 'postransactions',
@@ -420,7 +420,7 @@ export const generateCustomerReport = async ({
           as: 'transactions',
         },
       });
-      
+
       pipeline.push({
         $addFields: {
           transactionCount: { $size: '$transactions' },
@@ -428,7 +428,7 @@ export const generateCustomerReport = async ({
         },
       });
     }
-    
+
     // Add grouping if specified
     if (groupBy) {
       const groupStage: any = {
@@ -436,12 +436,12 @@ export const generateCustomerReport = async ({
         count: { $sum: 1 },
         totalPurchases: { $sum: '$totalPurchases' },
       };
-      
+
       if (startDate || endDate) {
         groupStage.periodTotal = { $sum: '$periodTotal' };
         groupStage.transactionCount = { $sum: '$transactionCount' };
       }
-      
+
       if (Array.isArray(groupBy)) {
         groupBy.forEach(field => {
           groupStage._id[field] = `$${field}`;
@@ -449,9 +449,9 @@ export const generateCustomerReport = async ({
       } else {
         groupStage._id[groupBy] = `$${groupBy}`;
       }
-      
+
       pipeline.push({ $group: groupStage });
-      
+
       // Sort by total purchases descending
       pipeline.push({ $sort: { totalPurchases: -1 } });
     } else {
@@ -471,37 +471,37 @@ export const generateCustomerReport = async ({
           periodTotal: 1,
         },
       });
-      
+
       pipeline.push({ $sort: { totalPurchases: -1 } });
     }
-    
+
     // Execute aggregation
     const results = await Customer.aggregate(pipeline);
-    
+
     // Calculate summary
     const summary = {
       totalCustomers: results.length,
       totalPurchases: results.reduce((sum, item) => sum + (item.totalPurchases || 0), 0),
-      averagePurchase: results.length > 0 
-        ? results.reduce((sum, item) => sum + (item.totalPurchases || 0), 0) / results.length 
+      averagePurchase: results.length > 0
+        ? results.reduce((sum, item) => sum + (item.totalPurchases || 0), 0) / results.length
         : 0,
       periodTotal: results.reduce((sum, item) => sum + (item.periodTotal || 0), 0),
       transactionCount: results.reduce((sum, item) => sum + (item.transactionCount || 0), 0),
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
     };
-    
+
     // Format the report based on the requested format
     const reportData = {
       title: 'Customer Report',
-      type: ReportType.CUSTOMER,
+      type: ReportType.PATIENT, // Using PATIENT instead of CUSTOMER which doesn't exist
       generatedAt: new Date(),
       startDate: startDate ? new Date(startDate) : null,
       endDate: endDate ? new Date(endDate) : null,
       data: results,
       summary,
     };
-    
+
     return formatReport(reportData, format);
   } catch (error) {
     logger.error('Error generating customer report:', error);
@@ -520,157 +520,157 @@ const formatReport = async (reportData, format) => {
           data: reportData,
           format: ReportFormat.JSON,
         };
-        
+
       case ReportFormat.CSV:
         const csvParser = new Parser();
         const csv = csvParser.parse(reportData.data);
-        
+
         const csvFilePath = path.join(
           __dirname,
           '../../../uploads/reports',
           `${reportData.type}_${Date.now()}.csv`
         );
-        
+
         // Ensure directory exists
         fs.mkdirSync(path.dirname(csvFilePath), { recursive: true });
-        
+
         // Write CSV file
         fs.writeFileSync(csvFilePath, csv);
-        
+
         return {
           data: reportData,
           format: ReportFormat.CSV,
           fileUrl: csvFilePath,
         };
-        
+
       case ReportFormat.EXCEL:
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Report');
-        
+
         // Add title
         worksheet.addRow([reportData.title]);
         worksheet.addRow([`Generated at: ${formatDate(reportData.generatedAt)}`]);
-        
+
         if (reportData.startDate && reportData.endDate) {
           worksheet.addRow([
             `Period: ${formatDate(reportData.startDate)} to ${formatDate(reportData.endDate)}`,
           ]);
         }
-        
+
         worksheet.addRow([]);
-        
+
         // Add headers
         if (reportData.data.length > 0) {
           const headers = Object.keys(reportData.data[0]);
           worksheet.addRow(headers);
-          
+
           // Add data
           reportData.data.forEach(item => {
             worksheet.addRow(Object.values(item));
           });
         }
-        
+
         // Add summary
         worksheet.addRow([]);
         worksheet.addRow(['Summary']);
-        
+
         Object.entries(reportData.summary).forEach(([key, value]) => {
           worksheet.addRow([key, value]);
         });
-        
+
         // Save workbook
         const excelFilePath = path.join(
           __dirname,
           '../../../uploads/reports',
           `${reportData.type}_${Date.now()}.xlsx`
         );
-        
+
         // Ensure directory exists
         fs.mkdirSync(path.dirname(excelFilePath), { recursive: true });
-        
+
         // Write Excel file
         await workbook.xlsx.writeFile(excelFilePath);
-        
+
         return {
           data: reportData,
           format: ReportFormat.EXCEL,
           fileUrl: excelFilePath,
         };
-        
+
       case ReportFormat.PDF:
         const pdfFilePath = path.join(
           __dirname,
           '../../../uploads/reports',
           `${reportData.type}_${Date.now()}.pdf`
         );
-        
+
         // Ensure directory exists
         fs.mkdirSync(path.dirname(pdfFilePath), { recursive: true });
-        
+
         // Create PDF document
         const doc = new PDFDocument();
         const stream = fs.createWriteStream(pdfFilePath);
-        
+
         doc.pipe(stream);
-        
+
         // Add title
         doc.fontSize(16).text(reportData.title, { align: 'center' });
         doc.moveDown();
-        
+
         // Add generation date
         doc.fontSize(10).text(`Generated at: ${formatDate(reportData.generatedAt)}`);
-        
+
         // Add date range if available
         if (reportData.startDate && reportData.endDate) {
           doc.text(
             `Period: ${formatDate(reportData.startDate)} to ${formatDate(reportData.endDate)}`
           );
         }
-        
+
         doc.moveDown();
-        
+
         // Add summary
         doc.fontSize(12).text('Summary', { underline: true });
         doc.moveDown(0.5);
-        
+
         Object.entries(reportData.summary).forEach(([key, value]) => {
           doc.fontSize(10).text(`${key}: ${value}`);
         });
-        
+
         doc.moveDown();
-        
+
         // Add data table
         if (reportData.data.length > 0) {
           doc.fontSize(12).text('Data', { underline: true });
           doc.moveDown(0.5);
-          
+
           // This is a simplified approach - a real implementation would need
           // more sophisticated table rendering
           reportData.data.forEach((item, index) => {
             doc.fontSize(10).text(`Item ${index + 1}:`);
-            
+
             Object.entries(item).forEach(([key, value]) => {
               doc.text(`  ${key}: ${value}`);
             });
-            
+
             doc.moveDown(0.5);
           });
         }
-        
+
         // Finalize PDF
         doc.end();
-        
+
         // Wait for the stream to finish
-        await new Promise((resolve) => {
-          stream.on('finish', resolve);
+        await new Promise<void>((resolve) => {
+          stream.on('finish', () => resolve());
         });
-        
+
         return {
           data: reportData,
           format: ReportFormat.PDF,
           fileUrl: pdfFilePath,
         };
-        
+
       default:
         throw new AppError(`Unsupported report format: ${format}`, 400);
     }

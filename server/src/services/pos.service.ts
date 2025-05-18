@@ -240,7 +240,8 @@ export const createSale = async ({
         // This is just a placeholder to show the integration
         const emailSent = await sendReceiptEmail(sale[0], customerDoc);
         if (emailSent) {
-          sale[0].emailSent = true;
+          // We don't have an emailSent field in the schema, so we'll skip this
+          // sale[0].emailSent = true;
           await sale[0].save({ session });
         }
       } catch (emailError) {

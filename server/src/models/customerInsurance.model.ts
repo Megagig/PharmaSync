@@ -150,21 +150,21 @@ CustomerInsuranceSchema.index({ isActive: 1 });
 CustomerInsuranceSchema.pre('save', async function (next) {
   if (this.isPrimary) {
     // Find other primary insurances for this customer
-    const otherPrimary = await this.constructor.findOne({
+    const otherPrimary = await (this.constructor as any).findOne({
       customer: this.customer,
       isPrimary: true,
       _id: { $ne: this._id },
     });
-    
+
     if (otherPrimary) {
       // Update the other primary insurance to not be primary
-      await this.constructor.updateOne(
+      await (this.constructor as any).updateOne(
         { _id: otherPrimary._id },
         { $set: { isPrimary: false } }
       );
     }
   }
-  
+
   next();
 });
 

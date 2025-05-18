@@ -172,31 +172,31 @@ InsuranceClaimSchema.pre('save', function (next) {
     let totalClaimAmount = 0;
     let totalApprovedAmount = 0;
     let totalPatientAmount = 0;
-    
-    this.items.forEach(item => {
+
+    (this.items as any[]).forEach(item => {
       totalClaimAmount += item.coveredAmount;
       totalPatientAmount += item.patientAmount;
     });
-    
+
     this.totalClaimAmount = totalClaimAmount;
     this.totalPatientAmount = totalPatientAmount;
-    
+
     if (this.claimStatus === ClaimStatus.APPROVED || this.claimStatus === ClaimStatus.PARTIALLY_APPROVED) {
-      totalApprovedAmount = this.approvedAmount || 0;
+      totalApprovedAmount = (this as any).approvedAmount || 0;
       this.totalApprovedAmount = totalApprovedAmount;
     }
   }
-  
+
   next();
 });
 
 // Generate claim number
 InsuranceClaimSchema.pre('save', async function (next) {
   if (this.isNew) {
-    const count = await this.constructor.countDocuments();
+    const count = await (this.constructor as any).countDocuments();
     this.claimNumber = `CLM-${(count + 1).toString().padStart(6, '0')}`;
   }
-  
+
   next();
 });
 

@@ -18,29 +18,29 @@ export const getDashboardAnalytics = asyncHandler(
     // Get date range
     const today = new Date();
     const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-    
+
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const startOfYesterday = new Date(yesterday.setHours(0, 0, 0, 0));
     const endOfYesterday = new Date(yesterday.setHours(23, 59, 59, 999));
-    
+
     const startOfThisWeek = new Date();
     startOfThisWeek.setDate(startOfThisWeek.getDate() - startOfThisWeek.getDay());
     startOfThisWeek.setHours(0, 0, 0, 0);
-    
+
     const startOfThisMonth = new Date();
     startOfThisMonth.setDate(1);
     startOfThisMonth.setHours(0, 0, 0, 0);
-    
+
     const startOfLastMonth = new Date();
     startOfLastMonth.setMonth(startOfLastMonth.getMonth() - 1);
     startOfLastMonth.setDate(1);
     startOfLastMonth.setHours(0, 0, 0, 0);
-    
+
     const endOfLastMonth = new Date();
     endOfLastMonth.setDate(0);
     endOfLastMonth.setHours(23, 59, 59, 999);
-    
+
     // Get today's sales
     const todaySales = await PosTransaction.aggregate([
       {
@@ -57,7 +57,7 @@ export const getDashboardAnalytics = asyncHandler(
         },
       },
     ]);
-    
+
     // Get yesterday's sales
     const yesterdaySales = await PosTransaction.aggregate([
       {
@@ -77,7 +77,7 @@ export const getDashboardAnalytics = asyncHandler(
         },
       },
     ]);
-    
+
     // Get this week's sales
     const thisWeekSales = await PosTransaction.aggregate([
       {
@@ -94,7 +94,7 @@ export const getDashboardAnalytics = asyncHandler(
         },
       },
     ]);
-    
+
     // Get this month's sales
     const thisMonthSales = await PosTransaction.aggregate([
       {
@@ -111,7 +111,7 @@ export const getDashboardAnalytics = asyncHandler(
         },
       },
     ]);
-    
+
     // Get last month's sales
     const lastMonthSales = await PosTransaction.aggregate([
       {
@@ -131,12 +131,12 @@ export const getDashboardAnalytics = asyncHandler(
         },
       },
     ]);
-    
+
     // Get sales by day for the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     thirtyDaysAgo.setHours(0, 0, 0, 0);
-    
+
     const salesByDay = await PosTransaction.aggregate([
       {
         $match: {
@@ -159,14 +159,14 @@ export const getDashboardAnalytics = asyncHandler(
         $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 },
       },
     ]);
-    
+
     // Format sales by day for chart
     const formattedSalesByDay = salesByDay.map(day => ({
       date: `${day._id.year}-${day._id.month.toString().padStart(2, '0')}-${day._id.day.toString().padStart(2, '0')}`,
       total: day.total,
       count: day.count,
     }));
-    
+
     // Get top selling products
     const topProducts = await PosTransaction.aggregate([
       {
@@ -199,18 +199,18 @@ export const getDashboardAnalytics = asyncHandler(
       { $sort: { totalSales: -1 } },
       { $limit: 5 },
     ]);
-    
+
     // Get low stock products
     const lowStockProducts = await Product.find({
       totalStock: { $lt: 10 },
     })
       .sort({ totalStock: 1 })
       .limit(5);
-    
+
     // Get expiring products
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 30);
-    
+
     const expiringProducts = await Product.aggregate([
       {
         $addFields: {
@@ -236,21 +236,21 @@ export const getDashboardAnalytics = asyncHandler(
       { $sort: { 'expiringInventory.expiryDate': 1 } },
       { $limit: 5 },
     ]);
-    
+
     // Get recent transactions
     const recentTransactions = await PosTransaction.find()
       .sort({ saleDate: -1 })
       .limit(5)
       .populate('customer', 'firstName lastName')
       .populate('cashier', 'firstName lastName');
-    
+
     // Get customer stats
     const totalCustomers = await Customer.countDocuments();
-    
+
     const newCustomersToday = await Customer.countDocuments({
       createdAt: { $gte: startOfToday },
     });
-    
+
     const activeCustomers = await PosTransaction.aggregate([
       {
         $match: {
@@ -268,7 +268,7 @@ export const getDashboardAnalytics = asyncHandler(
         $count: 'activeCustomers',
       },
     ]);
-    
+
     // Compile all analytics
     const analytics = {
       sales: {
@@ -291,7 +291,7 @@ export const getDashboardAnalytics = asyncHandler(
       },
       recentTransactions,
     };
-    
+
     res.status(200).json({
       status: 'success',
       data: analytics,
@@ -307,12 +307,12 @@ export const getDashboardAnalytics = asyncHandler(
 export const getSalesAnalytics = asyncHandler(
   async (req: Request, res: Response) => {
     const { startDate, endDate, period = 'daily', location } = req.query;
-    
+
     // Build date range
     const query: any = {
       transactionType: PosTransactionType.SALE,
     };
-    
+
     if (startDate && endDate) {
       query.saleDate = {
         $gte: new Date(startDate as string),
@@ -326,17 +326,17 @@ export const getSalesAnalytics = asyncHandler(
       // Default to last 30 days if no date range provided
       const defaultStartDate = new Date();
       defaultStartDate.setDate(defaultStartDate.getDate() - 30);
-      
+
       query.saleDate = { $gte: defaultStartDate };
     }
-    
+
     if (location) {
       query.location = new mongoose.Types.ObjectId(location as string);
     }
-    
+
     // Build date grouping based on period
     let dateFormat;
-    
+
     switch (period) {
       case 'hourly':
         dateFormat = {
@@ -377,7 +377,7 @@ export const getSalesAnalytics = asyncHandler(
           day: { $dayOfMonth: '$saleDate' },
         };
     }
-    
+
     // Build aggregation pipeline
     const pipeline: any[] = [
       { $match: query },
@@ -393,14 +393,14 @@ export const getSalesAnalytics = asyncHandler(
         $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1, '_id.hour': 1 },
       },
     ];
-    
+
     // Execute aggregation
     const salesByPeriod = await PosTransaction.aggregate(pipeline);
-    
+
     // Format results for chart display
     const formattedSales = salesByPeriod.map(item => {
       let label;
-      
+
       switch (period) {
         case 'hourly':
           label = `${item._id.year}-${item._id.month}-${item._id.day} ${item._id.hour}:00`;
@@ -420,7 +420,7 @@ export const getSalesAnalytics = asyncHandler(
         default:
           label = `${item._id.year}-${item._id.month}-${item._id.day}`;
       }
-      
+
       return {
         label,
         totalSales: item.totalSales,
@@ -428,7 +428,7 @@ export const getSalesAnalytics = asyncHandler(
         averageSale: item.averageSale,
       };
     });
-    
+
     // Get sales by payment method
     const paymentMethodPipeline = [
       { $match: query },
@@ -439,11 +439,11 @@ export const getSalesAnalytics = asyncHandler(
           count: { $sum: 1 },
         },
       },
-      { $sort: { totalSales: -1 } },
+      { $sort: { totalSales: -1 as const } },
     ];
-    
+
     const salesByPaymentMethod = await PosTransaction.aggregate(paymentMethodPipeline);
-    
+
     // Get sales by product category
     const categoryPipeline = [
       { $match: query },
@@ -482,16 +482,16 @@ export const getSalesAnalytics = asyncHandler(
           count: { $sum: 1 },
         },
       },
-      { $sort: { totalSales: -1 } },
+      { $sort: { totalSales: -1 as const } },
     ];
-    
+
     const salesByCategory = await PosTransaction.aggregate(categoryPipeline);
-    
+
     // Get total sales for the period
     const totalSales = formattedSales.reduce((sum, item) => sum + item.totalSales, 0);
     const totalCount = formattedSales.reduce((sum, item) => sum + item.count, 0);
     const averageSale = totalCount > 0 ? totalSales / totalCount : 0;
-    
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -519,18 +519,18 @@ export const getSalesAnalytics = asyncHandler(
 export const getInventoryAnalytics = asyncHandler(
   async (req: Request, res: Response) => {
     const { location, category } = req.query;
-    
+
     // Build query
     const query: any = {};
-    
+
     if (location) {
       query['inventory.location'] = location;
     }
-    
+
     if (category) {
       query.category = new mongoose.Types.ObjectId(category as string);
     }
-    
+
     // Get low stock products
     const lowStockPipeline = [
       {
@@ -539,16 +539,16 @@ export const getInventoryAnalytics = asyncHandler(
           totalStock: { $lt: 10 }, // Assuming 10 is the low stock threshold
         },
       },
-      { $sort: { totalStock: 1 } },
+      { $sort: { totalStock: 1 as const } },
       { $limit: 20 },
     ];
-    
+
     const lowStockProducts = await Product.aggregate(lowStockPipeline);
-    
+
     // Get expiring products
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 90); // 90 days expiry threshold
-    
+
     const expiringPipeline = [
       {
         $match: query,
@@ -574,12 +574,12 @@ export const getInventoryAnalytics = asyncHandler(
           expiringInventory: { $ne: [] },
         },
       },
-      { $sort: { 'expiringInventory.expiryDate': 1 } },
+      { $sort: { 'expiringInventory.expiryDate': 1 as const } },
       { $limit: 20 },
     ];
-    
+
     const expiringProducts = await Product.aggregate(expiringPipeline);
-    
+
     // Get inventory value by category
     const inventoryValuePipeline = [
       { $match: query },
@@ -604,11 +604,11 @@ export const getInventoryAnalytics = asyncHandler(
           categoryName: { $arrayElemAt: ['$categoryDetails.name', 0] },
         },
       },
-      { $sort: { totalValue: -1 } },
+      { $sort: { totalValue: -1 as const } },
     ];
-    
+
     const inventoryValueByCategory = await Product.aggregate(inventoryValuePipeline);
-    
+
     // Get total inventory value
     const totalInventoryPipeline = [
       { $match: query },
@@ -621,14 +621,14 @@ export const getInventoryAnalytics = asyncHandler(
         },
       },
     ];
-    
+
     const totalInventoryResult = await Product.aggregate(totalInventoryPipeline);
     const totalInventory = totalInventoryResult.length > 0 ? totalInventoryResult[0] : {
       totalProducts: 0,
       totalStock: 0,
       totalValue: 0,
     };
-    
+
     res.status(200).json({
       status: 'success',
       data: {

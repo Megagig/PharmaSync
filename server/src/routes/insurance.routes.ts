@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, restrictTo } from '../middleware/auth';
+import { protect, restrictTo } from '../middleware/auth.middleware';
 import { RoleType } from '../interfaces/role.interface';
 import * as insuranceController from '../controllers/insurance.controller';
 

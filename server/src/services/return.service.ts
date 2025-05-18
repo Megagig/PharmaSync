@@ -101,17 +101,17 @@ export const processFullReturn = async ({
     // Update inventory - add items back to stock
     for (const item of originalTransaction.items) {
       const product = await Product.findById(item.product._id).session(session);
-      
+
       if (!product) {
         throw new AppError(`Product not found: ${item.product._id}`, 404);
       }
-      
+
       // Update specific batch if provided
       if (item.batchNumber) {
         const batchIndex = product.inventory.findIndex(
           inv => inv.batchNumber === item.batchNumber
         );
-        
+
         if (batchIndex >= 0) {
           product.inventory[batchIndex].quantity += item.quantity;
         } else {
@@ -125,7 +125,7 @@ export const processFullReturn = async ({
           });
         }
       }
-      
+
       // Update total stock
       product.totalStock += item.quantity;
       await product.save({ session });
@@ -140,7 +140,7 @@ export const processFullReturn = async ({
     if (originalTransaction.loyaltyPointsEarned > 0) {
       // Get customer
       const customer = await Customer.findById(originalTransaction.customer).session(session);
-      
+
       if (customer) {
         try {
           // Reverse loyalty points earned from original transaction
@@ -150,7 +150,7 @@ export const processFullReturn = async ({
             userId,
             returnTransaction._id.toString()
           );
-          
+
           returnTransaction.loyaltyPointsReturned = originalTransaction.loyaltyPointsEarned;
         } catch (error) {
           logger.error('Error reversing loyalty points:', error);
@@ -172,7 +172,7 @@ export const processFullReturn = async ({
     // Send email notification if customer has email
     if (originalTransaction.customer) {
       const customer = await Customer.findById(originalTransaction.customer).session(session);
-      
+
       if (customer?.email) {
         try {
           await sendReturnConfirmationEmail(returnTransaction, customer, originalTransaction);
@@ -247,9 +247,9 @@ export const processPartialReturn = async ({
     let tax = 0;
 
     for (const originalItem of originalTransaction.items) {
-      const originalItemId = originalItem._id.toString();
+      const originalItemId = (originalItem as any)._id?.toString() || '';
       const returnQuantity = returnItemMap.get(originalItemId) || 0;
-      
+
       if (returnQuantity > 0) {
         if (returnQuantity > originalItem.quantity) {
           throw new AppError(
@@ -257,12 +257,12 @@ export const processPartialReturn = async ({
             400
           );
         }
-        
+
         // Calculate proportional values
         const proportion = returnQuantity / originalItem.quantity;
         const itemSubtotal = originalItem.subtotal * proportion;
         const itemDiscount = (originalItem.discount || 0) * proportion;
-        
+
         itemsToReturn.push({
           product: originalItem.product._id,
           quantity: returnQuantity,
@@ -271,9 +271,9 @@ export const processPartialReturn = async ({
           subtotal: itemSubtotal,
           batchNumber: originalItem.batchNumber,
           expiryDate: originalItem.expiryDate,
-          originalItemId: originalItem._id,
+          originalItemId: (originalItem as any)._id,
         });
-        
+
         subtotal += itemSubtotal;
         discount += itemDiscount;
       }
@@ -281,7 +281,7 @@ export const processPartialReturn = async ({
 
     // Calculate proportional tax
     tax = (originalTransaction.tax || 0) * (subtotal / originalTransaction.subtotal);
-    
+
     // Calculate total
     const total = subtotal - discount + tax;
 
@@ -324,17 +324,17 @@ export const processPartialReturn = async ({
     // Update inventory - add returned items back to stock
     for (const item of itemsToReturn) {
       const product = await Product.findById(item.product).session(session);
-      
+
       if (!product) {
         throw new AppError(`Product not found: ${item.product}`, 404);
       }
-      
+
       // Update specific batch if provided
       if (item.batchNumber) {
         const batchIndex = product.inventory.findIndex(
           inv => inv.batchNumber === item.batchNumber
         );
-        
+
         if (batchIndex >= 0) {
           product.inventory[batchIndex].quantity += item.quantity;
         } else {
@@ -348,7 +348,7 @@ export const processPartialReturn = async ({
           });
         }
       }
-      
+
       // Update total stock
       product.totalStock += item.quantity;
       await product.save({ session });
@@ -363,14 +363,14 @@ export const processPartialReturn = async ({
     if (originalTransaction.loyaltyPointsEarned > 0) {
       // Get customer
       const customer = await Customer.findById(originalTransaction.customer).session(session);
-      
+
       if (customer) {
         try {
           // Calculate proportional loyalty points to return
           const loyaltyPointsToReturn = Math.floor(
             originalTransaction.loyaltyPointsEarned * (total / originalTransaction.total)
           );
-          
+
           if (loyaltyPointsToReturn > 0) {
             // Reverse proportional loyalty points
             const loyaltyResult = await loyaltyService.redeemLoyaltyPoints(
@@ -379,7 +379,7 @@ export const processPartialReturn = async ({
               userId,
               returnTransaction._id.toString()
             );
-            
+
             returnTransaction.loyaltyPointsReturned = loyaltyPointsToReturn;
           }
         } catch (error) {
@@ -402,7 +402,7 @@ export const processPartialReturn = async ({
     // Send email notification if customer has email
     if (originalTransaction.customer) {
       const customer = await Customer.findById(originalTransaction.customer).session(session);
-      
+
       if (customer?.email) {
         try {
           await sendReturnConfirmationEmail(returnTransaction, customer, originalTransaction);
@@ -430,7 +430,7 @@ export const processPartialReturn = async ({
 const sendReturnConfirmationEmail = async (returnTransaction, customer, originalTransaction) => {
   try {
     const subject = `Return Confirmation - ${returnTransaction.saleNumber}`;
-    
+
     // Generate return confirmation HTML
     const returnHtml = `
       <h2>Return Confirmation</h2>
@@ -464,7 +464,7 @@ const sendReturnConfirmationEmail = async (returnTransaction, customer, original
       ${returnTransaction.returnReasonDetails ? `<p>Details: ${returnTransaction.returnReasonDetails}</p>` : ''}
       <p>Thank you for your business!</p>
     `;
-    
+
     // Send email
     return await sendEmail({
       to: customer.email,
@@ -486,7 +486,7 @@ export const getReturnableTransactions = async (customerId, days = 30) => {
     // Calculate date threshold
     const dateThreshold = new Date();
     dateThreshold.setDate(dateThreshold.getDate() - days);
-    
+
     // Find eligible transactions
     const transactions = await PosTransaction.find({
       customer: customerId,
@@ -496,55 +496,55 @@ export const getReturnableTransactions = async (customerId, days = 30) => {
     })
       .populate('items.product', 'name sku barcode')
       .sort({ saleDate: -1 });
-    
+
     // Filter out transactions that have already been fully returned
     const returnedTransactionIds = await PosTransaction.distinct('originalSale', {
       transactionType: PosTransactionType.RETURN,
       status: SaleStatus.COMPLETED,
     });
-    
+
     const returnedTransactionIdSet = new Set(
       returnedTransactionIds.map(id => id.toString())
     );
-    
+
     // Get partial returns to check for remaining returnable items
     const partialReturns = await PosTransaction.find({
       transactionType: PosTransactionType.PARTIAL_RETURN,
       status: SaleStatus.COMPLETED,
     }).select('originalSale returnedItems');
-    
+
     // Map of original transaction ID to returned item IDs
     const partialReturnMap = new Map();
     partialReturns.forEach(partialReturn => {
       const originalId = partialReturn.originalSale.toString();
       const returnedItems = partialReturn.returnedItems || [];
-      
+
       if (!partialReturnMap.has(originalId)) {
         partialReturnMap.set(originalId, new Set());
       }
-      
+
       returnedItems.forEach(itemId => {
         partialReturnMap.get(originalId).add(itemId.toString());
       });
     });
-    
+
     // Filter and process transactions
     const returnableTransactions = transactions
       .filter(transaction => !returnedTransactionIdSet.has(transaction._id.toString()))
       .map(transaction => {
         const transactionId = transaction._id.toString();
         const returnedItemIds = partialReturnMap.get(transactionId) || new Set();
-        
+
         // Filter out items that have already been returned
         const returnableItems = transaction.items.filter(
-          item => !returnedItemIds.has(item._id.toString())
+          (item: any) => !returnedItemIds.has((item._id || '').toString())
         );
-        
+
         // Only include transaction if it has returnable items
         if (returnableItems.length === 0) {
           return null;
         }
-        
+
         return {
           ...transaction.toObject(),
           items: returnableItems,
@@ -552,7 +552,7 @@ export const getReturnableTransactions = async (customerId, days = 30) => {
         };
       })
       .filter(Boolean); // Remove null entries
-    
+
     return returnableTransactions;
   } catch (error) {
     logger.error('Error in getReturnableTransactions:', error);

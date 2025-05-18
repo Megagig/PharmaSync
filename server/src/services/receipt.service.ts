@@ -16,11 +16,11 @@ handlebars.registerHelper('formatCurrency', function(value) {
 });
 
 handlebars.registerHelper('formatDate', function(date) {
-  return formatDate(date, 'YYYY-MM-DD HH:mm');
+  return formatDate(date, false);
 });
 
 handlebars.registerHelper('formatDateShort', function(date) {
-  return formatDate(date, 'YYYY-MM-DD');
+  return formatDate(date, false);
 });
 
 handlebars.registerHelper('eq', function(a, b) {
@@ -39,16 +39,16 @@ export const generateReceiptHtml = async (transactionId: string) => {
       .populate('cashier', 'firstName lastName')
       .populate('items.product', 'name sku barcode')
       .populate('originalSale', 'saleNumber saleDate total');
-    
+
     if (!transaction) {
       throw new AppError(`Transaction not found: ${transactionId}`, 404);
     }
-    
+
     // Load receipt template
     const templatePath = path.join(__dirname, '../templates/receipt.hbs');
     const templateSource = fs.readFileSync(templatePath, 'utf8');
     const template = handlebars.compile(templateSource);
-    
+
     // Prepare data for template
     const receiptData = {
       transaction: {
@@ -60,17 +60,17 @@ export const generateReceiptHtml = async (transactionId: string) => {
       },
       store: {
         name: 'PharmaSync',
-        address: transaction.location?.address || 'No address provided',
-        phone: transaction.location?.phone || 'No phone provided',
-        email: transaction.location?.email || 'No email provided',
+        address: (transaction.location as any)?.address || 'No address provided',
+        phone: (transaction.location as any)?.phone || 'No phone provided',
+        email: (transaction.location as any)?.email || 'No email provided',
         website: 'www.pharmasync.com',
       },
       date: new Date(),
     };
-    
+
     // Generate HTML
     const html = template(receiptData);
-    
+
     return html;
   } catch (error) {
     logger.error('Error generating receipt HTML:', error);
@@ -86,20 +86,20 @@ export const sendReceiptEmail = async (transactionId: string) => {
     // Get transaction
     const transaction = await PosTransaction.findById(transactionId)
       .populate('customer', 'firstName lastName customerNumber email phone');
-    
+
     if (!transaction) {
       throw new AppError(`Transaction not found: ${transactionId}`, 404);
     }
-    
+
     // Check if customer has email
     const customer = transaction.customer as any;
     if (!customer || !customer.email) {
       throw new AppError('Customer has no email address', 400);
     }
-    
+
     // Generate receipt HTML
     const receiptHtml = await generateReceiptHtml(transactionId);
-    
+
     // Send email
     const subject = `Your Receipt from PharmaSync - ${transaction.saleNumber}`;
     const result = await sendEmail({
@@ -108,11 +108,11 @@ export const sendReceiptEmail = async (transactionId: string) => {
       text: `Your receipt for transaction ${transaction.saleNumber}`,
       html: receiptHtml,
     });
-    
+
     // Update transaction
     transaction.emailSent = true;
     await transaction.save();
-    
+
     return {
       success: true,
       message: `Receipt sent to ${customer.email}`,
@@ -132,22 +132,22 @@ export const scheduleRefillReminder = async (transactionId: string, reminderDate
     const transaction = await PosTransaction.findById(transactionId)
       .populate('customer', 'firstName lastName customerNumber email phone')
       .populate('items.product', 'name sku barcode');
-    
+
     if (!transaction) {
       throw new AppError(`Transaction not found: ${transactionId}`, 404);
     }
-    
+
     // Check if customer has email
     const customer = transaction.customer as any;
     if (!customer || !customer.email) {
       throw new AppError('Customer has no email address', 400);
     }
-    
+
     // Update transaction with reminder date
     transaction.refillReminder = true;
     transaction.refillReminderDate = reminderDate;
     await transaction.save();
-    
+
     return {
       success: true,
       message: `Refill reminder scheduled for ${reminderDate.toLocaleDateString()}`,
@@ -166,10 +166,10 @@ export const sendRefillReminders = async () => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
-    
+
     // Find transactions with refill reminders due today
     const transactions = await PosTransaction.find({
       refillReminder: true,
@@ -180,9 +180,9 @@ export const sendRefillReminders = async () => {
       emailSent: false, // Only send if not already sent
     }).populate('customer', 'firstName lastName customerNumber email phone')
       .populate('items.product', 'name sku barcode');
-    
+
     logger.info(`Found ${transactions.length} refill reminders to send`);
-    
+
     // Send reminder emails
     const results = await Promise.all(
       transactions.map(async (transaction) => {
@@ -195,12 +195,12 @@ export const sendRefillReminders = async () => {
               message: 'Customer has no email address',
             };
           }
-          
+
           // Load reminder template
           const templatePath = path.join(__dirname, '../templates/refill-reminder.hbs');
           const templateSource = fs.readFileSync(templatePath, 'utf8');
           const template = handlebars.compile(templateSource);
-          
+
           // Prepare data for template
           const reminderData = {
             customer: {
@@ -216,10 +216,10 @@ export const sendRefillReminders = async () => {
             },
             date: new Date(),
           };
-          
+
           // Generate HTML
           const html = template(reminderData);
-          
+
           // Send email
           const subject = `Medication Refill Reminder - PharmaSync`;
           await sendEmail({
@@ -228,11 +228,11 @@ export const sendRefillReminders = async () => {
             text: `Your medication refill reminder from PharmaSync`,
             html,
           });
-          
+
           // Update transaction
           transaction.emailSent = true;
           await transaction.save();
-          
+
           return {
             transactionId: transaction._id,
             success: true,
@@ -248,7 +248,7 @@ export const sendRefillReminders = async () => {
         }
       })
     );
-    
+
     return {
       total: transactions.length,
       sent: results.filter(r => r.success).length,

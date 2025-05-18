@@ -283,11 +283,11 @@ export const generatePosReceipt = asyncHandler(
       transactionType: transaction.transactionType,
       notes: transaction.notes,
       prescription: transaction.prescription ? {
-        number: transaction.prescription.prescriptionNumber,
-        date: transaction.prescription.issueDate,
+        number: (transaction.prescription as any).prescriptionNumber || 'N/A',
+        date: (transaction.prescription as any).issueDate || new Date(),
       } : null,
       doctor: transaction.doctor ? {
-        name: `${transaction.doctor.firstName} ${transaction.doctor.lastName}`,
+        name: `${(transaction.doctor as any).firstName || 'Dr.'} ${(transaction.doctor as any).lastName || 'Unknown'}`,
       } : null,
       barcodeScanned: transaction.barcodeScanned,
       emailReceipt: transaction.emailReceipt,

@@ -1,6 +1,6 @@
 import express from 'express';
 import * as posReturnController from '../controllers/posReturn.controller';
-import { protect } from '../middleware/auth';
+import { protect } from '../middleware/auth.middleware';
 
 const router = express.Router();
 

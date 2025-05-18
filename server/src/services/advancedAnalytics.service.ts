@@ -307,6 +307,12 @@ export const getProductPerformanceAnalytics = async ({
       query.location = new mongoose.Types.ObjectId(location);
     }
 
+    // Build aggregation pipeline
+    const pipeline: any[] = [
+      { $match: query },
+      { $unwind: '$items' },
+    ];
+
     if (category) {
       // Join with products to filter by category
       pipeline.push({
@@ -1035,6 +1041,22 @@ const calculatePercentageChange = (previous: number, current: number): number =>
   return ((current - previous) / previous) * 100;
 };
 
+/**
+ * Get product analytics
+ */
+export const getProductAnalytics = async ({
+  startDate,
+  endDate,
+  topProducts = 10,
+  category,
+  location,
+}) => {
+  try {
+    // Build query
+    const query: any = {
+      transactionType: PosTransactionType.SALE,
+    };
+
     if (startDate && endDate) {
       query.saleDate = {
         $gte: new Date(startDate),
@@ -1239,18 +1261,7 @@ const calculatePercentageChange = (previous: number, current: number): number =>
       },
     };
   } catch (error) {
-    logger.error('Error in getPrescriptionAnalytics:', error);
+    logger.error('Error in getProductAnalytics:', error);
     throw error;
   }
-};
-
-/**
- * Helper function to calculate percentage change
- */
-const calculatePercentageChange = (previous: number, current: number): number => {
-  if (previous === 0) {
-    return current > 0 ? 100 : 0;
-  }
-
-  return ((current - previous) / previous) * 100;
 };

@@ -29,6 +29,7 @@ export const createSale = asyncHandler(async (req: Request, res: Response, next:
             paymentMethod,
             notes,
             userId: req.user._id,
+            location: req.body.location || '000000000000000000000000', // Default location if not provided
         });
 
         res.status(201).json({
@@ -123,4 +124,4 @@ export const getSales = asyncHandler(async (req: Request, res: Response, next: N
         logger.error('Error in getSales controller:', error);
         next(error);
     }
-}); 
+});

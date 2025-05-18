@@ -159,7 +159,7 @@ export const updateInsuranceProvider = async (id: string, updateData: any, userI
       }
     });
 
-    provider.updatedBy = userId;
+    provider.updatedBy = new mongoose.Types.ObjectId(userId);
 
     await provider.save();
 
@@ -383,7 +383,7 @@ export const updateInsurancePlan = async (id: string, updateData: any, userId: s
       }
     });
 
-    plan.updatedBy = userId;
+    plan.updatedBy = new mongoose.Types.ObjectId(userId);
 
     await plan.save();
 
@@ -632,7 +632,7 @@ export const updateCustomerInsurance = async (id: string, updateData: any, userI
       }
     });
 
-    customerInsurance.updatedBy = userId;
+    customerInsurance.updatedBy = new mongoose.Types.ObjectId(userId);
 
     await customerInsurance.save();
 
@@ -720,9 +720,9 @@ export const checkInsuranceEligibility = async (customerInsuranceId: string, use
     let responseDetails = null;
 
     // If provider has API integration, check eligibility with provider
-    if (customerInsurance.provider.apiEndpoint &&
-        customerInsurance.provider.apiKey &&
-        customerInsurance.provider.apiSecret) {
+    if ((customerInsurance.provider as any).apiEndpoint &&
+        (customerInsurance.provider as any).apiKey &&
+        (customerInsurance.provider as any).apiSecret) {
       try {
         // This is a mock API call - in a real implementation, this would call the provider's API
         const response = await mockEligibilityCheck(customerInsurance);
@@ -810,7 +810,7 @@ export const createInsuranceClaim = async (claimData: any, userId: string) => {
 
       if (item.quantity > transactionItem.quantity) {
         throw new AppError(
-          `Claim quantity (${item.quantity}) exceeds transaction quantity (${transactionItem.quantity}) for product ${transactionItem.product.name}`,
+          `Claim quantity (${item.quantity}) exceeds transaction quantity (${transactionItem.quantity}) for product ${(transactionItem.product as any).name || 'Unknown'}`,
           400
         );
       }
@@ -1019,7 +1019,7 @@ export const updateInsuranceClaimStatus = async (id: string, updateData: any, us
       claim.responseDetails = updateData.responseDetails;
     }
 
-    claim.updatedBy = userId;
+    claim.updatedBy = new mongoose.Types.ObjectId(userId);
 
     await claim.save();
 

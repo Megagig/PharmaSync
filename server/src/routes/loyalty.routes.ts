@@ -1,6 +1,7 @@
 import express from 'express';
 import * as loyaltyController from '../controllers/loyalty.controller';
-import { protect, restrictTo } from '../middleware/auth';
+import { protect, restrictTo } from '../middleware/auth.middleware';
+import { RoleType } from '../interfaces/role.interface';
 
 const router = express.Router();
 
@@ -14,15 +15,15 @@ router.post('/customers/:customerId/redeem', loyaltyController.redeemLoyaltyPoin
 
 // Loyalty program routes (admin only)
 router.get('/program', loyaltyController.getLoyaltyProgram);
-router.post('/program', restrictTo('admin'), loyaltyController.createLoyaltyProgram);
-router.patch('/program/:id', restrictTo('admin'), loyaltyController.updateLoyaltyProgram);
+router.post('/program', restrictTo([RoleType.ADMIN]), loyaltyController.createLoyaltyProgram);
+router.patch('/program/:id', restrictTo([RoleType.ADMIN]), loyaltyController.updateLoyaltyProgram);
 
 // Loyalty tier routes (admin only)
 router.get('/tiers', loyaltyController.getLoyaltyTiers);
-router.post('/tiers', restrictTo('admin'), loyaltyController.createLoyaltyTier);
-router.patch('/tiers/:id', restrictTo('admin'), loyaltyController.updateLoyaltyTier);
+router.post('/tiers', restrictTo([RoleType.ADMIN]), loyaltyController.createLoyaltyTier);
+router.patch('/tiers/:id', restrictTo([RoleType.ADMIN]), loyaltyController.updateLoyaltyTier);
 
 // Process expired points (admin only)
-router.post('/process-expired', restrictTo('admin'), loyaltyController.processExpiredPoints);
+router.post('/process-expired', restrictTo([RoleType.ADMIN]), loyaltyController.processExpiredPoints);
 
 export default router;

@@ -261,26 +261,14 @@ const posTransactionSchema = new Schema<IPosTransaction>(
     refillReminderDate: {
       type: Date,
     },
-    loyaltyPointsEarned: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
-    loyaltyPointsRedeemed: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
+    // We already have loyaltyPointsEarned and loyaltyPointsRedeemed fields above
     loyaltyPointsReturned: {
       type: Number,
       min: 0,
       default: 0,
     },
-    loyaltyDiscount: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
+    // Loyalty discount is included in the total discount
+    // No separate field needed
     returnPolicy: {
       type: String,
       trim: true,
@@ -315,12 +303,14 @@ posTransactionSchema.index({ refillReminder: 1, refillReminderDate: 1 });
 
 // Generate sale number before saving
 posTransactionSchema.pre('save', function (next) {
-  if (!this.saleNumber) {
+  const doc = this as any; // Use 'any' type to bypass TypeScript checks
+
+  if (!doc.saleNumber) {
     // Format: POS-YYYYMMDD-XXXXX (where XXXXX is a random alphanumeric string)
     const date = new Date();
     const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
     let prefix;
-    switch (this.transactionType) {
+    switch (doc.transactionType) {
       case PosTransactionType.SALE:
         prefix = 'POS';
         break;
@@ -342,22 +332,22 @@ posTransactionSchema.pre('save', function (next) {
       default:
         prefix = 'POS';
     }
-    this.saleNumber = `${prefix}-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+    doc.saleNumber = `${prefix}-${dateStr}-${generateRandomString(5).toUpperCase()}`;
   }
 
   // Calculate totals
-  if (this.isModified('items') || this.isNew) {
+  if (doc.isModified('items') || doc.isNew) {
     // Calculate subtotal
-    this.subtotal = this.items.reduce((sum, item) => sum + item.subtotal, 0);
+    doc.subtotal = doc.items.reduce((sum: number, item: any) => sum + item.subtotal, 0);
 
     // Calculate total
-    this.total = this.subtotal - this.discount + this.tax;
+    doc.total = doc.subtotal - doc.discount + doc.tax;
   }
 
   // Calculate change due
-  if (this.isModified('paymentMethods') || this.isNew) {
-    const totalPaid = this.paymentMethods.reduce((sum, method) => sum + method.amount, 0);
-    this.changeDue = Math.max(0, totalPaid - this.total);
+  if (doc.isModified('paymentMethods') || doc.isNew) {
+    const totalPaid = doc.paymentMethods.reduce((sum: number, method: any) => sum + method.amount, 0);
+    doc.changeDue = Math.max(0, totalPaid - doc.total);
   }
 
   next();

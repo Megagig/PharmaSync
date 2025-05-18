@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import asyncHandler from 'express-async-handler';
 import mongoose from 'mongoose';
 import Prescription from '../models/prescription.model';
@@ -15,10 +15,10 @@ import * as prescriptionService from '../services/prescription.service';
  * @access  Private
  */
 export const getAllPrescriptions = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     // Check if we should use the new service
     if (req.query.useNewService === 'true') {
-      return await getPrescriptions(req, res);
+      return await getPrescriptions(req, res, next);
     }
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -465,7 +465,7 @@ export const cancelPrescription = asyncHandler(
  * @access Private
  */
 export const getPrescriptions = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     const {
       page,
       limit,

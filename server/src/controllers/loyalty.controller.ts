@@ -42,10 +42,10 @@ export const addLoyaltyPoints = asyncHandler(
     try {
       // Get customer loyalty record or create if it doesn't exist
       let customerLoyalty = await CustomerLoyalty.findOne({ customer: customerId }).session(session);
-      
+
       if (!customerLoyalty) {
         // Create new loyalty record for customer
-        customerLoyalty = await CustomerLoyalty.create(
+        const newLoyalty = await CustomerLoyalty.create(
           [{
             customer: new mongoose.Types.ObjectId(customerId),
             totalPoints: 0,
@@ -58,7 +58,7 @@ export const addLoyaltyPoints = asyncHandler(
           }],
           { session }
         );
-        customerLoyalty = customerLoyalty[0];
+        customerLoyalty = newLoyalty[0];
       }
 
       // Add points to customer loyalty record

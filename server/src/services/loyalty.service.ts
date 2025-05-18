@@ -45,10 +45,10 @@ export const calculatePurchasePoints = async (
 
     // Get customer loyalty record or create if it doesn't exist
     let customerLoyalty = await CustomerLoyalty.findOne({ customer: customerId }).session(session);
-    
+
     if (!customerLoyalty) {
       // Create new loyalty record for customer
-      customerLoyalty = await CustomerLoyalty.create(
+      const newLoyalty = await CustomerLoyalty.create(
         [{
           customer: toObjectId(customerId),
           totalPoints: 0,
@@ -61,7 +61,7 @@ export const calculatePurchasePoints = async (
         }],
         { session }
       );
-      customerLoyalty = customerLoyalty[0];
+      customerLoyalty = newLoyalty[0];
     }
 
     // Calculate expiry date
@@ -94,7 +94,7 @@ export const calculatePurchasePoints = async (
     }
 
     await session.commitTransaction();
-    
+
     return {
       awarded: true,
       points: pointsEarned,
@@ -126,7 +126,7 @@ export const redeemLoyaltyPoints = async (
   try {
     // Get customer loyalty record
     const customerLoyalty = await CustomerLoyalty.findOne({ customer: customerId }).session(session);
-    
+
     if (!customerLoyalty) {
       throw new AppError('Customer has no loyalty record', 404);
     }
@@ -168,7 +168,7 @@ export const redeemLoyaltyPoints = async (
     }
 
     await session.commitTransaction();
-    
+
     return {
       redeemed: true,
       points: pointsToRedeem,
@@ -199,11 +199,11 @@ const updateCustomerTier = async (customerLoyalty: any, session: mongoose.Client
 
   // Find the highest tier the customer qualifies for
   const qualifyingTier = tiers.find(tier => customerLoyalty.totalPoints >= tier.minimumPoints);
-  
+
   if (qualifyingTier && qualifyingTier.name !== customerLoyalty.tier) {
     // Update customer tier
     customerLoyalty.tier = qualifyingTier.name;
-    
+
     // Add tier change event
     customerLoyalty.events.push({
       eventType: LoyaltyEventType.MANUAL_ADJUSTMENT,
@@ -223,7 +223,7 @@ export const getCustomerLoyalty = async (customerId: string) => {
     if (redisClient.isOpen) {
       const cachedLoyalty = await redisClient.get(`customer:${customerId}:loyalty`);
       if (cachedLoyalty) {
-        return JSON.parse(cachedLoyalty);
+        return JSON.parse(cachedLoyalty.toString());
       }
     }
 
@@ -247,16 +247,16 @@ export const getCustomerLoyalty = async (customerId: string) => {
 
     // Get active loyalty program for points valuation
     const loyaltyProgram = await LoyaltyProgram.findOne({ isActive: true });
-    
+
     // Get customer's tier details
-    const tierDetails = await LoyaltyTier.findOne({ 
+    const tierDetails = await LoyaltyTier.findOne({
       name: customerLoyalty.tier,
-      isActive: true 
+      isActive: true
     });
 
     const result = {
       ...customerLoyalty.toObject(),
-      pointsValue: loyaltyProgram 
+      pointsValue: loyaltyProgram
         ? customerLoyalty.availablePoints * loyaltyProgram.pointsValuation
         : 0,
       tierDetails: tierDetails ? {
@@ -293,7 +293,7 @@ export const processExpiredPoints = async () => {
 
   try {
     const today = new Date();
-    
+
     // Find all customer loyalty records with events that have expired
     const customerLoyalties = await CustomerLoyalty.find({
       'events.expiryDate': { $lt: today },
@@ -306,54 +306,54 @@ export const processExpiredPoints = async () => {
     // Process each customer
     for (const loyalty of customerLoyalties) {
       let pointsExpired = 0;
-      
+
       // Find expired events that haven't been processed yet
       const expiredEvents = loyalty.events.filter(
-        event => 
-          event.eventType === LoyaltyEventType.PURCHASE && 
-          event.expiryDate && 
+        event =>
+          event.eventType === LoyaltyEventType.PURCHASE &&
+          event.expiryDate &&
           event.expiryDate < today &&
           event.points > 0 // Only positive points can expire
       );
-      
+
       // Process each expired event
       for (const event of expiredEvents) {
         // Add expiry event
         loyalty.events.push({
           eventType: LoyaltyEventType.EXPIRY,
           points: -event.points, // Negative points for expiry
-          description: `Points expired from event on ${event.createdAt?.toLocaleDateString()}`,
+          description: `Points expired from event`,
           createdBy: loyalty.customer, // System update
         });
-        
+
         pointsExpired += event.points;
-        
+
         // Mark original event as processed by setting points to 0
         // This is a workaround since we can't modify the original event directly
         // in the array without complex array manipulation
         event.points = 0;
       }
-      
+
       if (pointsExpired > 0) {
         // Update points
         loyalty.availablePoints = Math.max(0, loyalty.availablePoints - pointsExpired);
         loyalty.expiredPoints += pointsExpired;
-        
+
         // Save changes
         await loyalty.save({ session });
-        
+
         // Clear cache
         if (redisClient.isOpen) {
           await redisClient.del(`customer:${loyalty.customer}:loyalty`);
         }
-        
+
         totalProcessed++;
         totalExpired += pointsExpired;
       }
     }
 
     await session.commitTransaction();
-    
+
     return {
       processed: totalProcessed,
       expiredPoints: totalExpired,
