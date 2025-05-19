@@ -16,11 +16,14 @@ interface PurchaseFormData {
   orderDate: string;
   expectedDeliveryDate?: string;
   items: {
-    medication: string;
+    product: string; // Changed from medication to product
+    productName: string; // Added product name field
     quantity: number;
     unitPrice: number;
     subtotal: number;
     notes?: string;
+    retailPrice?: number;
+    wholesalePrice?: number;
   }[];
   discount: number;
   tax: number;
@@ -37,6 +40,8 @@ const CreatePurchase = () => {
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [selectedSupplierInfo, setSelectedSupplierInfo] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
   const [costPrice, setCostPrice] = useState(0);
@@ -108,7 +113,8 @@ const CreatePurchase = () => {
     const subtotal = quantity * costPrice;
 
     const newItem = {
-      medication: selectedProduct._id,
+      product: selectedProduct._id, // Use product ID instead of medication ID
+      productName: selectedProduct.name, // Store the product name
       quantity,
       unitPrice: costPrice,
       subtotal,
@@ -173,11 +179,11 @@ const CreatePurchase = () => {
 
     try {
       const response = await api.post('/purchase-orders', formData);
-      showToast('Purchase order created successfully', 'success');
+      showToast('Purchase created successfully', 'success');
       navigate(`/inventory/purchases/${response.data.data._id}`);
     } catch (error) {
-      console.error('Error creating purchase order:', error);
-      showToast('Error creating purchase order', 'error');
+      console.error('Error creating purchase:', error);
+      showToast('Error creating purchase', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -331,15 +337,48 @@ const CreatePurchase = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Product Search
                   </label>
-                  <ProductSearch
-                    onSelect={(product) => {
-                      console.log('Product selected in CreatePurchase:', product);
-                      setSelectedProduct(product);
-                      setCostPrice(product.costPrice || product.defaultPrice || 0);
-                      setRetailPrice(product.retailPrice || product.defaultPrice || 0);
-                      setWholesalePrice(product.wholesalePrice || product.defaultPrice || 0);
-                    }}
-                  />
+                  <div className="flex space-x-2">
+                    <div className="flex-1">
+                      <ProductSearch
+                        onSelect={(product) => {
+                          console.log('Product selected in CreatePurchase:', product);
+                          setSelectedProduct(product);
+                          setCostPrice(product.costPrice || product.defaultPrice || 0);
+                          setRetailPrice(product.retailPrice || product.defaultPrice || 0);
+                          setWholesalePrice(product.wholesalePrice || product.defaultPrice || 0);
+                        }}
+                        onSearchChange={(term, results) => {
+                          setSearchTerm(term);
+                          setFilteredProducts(results);
+                        }}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={(e) => {
+                        e.preventDefault(); // Prevent form submission
+                        console.log('Navigating to new product page');
+                        navigate('/inventory/products/new?returnTo=/inventory/purchases/create');
+                      }}
+                    >
+                      New
+                    </Button>
+                  </div>
+                  {filteredProducts && filteredProducts.length === 0 && searchTerm && (
+                    <div className="mt-2 text-sm text-gray-500">
+                      No products found. <button
+                        type="button"
+                        className="text-primary-600 hover:text-primary-700"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          navigate('/inventory/products/new?returnTo=/inventory/purchases/create');
+                        }}
+                      >
+                        Create a new product
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {selectedProduct && (
@@ -435,14 +474,10 @@ const CreatePurchase = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {formData.items.map((item, index) => {
-                      const product = products.find(
-                        (p) => p._id === item.medication
-                      );
-
                       return (
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {product?.name || 'Unknown Product'}
+                            {item.productName || 'Unknown Product'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {item.quantity}
@@ -548,7 +583,7 @@ const CreatePurchase = () => {
             variant="primary"
             disabled={isLoading || formData.items.length === 0}
           >
-            {isLoading ? 'Creating...' : 'Create Purchase Order'}
+            {isLoading ? 'Creating...' : 'Create Purchase'}
           </Button>
         </div>
       </form>

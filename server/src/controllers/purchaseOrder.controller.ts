@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import PurchaseOrder from '../models/purchaseOrder.model';
 import Supplier from '../models/supplier.model';
 import Medication from '../models/medication.model';
+import Product from '../models/product.model';
 import { PurchaseOrderStatus } from '../interfaces/purchaseOrder.interface';
 import { AppError } from '../utils/error';
 
@@ -131,12 +132,12 @@ export const createPurchaseOrder = asyncHandler(
     let subtotal = 0;
 
     for (const item of items) {
-      const { medication, quantity, unitPrice } = item;
+      const { product, quantity, unitPrice } = item;
 
-      // Verify medication exists
-      const medicationExists = await Medication.findById(medication);
-      if (!medicationExists) {
-        throw new AppError(`Medication with ID ${medication} not found`, 404);
+      // Verify product exists
+      const productExists = await Product.findById(product);
+      if (!productExists) {
+        throw new AppError(`Product with ID ${product} not found`, 404);
       }
 
       // Calculate item subtotal
@@ -146,6 +147,7 @@ export const createPurchaseOrder = asyncHandler(
       // Add to processed items
       processedItems.push({
         ...item,
+        medication: productExists.medicationId, // Map product to medication if available
         subtotal: itemSubtotal,
       });
     }

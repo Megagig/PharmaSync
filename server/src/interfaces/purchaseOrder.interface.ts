@@ -11,7 +11,8 @@ export enum PurchaseOrderStatus {
 }
 
 export interface IPurchaseOrderItem extends Document {
-  medication: Types.ObjectId; // Reference to medication ID
+  medication?: Types.ObjectId; // Reference to medication ID (optional)
+  product?: Types.ObjectId; // Reference to product ID (optional)
   quantity: number;
   unitPrice: number;
   subtotal: number;

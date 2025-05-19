@@ -10,7 +10,12 @@ const purchaseOrderItemSchema = new Schema(
     medication: {
       type: Schema.Types.ObjectId,
       ref: 'Medication',
-      required: true,
+      required: false, // Make medication optional
+    },
+    product: {
+      type: Schema.Types.ObjectId,
+      ref: 'Product',
+      required: false, // Make product optional
     },
     quantity: {
       type: Number,

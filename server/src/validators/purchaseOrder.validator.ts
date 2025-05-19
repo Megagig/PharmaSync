@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { PurchaseOrderStatus } from '../interfaces/purchaseOrder.interface';
 
 const purchaseOrderItemSchema = z.object({
-  medication: z.string().min(1, 'Medication ID is required'),
+  product: z.string().min(1, 'Product ID is required'),
   quantity: z.number().int().positive('Quantity must be positive'),
   unitPrice: z.number().nonnegative('Unit price must be non-negative'),
   notes: z.string().optional(),

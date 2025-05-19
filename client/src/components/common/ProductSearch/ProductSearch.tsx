@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/useToast';
 interface ProductSearchProps {
   onSelect?: (product: Product) => void;
   onChange?: (product: Product) => void;
+  onSearchChange?: (term: string, results: Product[]) => void;
   value?: Product | null;
   placeholder?: string;
   className?: string;
@@ -16,6 +17,7 @@ interface ProductSearchProps {
 const ProductSearch = ({
   onSelect,
   onChange,
+  onSearchChange,
   value,
   placeholder = 'Search products by name, SKU, or barcode',
   className = '',
@@ -29,6 +31,12 @@ const ProductSearch = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const onSearchChangeRef = useRef(onSearchChange);
+
+  // Update ref when onSearchChange changes
+  useEffect(() => {
+    onSearchChangeRef.current = onSearchChange;
+  }, [onSearchChange]);
 
   // Fetch all products on component mount
   useEffect(() => {
@@ -81,6 +89,9 @@ const ProductSearch = ({
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredProducts([]);
+      if (onSearchChangeRef.current) {
+        onSearchChangeRef.current(searchTerm, []);
+      }
       return;
     }
 
@@ -88,6 +99,9 @@ const ProductSearch = ({
     if (!Array.isArray(products)) {
       console.error('Products is not an array:', products);
       setFilteredProducts([]);
+      if (onSearchChangeRef.current) {
+        onSearchChangeRef.current(searchTerm, []);
+      }
       return;
     }
 
@@ -103,6 +117,11 @@ const ProductSearch = ({
       setFilteredProducts(filtered);
       console.log('Filtered products:', filtered.length);
 
+      // Notify parent component about search results
+      if (onSearchChangeRef.current) {
+        onSearchChangeRef.current(searchTerm, filtered);
+      }
+
       // If no products found, show a message
       if (filtered.length === 0) {
         console.log('No products found matching:', term);
@@ -110,6 +129,9 @@ const ProductSearch = ({
     } catch (error) {
       console.error('Error filtering products:', error);
       setFilteredProducts([]);
+      if (onSearchChangeRef.current) {
+        onSearchChangeRef.current(searchTerm, []);
+      }
     }
   }, [searchTerm, products]);
 
@@ -133,7 +155,8 @@ const ProductSearch = ({
   }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const term = e.target.value;
+    setSearchTerm(term);
     setShowDropdown(true);
   };
 

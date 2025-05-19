@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -70,11 +70,16 @@ type ProductFormData = z.infer<typeof productSchema>;
 const ProductForm = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [medications, setMedications] = useState<any[]>([]);
   const [showCustomType, setShowCustomType] = useState(false);
   const [showCustomCategory, setShowCustomCategory] = useState(false);
+
+  // Get the returnTo parameter from the URL query string
+  const queryParams = new URLSearchParams(location.search);
+  const returnTo = queryParams.get('returnTo');
 
   const {
     control,
@@ -155,14 +160,23 @@ const ProductForm = () => {
       delete formData.customType;
       delete formData.customCategory;
 
+      let createdProduct;
+
       if (id) {
         await api.patch(`/products/${id}`, formData);
         showToast('Product updated successfully', 'success');
       } else {
-        await api.post('/products', formData);
+        const response = await api.post('/products', formData);
+        createdProduct = response.data.data;
         showToast('Product created successfully', 'success');
       }
-      navigate('/inventory/products');
+
+      // If returnTo is specified, navigate back to that page, otherwise go to products list
+      if (returnTo) {
+        navigate(returnTo);
+      } else {
+        navigate('/inventory/products');
+      }
     } catch (error) {
       console.error('Error saving product:', error);
       showToast('Error saving product', 'error');
