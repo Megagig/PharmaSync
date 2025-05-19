@@ -171,8 +171,13 @@ const ProductForm = () => {
         showToast('Product created successfully', 'success');
       }
 
-      // If returnTo is specified, navigate back to that page, otherwise go to products list
+      // If returnTo is specified, navigate back to that page with the new product ID, otherwise go to products list
       if (returnTo) {
+        // If we created a new product and are returning to the purchase form, store the product ID
+        if (!id && createdProduct && returnTo.includes('/inventory/purchases/create')) {
+          // Store the newly created product ID in localStorage so it can be selected when returning
+          localStorage.setItem('newlyCreatedProductId', createdProduct._id);
+        }
         navigate(returnTo);
       } else {
         navigate('/inventory/products');

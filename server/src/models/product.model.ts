@@ -104,6 +104,18 @@ const productSchema = new Schema<IProduct>(
       required: true,
       min: 0,
     },
+    retailPrice: {
+      type: Number,
+      min: 0,
+    },
+    wholesalePrice: {
+      type: Number,
+      min: 0,
+    },
+    costPrice: {
+      type: Number,
+      min: 0,
+    },
     minimumStockLevel: {
       type: Number,
       required: true,

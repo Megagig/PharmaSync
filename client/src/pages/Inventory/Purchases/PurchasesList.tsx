@@ -10,10 +10,7 @@ import { useToast } from '@/hooks/useToast';
 import api from '@/services/api';
 
 enum PurchaseStatus {
-  DRAFT = 'draft',
-  ORDERED = 'ordered',
-  PARTIALLY_RECEIVED = 'partially_received',
-  RECEIVED = 'received',
+  COMPLETED = 'completed',
   CANCELLED = 'cancelled',
 }
 
@@ -29,16 +26,19 @@ interface PurchaseItem {
 
 interface Purchase {
   _id: string;
-  referenceNumber: string;
+  purchaseNumber: string;
   supplier: {
     _id: string;
     name: string;
   };
-  date: Date;
-  expectedDeliveryDate?: Date;
+  purchaseDate: Date;
   status: PurchaseStatus;
   items: PurchaseItem[];
-  totalAmount: number;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  shippingCost: number;
+  total: number;
   notes?: string;
   createdBy: {
     _id: string;
@@ -148,14 +148,8 @@ const PurchasesList = () => {
 
   const getStatusBadge = (status: PurchaseStatus) => {
     switch (status) {
-      case PurchaseStatus.DRAFT:
-        return <Badge color="gray">Draft</Badge>;
-      case PurchaseStatus.ORDERED:
-        return <Badge color="blue">Ordered</Badge>;
-      case PurchaseStatus.PARTIALLY_RECEIVED:
-        return <Badge color="yellow">Partially Received</Badge>;
-      case PurchaseStatus.RECEIVED:
-        return <Badge color="green">Received</Badge>;
+      case PurchaseStatus.COMPLETED:
+        return <Badge color="green">Completed</Badge>;
       case PurchaseStatus.CANCELLED:
         return <Badge color="red">Cancelled</Badge>;
       default:
@@ -193,7 +187,7 @@ const PurchasesList = () => {
           >
             <div className="flex-1">
               <Input
-                placeholder="Search by reference number or supplier"
+                placeholder="Search by purchase number or supplier"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -292,7 +286,7 @@ const PurchasesList = () => {
                             navigate(`/inventory/purchases/${purchase._id}`)
                           }
                         >
-                          {purchase.referenceNumber}
+                          {purchase.purchaseNumber}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -302,20 +296,13 @@ const PurchasesList = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {new Date(purchase.date).toLocaleDateString()}
+                          {new Date(purchase.purchaseDate).toLocaleDateString()}
                         </div>
-                        {purchase.expectedDeliveryDate && (
-                          <div className="text-xs text-gray-500">
-                            Expected:{' '}
-                            {new Date(
-                              purchase.expectedDeliveryDate
-                            ).toLocaleDateString()}
-                          </div>
-                        )}
+
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {formatCurrency(purchase.totalAmount)}
+                          {formatCurrency(purchase.total)}
                         </div>
                         <div className="text-xs text-gray-500">
                           {purchase.items.length} items
@@ -334,54 +321,16 @@ const PurchasesList = () => {
                           >
                             View
                           </Button>
-                          {purchase.status === PurchaseStatus.DRAFT && (
-                            <>
-                              <Button
-                                variant="text"
-                                onClick={() =>
-                                  navigate(
-                                    `/inventory/purchases/${purchase._id}/edit`
-                                  )
-                                }
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                variant="text"
-                                color="danger"
-                                onClick={() =>
-                                  handleDeletePurchase(purchase._id)
-                                }
-                              >
-                                Delete
-                              </Button>
-                            </>
+                          {purchase.status === PurchaseStatus.COMPLETED && (
+                            <Button
+                              variant="text"
+                              color="danger"
+                              onClick={() => handleCancelPurchase(purchase._id)}
+                            >
+                              Cancel
+                            </Button>
                           )}
-                          {(purchase.status === PurchaseStatus.ORDERED ||
-                            purchase.status ===
-                              PurchaseStatus.PARTIALLY_RECEIVED) && (
-                            <>
-                              <Button
-                                variant="text"
-                                onClick={() =>
-                                  navigate(
-                                    `/inventory/purchases/${purchase._id}/receive`
-                                  )
-                                }
-                              >
-                                Receive
-                              </Button>
-                              <Button
-                                variant="text"
-                                color="danger"
-                                onClick={() =>
-                                  handleCancelPurchase(purchase._id)
-                                }
-                              >
-                                Cancel
-                              </Button>
-                            </>
-                          )}
+
                         </div>
                       </td>
                     </tr>

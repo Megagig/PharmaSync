@@ -111,6 +111,7 @@ export const createPurchaseOrder = asyncHandler(
   async (req: Request, res: Response) => {
     const {
       supplier,
+      orderNumber,
       orderDate,
       expectedDeliveryDate,
       items,
@@ -120,6 +121,9 @@ export const createPurchaseOrder = asyncHandler(
       paymentTerms,
       notes,
     } = req.body;
+
+    // Generate order number if not provided
+    const generatedOrderNumber = orderNumber || `PO-${Date.now()}`;
 
     // Verify supplier exists
     const supplierExists = await Supplier.findById(supplier);
@@ -161,6 +165,7 @@ export const createPurchaseOrder = asyncHandler(
     // Create purchase order
     const purchaseOrder = await PurchaseOrder.create({
       supplier,
+      orderNumber: generatedOrderNumber,
       orderDate: orderDate || new Date(),
       expectedDeliveryDate,
       items: processedItems,

@@ -13,11 +13,11 @@ import api from '@/services/api';
 
 interface PurchaseFormData {
   supplier: string;
-  orderDate: string;
+  purchaseDate: string; // Changed from orderDate to match backend expectation
   expectedDeliveryDate?: string;
   items: {
-    product: string; // Changed from medication to product
-    productName: string; // Added product name field
+    product: string;
+    productName: string;
     quantity: number;
     unitPrice: number;
     subtotal: number;
@@ -43,22 +43,93 @@ const CreatePurchase = () => {
   const [filteredProducts, setFilteredProducts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
-  const [quantity, setQuantity] = useState(1);
-  const [costPrice, setCostPrice] = useState(0);
-  const [retailPrice, setRetailPrice] = useState(0);
-  const [wholesalePrice, setWholesalePrice] = useState(0);
+  const [quantity, setQuantity] = useState<number | string>(1);
+  const [costPrice, setCostPrice] = useState<number | string>('');
+  const [retailPrice, setRetailPrice] = useState<number | string>('');
+  const [wholesalePrice, setWholesalePrice] = useState<number | string>('');
 
-  const [formData, setFormData] = useState<PurchaseFormData>({
-    supplier: '',
-    orderDate: new Date().toISOString().split('T')[0],
-    expectedDeliveryDate: '',
-    items: [],
-    discount: 0,
-    tax: 0,
-    shippingCost: 0,
-    paymentTerms: 'net30',
-    notes: '',
+  // Initialize form data from localStorage if available
+  const [formData, setFormData] = useState<PurchaseFormData>(() => {
+    const savedFormData = localStorage.getItem('purchaseFormData');
+    return savedFormData
+      ? JSON.parse(savedFormData)
+      : {
+          supplier: '',
+          purchaseDate: new Date().toISOString().split('T')[0], // Changed from orderDate to purchaseDate
+          expectedDeliveryDate: '',
+          items: [],
+          discount: 0,
+          tax: 0,
+          shippingCost: 0,
+          paymentTerms: 'net30',
+          notes: '',
+        };
   });
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('purchaseFormData', JSON.stringify(formData));
+  }, [formData]);
+
+  // Restore selected supplier info if we have a supplier ID in formData
+  useEffect(() => {
+    const restoreSelectedSupplier = async () => {
+      if (formData.supplier && !selectedSupplierInfo) {
+        try {
+          const response = await api.get(`/suppliers/${formData.supplier}`);
+          if (response.data && response.data.data) {
+            setSelectedSupplierInfo(response.data.data);
+          }
+        } catch (error) {
+          console.error('Error fetching supplier details:', error);
+        }
+      }
+    };
+
+    restoreSelectedSupplier();
+  }, [formData.supplier, selectedSupplierInfo]);
+
+  // Check for newly created product and select it
+  useEffect(() => {
+    const checkForNewProduct = async () => {
+      const newProductId = localStorage.getItem('newlyCreatedProductId');
+      if (newProductId) {
+        try {
+          // Fetch the newly created product
+          const response = await api.get(`/products/${newProductId}`);
+          if (response.data && response.data.data) {
+            // Select the product
+            setSelectedProduct(response.data.data);
+            setCostPrice(
+              response.data.data.costPrice ||
+                response.data.data.defaultPrice ||
+                ''
+            );
+            setRetailPrice(
+              response.data.data.retailPrice ||
+                response.data.data.defaultPrice ||
+                ''
+            );
+            setWholesalePrice(
+              response.data.data.wholesalePrice ||
+                response.data.data.defaultPrice ||
+                ''
+            );
+            // Set quantity to current stock for reference
+            setQuantity(response.data.data.totalStock || 0);
+
+            // Clear the stored product ID
+            localStorage.removeItem('newlyCreatedProductId');
+          }
+        } catch (error) {
+          console.error('Error fetching newly created product:', error);
+          localStorage.removeItem('newlyCreatedProductId');
+        }
+      }
+    };
+
+    checkForNewProduct();
+  }, []);
 
   useEffect(() => {
     // Load products
@@ -100,7 +171,11 @@ const CreatePurchase = () => {
   };
 
   const handleAddItem = () => {
-    if (!selectedProduct || quantity <= 0 || costPrice <= 0) {
+    // Convert string values to numbers for validation
+    const numQuantity = Number(quantity);
+    const numCostPrice = Number(costPrice);
+
+    if (!selectedProduct || numQuantity <= 0 || numCostPrice <= 0) {
       showToast(
         'Please select a product, and enter valid quantity and price',
         'error'
@@ -110,17 +185,17 @@ const CreatePurchase = () => {
 
     console.log('Adding item to purchase:', selectedProduct);
 
-    const subtotal = quantity * costPrice;
+    const subtotal = numQuantity * numCostPrice;
 
     const newItem = {
       product: selectedProduct._id, // Use product ID instead of medication ID
       productName: selectedProduct.name, // Store the product name
-      quantity,
-      unitPrice: costPrice,
+      quantity: numQuantity,
+      unitPrice: numCostPrice,
       subtotal,
       notes: '',
-      retailPrice,
-      wholesalePrice
+      retailPrice: Number(retailPrice) || 0,
+      wholesalePrice: Number(wholesalePrice) || 0,
     };
 
     setFormData((prev) => {
@@ -141,9 +216,9 @@ const CreatePurchase = () => {
     // Reset item form
     setSelectedProduct(null);
     setQuantity(1);
-    setCostPrice(0);
-    setRetailPrice(0);
-    setWholesalePrice(0);
+    setCostPrice('');
+    setRetailPrice('');
+    setWholesalePrice('');
   };
 
   const handleRemoveItem = (index: number) => {
@@ -178,12 +253,40 @@ const CreatePurchase = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/purchase-orders', formData);
+      // Prepare the data to match the backend expectations
+      const purchaseData = {
+        supplier: formData.supplier,
+        purchaseDate: formData.purchaseDate,
+        items: formData.items,
+        discount: formData.discount || 0,
+        tax: formData.tax || 0,
+        shippingCost: formData.shippingCost || 0,
+        paymentTerms: formData.paymentTerms,
+        notes: formData.notes,
+      };
+
+      console.log('Sending purchase data:', purchaseData);
+
+      // Use the purchases API
+      const response = await api.post('/purchases', purchaseData);
       showToast('Purchase created successfully', 'success');
-      navigate(`/inventory/purchases/${response.data.data._id}`);
-    } catch (error) {
+      // Clear the saved form data after successful submission
+      localStorage.removeItem('purchaseFormData');
+      // Navigate back to the purchases list
+      navigate('/inventory/purchases');
+    } catch (error: any) {
       console.error('Error creating purchase:', error);
-      showToast('Error creating purchase', 'error');
+
+      // Show more detailed error message if available
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        showToast(`Error: ${error.response.data.message}`, 'error');
+      } else {
+        showToast('Error creating purchase', 'error');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -256,9 +359,9 @@ const CreatePurchase = () => {
                 </div>
 
                 <DatePicker
-                  label="Order Date"
-                  value={formData.orderDate}
-                  onChange={(date) => handleDateChange('orderDate', date)}
+                  label="Purchase Date"
+                  value={formData.purchaseDate}
+                  onChange={(date) => handleDateChange('purchaseDate', date)}
                   required
                 />
 
@@ -341,11 +444,18 @@ const CreatePurchase = () => {
                     <div className="flex-1">
                       <ProductSearch
                         onSelect={(product) => {
-                          console.log('Product selected in CreatePurchase:', product);
+                          console.log(
+                            'Product selected in CreatePurchase:',
+                            product
+                          );
                           setSelectedProduct(product);
-                          setCostPrice(product.costPrice || product.defaultPrice || 0);
-                          setRetailPrice(product.retailPrice || product.defaultPrice || 0);
-                          setWholesalePrice(product.wholesalePrice || product.defaultPrice || 0);
+                          // Set quantity to 1 by default (user can change this)
+                          setQuantity(1);
+                          // Clear price fields to allow user input
+                          // The placeholders will show the previous values
+                          setCostPrice('');
+                          setRetailPrice('');
+                          setWholesalePrice('');
                         }}
                         onSearchChange={(term, results) => {
                           setSearchTerm(term);
@@ -359,26 +469,33 @@ const CreatePurchase = () => {
                       onClick={(e) => {
                         e.preventDefault(); // Prevent form submission
                         console.log('Navigating to new product page');
-                        navigate('/inventory/products/new?returnTo=/inventory/purchases/create');
+                        navigate(
+                          '/inventory/products/new?returnTo=/inventory/purchases/create'
+                        );
                       }}
                     >
                       New
                     </Button>
                   </div>
-                  {filteredProducts && filteredProducts.length === 0 && searchTerm && (
-                    <div className="mt-2 text-sm text-gray-500">
-                      No products found. <button
-                        type="button"
-                        className="text-primary-600 hover:text-primary-700"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          navigate('/inventory/products/new?returnTo=/inventory/purchases/create');
-                        }}
-                      >
-                        Create a new product
-                      </button>
-                    </div>
-                  )}
+                  {filteredProducts &&
+                    filteredProducts.length === 0 &&
+                    searchTerm && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        No products found.{' '}
+                        <button
+                          type="button"
+                          className="text-primary-600 hover:text-primary-700"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            navigate(
+                              '/inventory/products/new?returnTo=/inventory/purchases/create'
+                            );
+                          }}
+                        >
+                          Create a new product
+                        </button>
+                      </div>
+                    )}
                 </div>
 
                 {selectedProduct && (
@@ -387,9 +504,12 @@ const CreatePurchase = () => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Selected Product
                       </label>
-                      <div className="font-medium text-gray-900">{selectedProduct.name}</div>
+                      <div className="font-medium text-gray-900">
+                        {selectedProduct.name}
+                      </div>
                       <div className="text-sm text-gray-500">
-                        SKU: {selectedProduct.sku} | Stock: {selectedProduct.totalStock || 0}
+                        SKU: {selectedProduct.sku || 'N/A'} | Stock:{' '}
+                        {selectedProduct.totalStock || 0}
                       </div>
                     </div>
 
@@ -399,6 +519,9 @@ const CreatePurchase = () => {
                       value={quantity}
                       onChange={(e) => setQuantity(Number(e.target.value))}
                       min="1"
+                      placeholder={`Current Stock: ${
+                        selectedProduct.totalStock || 0
+                      }`}
                     />
 
                     <Input
@@ -408,6 +531,9 @@ const CreatePurchase = () => {
                       onChange={(e) => setCostPrice(Number(e.target.value))}
                       min="0"
                       step="0.01"
+                      placeholder={`Previous: ${
+                        selectedProduct.costPrice || 'N/A'
+                      }`}
                     />
 
                     <Input
@@ -417,15 +543,23 @@ const CreatePurchase = () => {
                       onChange={(e) => setRetailPrice(Number(e.target.value))}
                       min="0"
                       step="0.01"
+                      placeholder={`Previous: ${
+                        selectedProduct.retailPrice || 'N/A'
+                      }`}
                     />
 
                     <Input
                       type="number"
                       label="Wholesale Price (₦)"
                       value={wholesalePrice}
-                      onChange={(e) => setWholesalePrice(Number(e.target.value))}
+                      onChange={(e) =>
+                        setWholesalePrice(Number(e.target.value))
+                      }
                       min="0"
                       step="0.01"
+                      placeholder={`Previous: ${
+                        selectedProduct.wholesalePrice || 'N/A'
+                      }`}
                     />
 
                     <Button

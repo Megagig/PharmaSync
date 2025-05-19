@@ -75,6 +75,10 @@ export interface IProduct extends Document {
   inventory: IProductInventoryItem[];
   priceLevels: IProductPriceLevel[];
   defaultPrice: number;
+  // Price properties
+  retailPrice: number;
+  wholesalePrice: number;
+  costPrice: number;
   minimumStockLevel: number;
   maximumStockLevel?: number;
   reorderPoint: number;
@@ -104,6 +108,9 @@ export interface IProductCreate {
   manufacturer?: string;
   requiresPrescription: boolean;
   defaultPrice: number;
+  retailPrice: number;
+  wholesalePrice: number;
+  costPrice: number;
   priceLevels?: IProductPriceLevel[];
   minimumStockLevel: number;
   maximumStockLevel?: number;
@@ -129,6 +136,9 @@ export interface IProductUpdate {
   manufacturer?: string;
   requiresPrescription?: boolean;
   defaultPrice?: number;
+  retailPrice?: number;
+  wholesalePrice?: number;
+  costPrice?: number;
   minimumStockLevel?: number;
   maximumStockLevel?: number;
   reorderPoint?: number;
@@ -156,6 +166,9 @@ export interface IProductResponse {
   inventory: IProductInventoryItem[];
   priceLevels: IProductPriceLevel[];
   defaultPrice: number;
+  retailPrice: number;
+  wholesalePrice: number;
+  costPrice: number;
   minimumStockLevel: number;
   maximumStockLevel?: number;
   reorderPoint: number;
