@@ -12,20 +12,20 @@ export const getAllSuppliers = asyncHandler(async (req: Request, res: Response) 
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
   const skip = (page - 1) * limit;
-  
+
   // Build filter object
   const filter: any = {};
-  
+
   // Filter by active status
   if (req.query.isActive !== undefined) {
     filter.isActive = req.query.isActive === 'true';
   }
-  
+
   // Filter by preferred supplier
   if (req.query.preferredSupplier !== undefined) {
     filter.preferredSupplier = req.query.preferredSupplier === 'true';
   }
-  
+
   // Search by name or supplier code
   if (req.query.search) {
     filter.$or = [
@@ -33,21 +33,21 @@ export const getAllSuppliers = asyncHandler(async (req: Request, res: Response) 
       { supplierCode: { $regex: req.query.search, $options: 'i' } },
     ];
   }
-  
+
   // Filter by category
   if (req.query.category) {
     filter.categories = { $in: [req.query.category] };
   }
-  
+
   // Execute query with pagination
   const suppliers = await Supplier.find(filter)
     .sort({ name: 1 })
     .skip(skip)
     .limit(limit);
-  
+
   // Get total count for pagination
   const total = await Supplier.countDocuments(filter);
-  
+
   res.status(200).json({
     status: 'success',
     data: suppliers,
@@ -67,11 +67,11 @@ export const getAllSuppliers = asyncHandler(async (req: Request, res: Response) 
  */
 export const getSupplierById = asyncHandler(async (req: Request, res: Response) => {
   const supplier = await Supplier.findById(req.params.id);
-  
+
   if (!supplier) {
     throw new AppError('Supplier not found', 404);
   }
-  
+
   res.status(200).json({
     status: 'success',
     data: supplier,
@@ -97,14 +97,16 @@ export const createSupplier = asyncHandler(async (req: Request, res: Response) =
     supplierCode,
     categories,
   } = req.body;
-  
-  // Check if supplier with same email already exists
-  const existingSupplier = await Supplier.findOne({ email });
-  
-  if (existingSupplier) {
-    throw new AppError('Supplier with this email already exists', 400);
+
+  // Check if supplier with same email already exists (only if email is provided)
+  if (email && email.trim() !== '') {
+    const existingSupplier = await Supplier.findOne({ email });
+
+    if (existingSupplier) {
+      throw new AppError('Supplier with this email already exists', 400);
+    }
   }
-  
+
   // Create supplier
   const supplier = await Supplier.create({
     name,
@@ -119,7 +121,7 @@ export const createSupplier = asyncHandler(async (req: Request, res: Response) =
     supplierCode,
     categories,
   });
-  
+
   res.status(201).json({
     status: 'success',
     data: supplier,
@@ -145,22 +147,22 @@ export const updateSupplier = asyncHandler(async (req: Request, res: Response) =
     preferredSupplier,
     categories,
   } = req.body;
-  
+
   const supplier = await Supplier.findById(req.params.id);
-  
+
   if (!supplier) {
     throw new AppError('Supplier not found', 404);
   }
-  
+
   // Check if email is being changed and if it already exists
   if (email && email !== supplier.email) {
     const existingSupplier = await Supplier.findOne({ email });
-    
+
     if (existingSupplier) {
       throw new AppError('Supplier with this email already exists', 400);
     }
   }
-  
+
   // Update fields
   if (name) supplier.name = name;
   if (contactPerson) supplier.contactPerson = contactPerson;
@@ -179,9 +181,9 @@ export const updateSupplier = asyncHandler(async (req: Request, res: Response) =
   if (isActive !== undefined) supplier.isActive = isActive;
   if (preferredSupplier !== undefined) supplier.preferredSupplier = preferredSupplier;
   if (categories) supplier.categories = categories;
-  
+
   await supplier.save();
-  
+
   res.status(200).json({
     status: 'success',
     data: supplier,
@@ -195,15 +197,15 @@ export const updateSupplier = asyncHandler(async (req: Request, res: Response) =
  */
 export const deleteSupplier = asyncHandler(async (req: Request, res: Response) => {
   const supplier = await Supplier.findById(req.params.id);
-  
+
   if (!supplier) {
     throw new AppError('Supplier not found', 404);
   }
-  
+
   // Soft delete by setting isActive to false
   supplier.isActive = false;
   await supplier.save();
-  
+
   res.status(200).json({
     status: 'success',
     data: null,

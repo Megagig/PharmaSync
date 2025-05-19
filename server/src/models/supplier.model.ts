@@ -31,27 +31,27 @@ const supplierSchema = new Schema<ISupplier>(
     address: {
       street: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
       },
       city: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
       },
       state: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
       },
       postalCode: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
       },
       country: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
         default: 'Nigeria',
       },

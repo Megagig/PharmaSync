@@ -65,14 +65,14 @@ const supplierSchema = z.object({
   contactPerson: z.string().min(1, 'Contact person is required'),
   address: z
     .object({
-      street: z.string().min(1, 'Street is required'),
-      city: z.string().min(1, 'City is required'),
-      state: z.string().min(1, 'State is required'),
-      postalCode: z.string().min(1, 'Postal code is required'),
+      street: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      postalCode: z.string().optional(),
       country: z.string().default('Nigeria'),
     })
     .optional(),
-  phone: z.string().optional(),
+  phone: z.string().min(1, 'Phone number is required'),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   website: z.string().url('Invalid website URL').optional().or(z.literal('')),
   paymentTerms: z.string().optional(),
@@ -170,16 +170,18 @@ const SuppliersList = () => {
 
   const onSubmit = async (data: SupplierFormData) => {
     try {
-      // Make sure address is included
+      // If address checkbox is not checked, set address to an empty object
+      // This ensures we don't send undefined which can cause validation issues
       if (!data.address) {
-        data.address = {
-          street: 'Default Street',
-          city: 'Default City',
-          state: 'Default State',
-          postalCode: '00000',
-          country: 'Nigeria',
-        };
+        data.address = {};
       }
+
+      // Ensure email is not an empty string (to avoid validation issues)
+      if (data.email === '') {
+        data.email = undefined;
+      }
+
+      console.log('Submitting supplier data:', data);
 
       if (editingSupplierId) {
         await api.patch(`/suppliers/${editingSupplierId}`, data);
@@ -470,7 +472,6 @@ const SuppliersList = () => {
                             label="Street"
                             placeholder="Enter street address"
                             error={errors.address?.street?.message}
-                            required
                             {...field}
                           />
                         )}
@@ -485,7 +486,6 @@ const SuppliersList = () => {
                             label="City"
                             placeholder="Enter city"
                             error={errors.address?.city?.message}
-                            required
                             {...field}
                           />
                         )}
@@ -500,7 +500,6 @@ const SuppliersList = () => {
                             label="State"
                             placeholder="Enter state"
                             error={errors.address?.state?.message}
-                            required
                             {...field}
                           />
                         )}
@@ -515,7 +514,6 @@ const SuppliersList = () => {
                             label="Postal Code"
                             placeholder="Enter postal code"
                             error={errors.address?.postalCode?.message}
-                            required
                             {...field}
                           />
                         )}
@@ -530,7 +528,6 @@ const SuppliersList = () => {
                             label="Country"
                             placeholder="Enter country"
                             error={errors.address?.country?.message}
-                            required
                             {...field}
                           />
                         )}

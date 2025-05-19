@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 const addressSchema = z.object({
-  street: z.string().min(1, 'Street is required'),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  postalCode: z.string().min(1, 'Postal code is required'),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  postalCode: z.string().optional(),
   country: z.string().default('Nigeria'),
 });
 
