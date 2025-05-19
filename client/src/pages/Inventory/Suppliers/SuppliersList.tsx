@@ -281,7 +281,7 @@ const SuppliersList = () => {
                     control={control}
                     render={({ field }) => (
                       <Input
-                        label="Supplier Name"
+                        label={<>Supplier Name <span className="text-red-500">*</span></>}
                         placeholder="Enter supplier name"
                         error={errors.name?.message}
                         required
@@ -310,7 +310,7 @@ const SuppliersList = () => {
                     control={control}
                     render={({ field }) => (
                       <Input
-                        label="Contact Person"
+                        label={<>Contact Person <span className="text-red-500">*</span></>}
                         placeholder="Enter contact person name"
                         error={errors.contactPerson?.message}
                         required
@@ -325,7 +325,7 @@ const SuppliersList = () => {
                     control={control}
                     render={({ field }) => (
                       <Select
-                        label="Supplier Type"
+                        label={<>Supplier Type <span className="text-red-500">*</span></>}
                         options={Object.values(SupplierType).map((type) => ({
                           value: type,
                           label: getSupplierTypeLabel(type),
@@ -343,9 +343,10 @@ const SuppliersList = () => {
                     control={control}
                     render={({ field }) => (
                       <Input
-                        label="Phone"
+                        label={<>Phone <span className="text-red-500">*</span></>}
                         placeholder="Enter phone number"
                         error={errors.phone?.message}
+                        required
                         {...field}
                       />
                     )}

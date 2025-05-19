@@ -17,14 +17,8 @@ const env = cleanEnv(process.env, {
   // MongoDB Configuration
   MONGODB_URI: str({
     default:
-      'mongodb://megagigdev:CGaPkfAtL73vikoI@ac-ixnxnxl-shard-00-00.io0gig6.mongodb.net:27017,ac-ixnxnxl-shard-00-01.io0gig6.mongodb.net:27017,ac-ixnxnxl-shard-00-02.io0gig6.mongodb.net:27017/PharmaSyncDB?ssl=true&replicaSet=atlas-ixnxnxl-shard-0&authSource=admin&retryWrites=true&w=majority',
+      'mongodb+srv://turningpointcodes:sJIVGXl3b5sXIJo1@cluster0.xya4vqe.mongodb.net/PharmaSyncDBretryWrites=true&w=majority&appName=Cluster0',
   }),
-  MONGODB_URI_TEST: str({
-    default: 'mongodb://localhost:27017/pharmasync-test',
-  }),
-  MONGODB_URI_DEV: str({ default: 'mongodb://localhost:27017/pharmasync-dev' }),
-  MONGODB_POOL_SIZE: num({ default: 10 }),
-  MONGODB_CONNECT_TIMEOUT_MS: num({ default: 30000 }),
 
   // JWT Configuration
   JWT_SECRET: str(),

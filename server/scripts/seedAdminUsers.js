@@ -10,14 +10,7 @@ const bcrypt = require('bcryptjs');
 // Get MongoDB URI from environment variables
 const MONGODB_URI = process.env.MONGODB_URI;
 
-// Convert SRV connection string to direct connection string if needed
-function getDirectConnectionString(uri) {
-  if (!uri) return null;
-
-  // If it's already a direct connection string, return it as is
-  if (!uri.includes('mongodb+srv://')) {
-    return uri;
-  }
+// No longer need to convert SRV connection string
 
   try {
     // Extract parts from the SRV connection string
@@ -67,23 +60,11 @@ const connectDB = async () => {
       process.exit(1);
     }
 
-    // Convert to direct connection string if needed
-    const connectionString = getDirectConnectionString(MONGODB_URI);
-    console.log(
-      'Connection string type:',
-      connectionString.includes('mongodb+srv') ? 'SRV' : 'Direct'
-    );
-
     // Add more detailed logging
     console.log('Attempting to connect to MongoDB...');
 
-    await mongoose.connect(connectionString, {
-      serverSelectionTimeoutMS: 10000, // Timeout after 10 seconds
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
-      ssl: true,
-      tls: true,
-    });
+    // Connect with simplified configuration
+    await mongoose.connect(MONGODB_URI);
 
     console.log('MongoDB connected successfully');
   } catch (error) {

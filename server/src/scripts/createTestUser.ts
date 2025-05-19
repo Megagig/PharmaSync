@@ -70,21 +70,8 @@ const connectDB = async (): Promise<void> => {
 
     console.log('Connecting to MongoDB...');
 
-    // Determine if we're connecting to a local MongoDB instance
-    const isLocalConnection = mongoURI.includes('localhost') || mongoURI.includes('127.0.0.1');
-    
-    // Connection options
-    const options = {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
-      // Only use SSL/TLS for remote connections (like MongoDB Atlas)
-      ssl: !isLocalConnection,
-      tls: !isLocalConnection,
-    };
-
-    await mongoose.connect(mongoURI, options);
+    // Connect with simplified configuration
+    await mongoose.connect(mongoURI);
     console.log('MongoDB connected successfully');
   } catch (error) {
     console.error('MongoDB connection error:', error);

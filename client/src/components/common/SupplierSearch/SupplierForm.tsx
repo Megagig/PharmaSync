@@ -20,12 +20,13 @@ const addressSchema = z.object({
 const supplierSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   contactPerson: z.string().min(1, 'Contact person is required'),
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().min(1, 'Phone number is required'),
   address: addressSchema,
   paymentTerms: z
     .enum(['prepaid', 'net15', 'net30', 'net60', 'cod'])
     .optional(),
+  type: z.string().min(1, 'Supplier type is required').default('wholesaler'),
 });
 
 type SupplierFormData = z.infer<typeof supplierSchema>;
@@ -58,6 +59,7 @@ const SupplierForm = ({ onSubmit, onCancel }: SupplierFormProps) => {
         country: 'Nigeria',
       },
       paymentTerms: 'net30',
+      type: 'wholesaler',
     },
   });
 
@@ -97,7 +99,7 @@ const SupplierForm = ({ onSubmit, onCancel }: SupplierFormProps) => {
             control={control}
             render={({ field }) => (
               <Input
-                label="Supplier Name"
+                label={<>Supplier Name <span className="text-red-500">*</span></>}
                 placeholder="Enter supplier name"
                 error={errors.name?.message}
                 required
@@ -112,10 +114,32 @@ const SupplierForm = ({ onSubmit, onCancel }: SupplierFormProps) => {
             control={control}
             render={({ field }) => (
               <Input
-                label="Contact Person"
+                label={<>Contact Person <span className="text-red-500">*</span></>}
                 placeholder="Enter contact person name"
                 error={errors.contactPerson?.message}
                 required
+                {...field}
+              />
+            )}
+          />
+        </div>
+        <div>
+          <Controller
+            name="type"
+            control={control}
+            render={({ field }) => (
+              <Select
+                label={<>Supplier Type <span className="text-red-500">*</span></>}
+                placeholder="Select supplier type"
+                error={errors.type?.message}
+                required
+                options={[
+                  { value: 'wholesaler', label: 'Wholesaler' },
+                  { value: 'manufacturer', label: 'Manufacturer' },
+                  { value: 'distributor', label: 'Distributor' },
+                  { value: 'retailer', label: 'Retailer' },
+                  { value: 'other', label: 'Other' },
+                ]}
                 {...field}
               />
             )}
@@ -127,7 +151,7 @@ const SupplierForm = ({ onSubmit, onCancel }: SupplierFormProps) => {
             control={control}
             render={({ field }) => (
               <Input
-                label="Phone"
+                label={<>Phone <span className="text-red-500">*</span></>}
                 placeholder="Enter phone number"
                 error={errors.phone?.message}
                 required
@@ -145,7 +169,6 @@ const SupplierForm = ({ onSubmit, onCancel }: SupplierFormProps) => {
                 label="Email"
                 placeholder="Enter email address"
                 error={errors.email?.message}
-                required
                 {...field}
               />
             )}

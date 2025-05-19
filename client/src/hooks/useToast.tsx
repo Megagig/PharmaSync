@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 interface Toast {
   id: string;
@@ -9,27 +9,45 @@ interface Toast {
 
 interface ToastContextType {
   toasts: Toast[];
-  showToast: (message: string, type: 'success' | 'error' | 'warning' | 'info') => void;
+  showToast: (message: string, type: 'success' | 'error' | 'warning' | 'info', duration?: number) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
+// Safely handle browser extension interactions
+const safelyExecute = (callback: Function) => {
+  try {
+    return callback();
+  } catch (error) {
+    // Safely handle runtime.lastError
+    if (error instanceof Error && error.message.includes('message port closed')) {
+      console.warn('Browser extension communication error handled gracefully');
+      return null;
+    }
+    throw error;
+  }
+};
+
 export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info', duration = 5000) => {
     const id = Date.now().toString();
-    setToasts(prev => [
-      ...prev,
-      { id, message, type, duration: 5000 }
-    ]);
-  };
+    safelyExecute(() => {
+      setToasts(prev => [
+        ...prev,
+        { id, message, type, duration }
+      ]);
+    });
+  }, []);
 
   useEffect(() => {
     if (toasts.length === 0) return;
 
     const timer = setTimeout(() => {
-      setToasts(prev => prev.slice(1));
+      safelyExecute(() => {
+        setToasts(prev => prev.slice(1));
+      });
     }, toasts[0].duration || 5000);
 
     return () => clearTimeout(timer);

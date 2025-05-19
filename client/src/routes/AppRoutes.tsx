@@ -72,6 +72,10 @@ import SuppliersList from '@/pages/Inventory/Suppliers/SuppliersList';
 import LocationList from '@/pages/Inventory/Locations/LocationList';
 import InventoryReportsList from '@/pages/Inventory/Reports/InventoryReportsList';
 
+// Purchase Order pages
+import PurchaseOrderList from '@/pages/purchase-orders/PurchaseOrderList';
+import PurchaseOrderDetail from '@/pages/purchase-orders/PurchaseOrderDetail';
+
 // Sales pages
 import SalesList from '@/pages/Sales/SalesList';
 import CreateSale from '@/pages/Sales/CreateSale';
@@ -355,6 +359,10 @@ const AppRoutes = () => {
           />
           <Route path="/inventory/locations" element={<LocationList />} />
           <Route path="/inventory/reports" element={<InventoryReportsList />} />
+
+          {/* Purchase Orders */}
+          <Route path="/purchase-orders" element={<PurchaseOrderList />} />
+          <Route path="/purchase-orders/:id" element={<PurchaseOrderDetail />} />
 
           {/* Reports */}
           <Route path="/reports" element={<ReportsModule />} />

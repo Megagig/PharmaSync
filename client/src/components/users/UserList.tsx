@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store/store';
 import { fetchUsers, deleteUser } from '@/store/slices/userSlice';
+import { safelyExecute, safeEventHandler } from '@/utils/browser.utils';
+import { useToast } from '@/hooks/useToast';
 import { User, UserRole } from '@/types/user.types';
 import { RoleType } from '@/types/role.types';
 import Card from '@/components/common/Card/Card';
@@ -18,70 +20,80 @@ import { FiEdit, FiTrash2, FiKey, FiRefreshCw, FiUserPlus } from 'react-icons/fi
 const UserList: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+  const { showToast } = useToast();
+
   const { users, isLoading, error, totalPages, currentPage } = useSelector(
     (state: RootState) => state.users
   );
-  
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('');
   const [filterActive, setFilterActive] = useState<boolean | undefined>(undefined);
-  
-  useEffect(() => {
-    loadUsers();
-  }, [dispatch, currentPage, filterRole, filterActive]);
-  
-  const loadUsers = (page = 1) => {
+
+  // Safe version of loadUsers to prevent browser extension issues
+  const loadUsers = useCallback((page = 1) => {
     const params: any = { page, limit: 10 };
-    
+
     if (searchTerm) {
       params.search = searchTerm;
     }
-    
+
     if (filterRole) {
       params.roleType = filterRole;
     }
-    
+
     if (filterActive !== undefined) {
       params.isActive = filterActive;
     }
-    
-    dispatch(fetchUsers(params));
-  };
-  
-  const handleSearch = () => {
+
+    safelyExecute(() => {
+      dispatch(fetchUsers(params));
+    });
+  }, [dispatch, searchTerm, filterRole, filterActive]);
+
+  useEffect(() => {
+    loadUsers(currentPage);
+  }, [loadUsers, currentPage]);
+
+  const handleSearch = useCallback(() => {
     loadUsers(1);
-  };
-  
-  const handlePageChange = (page: number) => {
+  }, [loadUsers]);
+
+  const handlePageChange = useCallback((page: number) => {
     loadUsers(page);
-  };
-  
-  const handleDelete = () => {
+  }, [loadUsers]);
+
+  const handleDelete = useCallback(() => {
     if (selectedUserId) {
-      dispatch(deleteUser(selectedUserId))
-        .unwrap()
-        .then(() => {
-          setShowDeleteModal(false);
-          setSelectedUserId(null);
-          loadUsers(currentPage);
-        })
-        .catch((error) => {
-          console.error('Failed to delete user:', error);
-        });
+      safelyExecute(() => {
+        dispatch(deleteUser(selectedUserId))
+          .unwrap()
+          .then(() => {
+            setShowDeleteModal(false);
+            setSelectedUserId(null);
+            loadUsers(currentPage);
+            showToast('User deleted successfully', 'success');
+          })
+          .catch((error) => {
+            console.error('Failed to delete user:', error);
+            showToast('Failed to delete user', 'error');
+          });
+      });
     }
-  };
-  
-  const confirmDelete = (id: string) => {
-    setSelectedUserId(id);
-    setShowDeleteModal(true);
-  };
-  
+  }, [selectedUserId, dispatch, currentPage, loadUsers, showToast]);
+
+  const confirmDelete = useCallback((id: string) => {
+    safelyExecute(() => {
+      setSelectedUserId(id);
+      setShowDeleteModal(true);
+    });
+  }, []);
+
   const getRoleBadgeColor = (role?: UserRole | string) => {
     if (!role) return 'gray';
-    
+
     switch (role) {
       case UserRole.ADMIN:
       case RoleType.ADMIN:
@@ -106,7 +118,7 @@ const UserList: React.FC = () => {
         return 'gray';
     }
   };
-  
+
   const columns = [
     {
       header: 'User',
@@ -208,7 +220,7 @@ const UserList: React.FC = () => {
       ),
     },
   ];
-  
+
   const roleOptions = [
     { value: '', label: 'All Roles' },
     { value: RoleType.SUPER_ADMIN, label: 'Super Admin' },
@@ -220,7 +232,7 @@ const UserList: React.FC = () => {
     { value: RoleType.STAFF, label: 'Staff' },
     { value: RoleType.PATIENT, label: 'Patient' },
   ];
-  
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -233,7 +245,7 @@ const UserList: React.FC = () => {
           Create New User
         </Button>
       </div>
-      
+
       <Card>
         <div className="p-4 border-b">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -241,15 +253,15 @@ const UserList: React.FC = () => {
               <SearchInput
                 placeholder="Search users..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onSearch={handleSearch}
+                onChange={safeEventHandler((e) => setSearchTerm(e.target.value))}
+                onSearch={safeEventHandler(() => handleSearch())}
               />
             </div>
             <div className="flex flex-wrap gap-2">
               <select
                 className="form-select"
                 value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
+                onChange={safeEventHandler((e) => setFilterRole(e.target.value))}
               >
                 {roleOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -260,13 +272,13 @@ const UserList: React.FC = () => {
               <select
                 className="form-select"
                 value={filterActive === undefined ? '' : filterActive ? 'active' : 'inactive'}
-                onChange={(e) => {
+                onChange={safeEventHandler((e) => {
                   if (e.target.value === '') {
                     setFilterActive(undefined);
                   } else {
                     setFilterActive(e.target.value === 'active');
                   }
-                }}
+                })}
               >
                 <option value="">All Status</option>
                 <option value="active">Active</option>
@@ -282,7 +294,7 @@ const UserList: React.FC = () => {
             </div>
           </div>
         </div>
-        
+
         <div>
           {isLoading && users.length === 0 ? (
             <div className="flex items-center justify-center h-64">
@@ -317,7 +329,7 @@ const UserList: React.FC = () => {
             />
           )}
         </div>
-        
+
         {totalPages > 1 && (
           <div className="p-4 border-t">
             <Pagination
@@ -328,7 +340,7 @@ const UserList: React.FC = () => {
           </div>
         )}
       </Card>
-      
+
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={showDeleteModal}

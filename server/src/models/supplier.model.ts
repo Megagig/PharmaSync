@@ -15,7 +15,7 @@ const supplierSchema = new Schema<ISupplier>(
     },
     email: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       lowercase: true,
       match: [
@@ -88,6 +88,11 @@ const supplierSchema = new Schema<ISupplier>(
         trim: true,
       },
     ],
+    type: {
+      type: String,
+      trim: true,
+      default: 'wholesaler',
+    },
   },
   {
     timestamps: true,

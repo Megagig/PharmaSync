@@ -11,7 +11,7 @@ export interface ISupplierAddress {
 export interface ISupplier extends Document {
   name: string;
   contactPerson: string;
-  email: string;
+  email?: string;
   phone: string;
   address: ISupplierAddress;
   taxId?: string;
@@ -21,6 +21,7 @@ export interface ISupplier extends Document {
   preferredSupplier: boolean;
   supplierCode: string;
   categories: string[];
+  type?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -28,7 +29,7 @@ export interface ISupplier extends Document {
 export interface ISupplierCreate {
   name: string;
   contactPerson: string;
-  email: string;
+  email?: string;
   phone: string;
   address: ISupplierAddress;
   taxId?: string;
@@ -37,6 +38,7 @@ export interface ISupplierCreate {
   preferredSupplier?: boolean;
   supplierCode?: string;
   categories?: string[];
+  type?: string;
 }
 
 export interface ISupplierUpdate {
@@ -57,7 +59,7 @@ export interface ISupplierResponse {
   id: string;
   name: string;
   contactPerson: string;
-  email: string;
+  email?: string;
   phone: string;
   address: ISupplierAddress;
   taxId?: string;
@@ -67,6 +69,7 @@ export interface ISupplierResponse {
   preferredSupplier: boolean;
   supplierCode: string;
   categories: string[];
+  type?: string;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -13,12 +13,10 @@ const connectDB = async () => {
   try {
     console.log('Connecting to MongoDB...');
     console.log('MongoDB URI:', process.env.MONGODB_URI);
-    
-    await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    
+
+    // Connect with simplified configuration
+    await mongoose.connect(process.env.MONGODB_URI);
+
     console.log('MongoDB connected successfully');
   } catch (error) {
     console.error('MongoDB connection error:', error);
@@ -80,7 +78,7 @@ const userSchema = new mongoose.Schema({
 // Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  
+
   try {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -97,19 +95,21 @@ const seedUsers = async () => {
   try {
     // Check if users already exist
     const adminExists = await User.findOne({ email: 'Megagigdev@gmail.com' });
-    const pharmacistExists = await User.findOne({ email: 'turningpointcodes@gmail.com' });
-    
+    const pharmacistExists = await User.findOne({
+      email: 'turningpointcodes@gmail.com',
+    });
+
     // Delete existing users if they exist
     if (adminExists) {
       console.log('Deleting existing admin user...');
       await User.deleteOne({ email: 'Megagigdev@gmail.com' });
     }
-    
+
     if (pharmacistExists) {
       console.log('Deleting existing pharmacist user...');
       await User.deleteOne({ email: 'turningpointcodes@gmail.com' });
     }
-    
+
     // Create admin user
     const admin = new User({
       email: 'Megagigdev@gmail.com',
@@ -122,7 +122,7 @@ const seedUsers = async () => {
       approvalStatus: 'approved',
       phoneNumber: '+1234567890',
     });
-    
+
     // Create pharmacist user
     const pharmacist = new User({
       email: 'turningpointcodes@gmail.com',
@@ -136,14 +136,14 @@ const seedUsers = async () => {
       phoneNumber: '+0987654321',
       licenseNumber: 'PHARM-12345',
     });
-    
+
     // Save users to database
     await admin.save();
     console.log('Admin user created successfully');
-    
+
     await pharmacist.save();
     console.log('Pharmacist user created successfully');
-    
+
     console.log('Seed completed successfully');
   } catch (error) {
     console.error('Error seeding users:', error);

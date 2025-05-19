@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Product } from '@/types/product';
 import Input from '@/components/common/Input/Input';
 import api from '@/services/api';
+import { useToast } from '@/hooks/useToast';
 
 interface ProductSearchProps {
   onSelect?: (product: Product) => void;
@@ -20,6 +21,7 @@ const ProductSearch = ({
   className = '',
   disabled = false,
 }: ProductSearchProps) => {
+  const { showToast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -33,37 +35,15 @@ const ProductSearch = ({
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        const response = await api.get('/products?isActive=true');
+        // Fetch medications
+        const response = await api.get('/medications');
         console.log('ProductSearch - API response:', response.data);
 
         let productsArray: Product[] = [];
 
         if (response.data && response.data.data) {
-          if (Array.isArray(response.data.data)) {
-            // Direct array of products
-            productsArray = response.data.data;
-          } else if (
-            response.data.data.products &&
-            Array.isArray(response.data.data.products)
-          ) {
-            // Products nested in data.products
-            productsArray = response.data.data.products;
-          } else {
-            // Try to find arrays in the response
-            const possibleArrays = Object.values(response.data.data).filter(
-              (val) => Array.isArray(val)
-            );
-            if (possibleArrays.length > 0) {
-              productsArray = possibleArrays[0] as Product[];
-            } else {
-              console.warn(
-                'Could not find products array in response:',
-                response.data
-              );
-            }
-          }
+          productsArray = response.data.data;
         } else if (response.data && Array.isArray(response.data)) {
-          // Direct array in response
           productsArray = response.data;
         } else {
           console.warn('Unexpected API response structure:', response.data);
@@ -76,6 +56,7 @@ const ProductSearch = ({
           name: product.name || 'Unknown Product',
           sku: product.sku || 'No SKU',
           defaultPrice: product.defaultPrice || 0,
+          costPrice: product.costPrice || 0,
           totalStock: product.totalStock || 0,
         }));
 
@@ -83,6 +64,7 @@ const ProductSearch = ({
         setProducts(processedProducts);
       } catch (error) {
         console.error('Error fetching products:', error);
+        showToast('Error loading products', 'error');
         setProducts([]);
       } finally {
         setIsLoading(false);
@@ -116,6 +98,7 @@ const ProductSearch = ({
             (product.barcode && product.barcode.toLowerCase().includes(term)))
       );
       setFilteredProducts(filtered);
+      console.log('Filtered products:', filtered.length);
     } catch (error) {
       console.error('Error filtering products:', error);
       setFilteredProducts([]);
@@ -156,6 +139,7 @@ const ProductSearch = ({
       name: product.name || 'Unknown Product',
       sku: product.sku || 'No SKU',
       defaultPrice: product.defaultPrice || 0,
+      costPrice: product.costPrice || product.defaultPrice || 0,
       totalStock: product.totalStock || 0,
     };
 
@@ -165,6 +149,9 @@ const ProductSearch = ({
     } else if (onSelect) {
       onSelect(processedProduct);
     }
+
+    // Show success message
+    showToast(`Product ${processedProduct.name} selected`, 'success');
 
     setSearchTerm('');
     setShowDropdown(false);
@@ -198,7 +185,7 @@ const ProductSearch = ({
             >
               <div className="font-medium">{product.name}</div>
               <div className="text-sm text-gray-500">
-                SKU: {product.sku} | Stock: {product.totalStock}
+                SKU: {product.sku} | Stock: {product.totalStock} | Price: ₦{product.costPrice || product.defaultPrice}
               </div>
             </div>
           ))}

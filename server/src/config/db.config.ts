@@ -14,23 +14,32 @@ const connectDB = async (): Promise<void> => {
       throw new Error('MongoDB URI is required. Please check your .env file.');
     }
 
-    logger.info('Connecting to MongoDB...');
+    logger.info('Connecting to MongoDB Atlas...');
+
+    // Log connection string type (SRV or direct)
+    logger.info(
+      `Connection string type: ${
+        mongoURI.includes('mongodb+srv') ? 'SRV' : 'Direct'
+      }`
+    );
 
     // Configure Mongoose
     mongoose.set('strictQuery', true);
 
-    // Connection options for MongoDB Atlas
-    const options = {
+    // Connect to MongoDB with improved options for Atlas
+    await mongoose.connect(mongoURI, {
+      // Connection pool size
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 30000,
-      ssl: true,
-      tls: true,
-    };
 
-    // Connect to MongoDB
-    await mongoose.connect(mongoURI, options);
+      // Timeouts
+      serverSelectionTimeoutMS: 30000, // 30 seconds
+      socketTimeoutMS: 45000, // 45 seconds
+      connectTimeoutMS: 30000, // 30 seconds
+
+      // Retry options
+      retryWrites: true,
+      retryReads: true,
+    });
 
     // Add connection event listeners
     mongoose.connection.on('connected', () => {
@@ -60,7 +69,8 @@ const connectDB = async (): Promise<void> => {
     logger.info('MongoDB connection initialized successfully');
   } catch (error) {
     logger.error('MongoDB connection error:', error);
-    process.exit(1);
+    // Don't exit the process, let the application handle the error
+    throw error;
   }
 };
 

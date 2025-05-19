@@ -180,7 +180,7 @@ const PurchasesList = () => {
             variant="primary"
             onClick={() => navigate('/inventory/purchases/create')}
           >
-            Create Purchase Order
+            Create Purchase
           </Button>
         </div>
       </div>

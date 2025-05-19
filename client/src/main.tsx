@@ -9,6 +9,10 @@ import {
 import App from './App';
 import { store } from './store/store';
 import './assets/styles/index.css';
+import { setupGlobalErrorHandlers } from './utils/errorHandlers';
+
+// Setup global error handlers to catch browser extension issues
+setupGlobalErrorHandlers();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

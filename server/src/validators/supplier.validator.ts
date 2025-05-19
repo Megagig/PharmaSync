@@ -12,7 +12,7 @@ export const createSupplierSchema = z.object({
   body: z.object({
     name: z.string().min(1, 'Name is required'),
     contactPerson: z.string().min(1, 'Contact person is required'),
-    email: z.string().email('Invalid email address'),
+    email: z.string().email('Invalid email address').optional().or(z.literal('')),
     phone: z.string().min(1, 'Phone number is required'),
     address: addressSchema,
     taxId: z.string().optional(),
@@ -23,6 +23,7 @@ export const createSupplierSchema = z.object({
     preferredSupplier: z.boolean().optional(),
     supplierCode: z.string().optional(),
     categories: z.array(z.string()).optional(),
+    type: z.string().min(1, 'Supplier type is required').optional(),
   }),
 });
 
@@ -30,7 +31,7 @@ export const updateSupplierSchema = z.object({
   body: z.object({
     name: z.string().min(1, 'Name is required').optional(),
     contactPerson: z.string().min(1, 'Contact person is required').optional(),
-    email: z.string().email('Invalid email address').optional(),
+    email: z.string().email('Invalid email address').optional().or(z.literal('')),
     phone: z.string().min(1, 'Phone number is required').optional(),
     address: addressSchema.partial().optional(),
     taxId: z.string().optional(),
@@ -41,6 +42,7 @@ export const updateSupplierSchema = z.object({
     isActive: z.boolean().optional(),
     preferredSupplier: z.boolean().optional(),
     categories: z.array(z.string()).optional(),
+    type: z.string().min(1, 'Supplier type is required').optional(),
   }),
   params: z.object({
     id: z.string().min(1, 'Supplier ID is required'),

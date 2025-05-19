@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { HelmetProvider } from 'react-helmet-async';
+import { ToastProvider } from './hooks/useToast';
 import AppRoutes from './routes/AppRoutes';
 
 function App() {
@@ -13,7 +14,9 @@ function App() {
     <HelmetProvider>
       <ThemeProvider>
         <AuthProvider>
-          <AppRoutes />
+          <ToastProvider>
+            <AppRoutes />
+          </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
     </HelmetProvider>

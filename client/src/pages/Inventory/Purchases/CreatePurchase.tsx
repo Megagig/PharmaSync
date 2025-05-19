@@ -100,6 +100,8 @@ const CreatePurchase = () => {
       return;
     }
 
+    console.log('Adding item to purchase:', selectedProduct);
+
     const subtotal = quantity * unitPrice;
 
     const newItem = {
@@ -110,10 +112,20 @@ const CreatePurchase = () => {
       notes: '',
     };
 
-    setFormData((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
+    setFormData((prev) => {
+      const updatedItems = [...prev.items, newItem];
+      console.log('Updated items:', updatedItems);
+      return {
+        ...prev,
+        items: updatedItems,
+      };
+    });
+
+    // Show success message
+    showToast(
+      `Added ${quantity} ${selectedProduct.name} to purchase`,
+      'success'
+    );
 
     // Reset item form
     setSelectedProduct(null);
@@ -168,7 +180,7 @@ const CreatePurchase = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-gray-900">
-          Create Purchase Order
+          Create Purchase
         </h1>
         <Button
           variant="outline"
@@ -195,11 +207,14 @@ const CreatePurchase = () => {
                         supplier
                       );
                       if (supplier && supplier._id) {
+                        // Store the supplier ID in the form data
                         setFormData((prev) => ({
                           ...prev,
                           supplier: supplier._id,
                           paymentTerms: supplier.paymentTerms || 'net30',
                         }));
+
+                        // Show a success message
                         showToast(
                           `Supplier ${supplier.name} selected`,
                           'success'
@@ -308,8 +323,9 @@ const CreatePurchase = () => {
                   </label>
                   <ProductSearch
                     onSelect={(product) => {
+                      console.log('Product selected in CreatePurchase:', product);
                       setSelectedProduct(product);
-                      setUnitPrice(product.costPrice || 0);
+                      setUnitPrice(product.costPrice || product.defaultPrice || 0);
                     }}
                   />
                 </div>
