@@ -9,27 +9,22 @@ const customerAddressSchema = new Schema(
   {
     street: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     city: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     state: {
       type: String,
-      required: true,
-      trim: true,
-    },
-    postalCode: {
-      type: String,
-      required: true,
+      required: false,
       trim: true,
     },
     country: {
       type: String,
-      required: true,
+      required: false,
       trim: true,
       default: 'Nigeria',
     },
@@ -74,6 +69,7 @@ const customerSchema = new Schema<ICustomer>(
     },
     email: {
       type: String,
+      required: false,
       trim: true,
       lowercase: true,
       match: [

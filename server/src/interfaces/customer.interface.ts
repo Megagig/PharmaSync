@@ -18,11 +18,10 @@ export enum HealthcareProfessionalType {
 }
 
 export interface ICustomerAddress {
-  street: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
   isDefault?: boolean;
   _id?: Types.ObjectId;
 }
@@ -35,7 +34,7 @@ export interface ICustomer extends Document {
   lastName: string;
   email?: string;
   phone: string;
-  addresses: ICustomerAddress[];
+  addresses?: ICustomerAddress[];
   organization?: string;
   taxId?: string;
   priceLevel: string; // e.g., 'retail', 'wholesale', 'special'
@@ -60,7 +59,7 @@ export interface ICustomerCreate {
   lastName: string;
   email?: string;
   phone: string;
-  addresses: ICustomerAddress[];
+  addresses?: ICustomerAddress[];
   organization?: string;
   taxId?: string;
   priceLevel: string;

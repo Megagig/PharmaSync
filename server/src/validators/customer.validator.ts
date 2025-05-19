@@ -5,10 +5,9 @@ import {
 } from '../interfaces/customer.interface';
 
 const customerAddressSchema = z.object({
-  street: z.string().min(1, 'Street is required'),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  postalCode: z.string().min(1, 'Postal code is required'),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
   country: z.string().default('Nigeria'),
   isDefault: z.boolean().optional(),
 });
@@ -26,7 +25,7 @@ export const createCustomerSchema = z.object({
     phone: z.string().min(1, 'Phone number is required'),
     addresses: z
       .array(customerAddressSchema)
-      .min(1, 'At least one address is required'),
+      .optional(),
     organization: z.string().optional(),
     taxId: z.string().optional(),
     priceLevel: z.string().min(1, 'Price level is required'),

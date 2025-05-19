@@ -129,7 +129,7 @@ export const createCustomer = asyncHandler(
       lastName,
       email,
       phone,
-      addresses,
+      addresses: addresses || [],
       organization,
       taxId,
       priceLevel,
@@ -234,7 +234,7 @@ export const addCustomerAddress = asyncHandler(
       throw new AppError('Customer not found', 404);
     }
 
-    const { street, city, state, postalCode, country, isDefault } = req.body;
+    const { street, city, state, country, isDefault } = req.body;
 
     // If this address is set as default, update all other addresses
     if (isDefault) {
@@ -248,7 +248,6 @@ export const addCustomerAddress = asyncHandler(
       street,
       city,
       state,
-      postalCode,
       country: country || 'Nigeria',
       isDefault: isDefault || false,
     });
@@ -293,7 +292,7 @@ export const updateCustomerAddress = asyncHandler(
     }
 
     // Update address fields
-    const { street, city, state, postalCode, country, isDefault } = req.body;
+    const { street, city, state, country, isDefault } = req.body;
 
     if (street !== undefined) {
       address.street = street;
@@ -307,9 +306,7 @@ export const updateCustomerAddress = asyncHandler(
       address.state = state;
     }
 
-    if (postalCode !== undefined) {
-      address.postalCode = postalCode;
-    }
+    // Postal code field removed
 
     if (country !== undefined) {
       address.country = country;

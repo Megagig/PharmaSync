@@ -61,10 +61,9 @@ interface PriceLevel {
 }
 
 const addressSchema = z.object({
-  street: z.string().min(1, 'Street is required'),
-  city: z.string().min(1, 'City is required'),
-  state: z.string().min(1, 'State is required'),
-  postalCode: z.string().min(1, 'Postal code is required'),
+  street: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
   country: z.string().default('Nigeria'),
   isDefault: z.boolean().optional(),
 });
@@ -140,26 +139,47 @@ const CustomersList = () => {
 
   const fetchPriceLevels = async () => {
     try {
-      const response = await api.get('/price-levels');
+      // Try to fetch active price levels first
+      const response = await api.get('/price-levels/active');
       console.log('Price levels response:', response.data);
 
+      let priceLevelsData = [];
+
       // Handle different response formats
-      if (response.data.data && response.data.data.priceLevels) {
-        setPriceLevels(response.data.data.priceLevels);
-      } else if (response.data.data && Array.isArray(response.data.data)) {
-        setPriceLevels(response.data.data);
+      if (response.data.data && Array.isArray(response.data.data)) {
+        priceLevelsData = response.data.data;
+      } else if (response.data.data && response.data.data.priceLevels && Array.isArray(response.data.data.priceLevels)) {
+        priceLevelsData = response.data.data.priceLevels;
       } else if (Array.isArray(response.data)) {
-        setPriceLevels(response.data);
+        priceLevelsData = response.data;
       } else {
         console.error(
           'Unexpected price levels response format:',
           response.data
         );
-        setPriceLevels([]);
       }
+
+      // If no price levels found, add default ones
+      if (priceLevelsData.length === 0) {
+        priceLevelsData = [
+          { _id: 'retail', name: 'Retail', code: 'RET', isDefault: true },
+          { _id: 'wholesale', name: 'Wholesale', code: 'WHL', isDefault: false },
+          { _id: 'special', name: 'Special', code: 'SPC', isDefault: false }
+        ];
+      }
+
+      console.log('Setting price levels:', priceLevelsData);
+      setPriceLevels(priceLevelsData);
     } catch (error) {
       console.error('Error fetching price levels:', error);
-      showToast('Error fetching price levels', 'error');
+      // If API call fails, set default price levels
+      const defaultPriceLevels = [
+        { _id: 'retail', name: 'Retail', code: 'RET', isDefault: true },
+        { _id: 'wholesale', name: 'Wholesale', code: 'WHL', isDefault: false },
+        { _id: 'special', name: 'Special', code: 'SPC', isDefault: false }
+      ];
+      setPriceLevels(defaultPriceLevels);
+      showToast('Using default price levels', 'info');
     }
   };
 
@@ -232,20 +252,8 @@ const CustomersList = () => {
         customerNumber: data.code || generateCustomerNumber(), // Use code as customerNumber or generate one
         type: data.type || CustomerType.RETAIL, // Updated to match server-side enum
         priceLevel: data.priceLevel, // Already ensured above
-        // If address is provided, ensure it has all required fields
-        addresses: data.address
-          ? [data.address]
-          : [
-              // If no address provided, create a default one to satisfy validation
-              {
-                street: 'Default Street',
-                city: 'Default City',
-                state: 'Default State',
-                postalCode: '00000',
-                country: 'Nigeria',
-                isDefault: true,
-              },
-            ],
+        // If address is provided, include it, otherwise send an empty array
+        addresses: data.address ? [data.address] : [],
       };
 
       // Log the data being sent to the API for debugging
@@ -601,7 +609,6 @@ const CustomersList = () => {
                               street: '',
                               city: '',
                               state: '',
-                              postalCode: '',
                               country: 'Nigeria',
                             },
                           });
@@ -627,7 +634,6 @@ const CustomersList = () => {
                             label="Street"
                             placeholder="Enter street address"
                             error={errors.address?.street?.message}
-                            required
                             {...field}
                           />
                         )}
@@ -642,7 +648,6 @@ const CustomersList = () => {
                             label="City"
                             placeholder="Enter city"
                             error={errors.address?.city?.message}
-                            required
                             {...field}
                           />
                         )}
@@ -657,27 +662,12 @@ const CustomersList = () => {
                             label="State"
                             placeholder="Enter state"
                             error={errors.address?.state?.message}
-                            required
                             {...field}
                           />
                         )}
                       />
                     </div>
-                    <div>
-                      <Controller
-                        name="address.postalCode"
-                        control={control}
-                        render={({ field }) => (
-                          <Input
-                            label="Postal Code"
-                            placeholder="Enter postal code"
-                            error={errors.address?.postalCode?.message}
-                            required
-                            {...field}
-                          />
-                        )}
-                      />
-                    </div>
+
                     <div>
                       <Controller
                         name="address.country"
@@ -687,7 +677,6 @@ const CustomersList = () => {
                             label="Country"
                             placeholder="Enter country"
                             error={errors.address?.country?.message}
-                            required
                             {...field}
                           />
                         )}
