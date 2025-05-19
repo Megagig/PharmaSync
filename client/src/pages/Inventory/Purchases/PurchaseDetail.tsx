@@ -77,12 +77,12 @@ const PurchaseDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
-  
+
   const [purchase, setPurchase] = useState<Purchase | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Payment modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -94,16 +94,51 @@ const PurchaseDetail = () => {
   useEffect(() => {
     if (id) {
       fetchPurchaseDetails();
-      fetchPayments();
     }
   }, [id]);
+
+  // Fetch payments when purchase data is available
+  useEffect(() => {
+    if (purchase?.supplier?._id) {
+      fetchPayments();
+    }
+  }, [purchase]);
 
   const fetchPurchaseDetails = async () => {
     try {
       setIsLoading(true);
       const response = await api.get(`/purchases/${id}`);
-      setPurchase(response.data.data);
+      console.log('Purchase details response:', response.data);
+
+      // Handle different API response structures
+      const purchaseData = response.data.data || response.data;
+
+      // Ensure the purchase has a paymentStatus property
+      if (!purchaseData.paymentStatus) {
+        purchaseData.paymentStatus = 'unpaid';
+      }
+
+      // Ensure product data is properly structured
+      if (purchaseData.items && purchaseData.items.length > 0) {
+        purchaseData.items = purchaseData.items.map((item: any) => {
+          // Handle case where product is just an ID
+          if (typeof item.product === 'string') {
+            return {
+              ...item,
+              product: {
+                _id: item.product,
+                name: item.productName || 'Unknown Product'
+              }
+            };
+          }
+          return item;
+        });
+      }
+
+      console.log('Processed purchase data:', purchaseData);
+      setPurchase(purchaseData);
     } catch (err: any) {
+      console.error('Error fetching purchase details:', err);
       setError(err.response?.data?.message || 'Failed to fetch purchase details');
       showToast(err.response?.data?.message || 'Failed to fetch purchase details', 'error');
     } finally {
@@ -113,14 +148,24 @@ const PurchaseDetail = () => {
 
   const fetchPayments = async () => {
     try {
-      const response = await api.get(`/payments?direction=made&supplier=${purchase?.supplier._id}`);
+      if (!purchase || !purchase.supplier || !purchase.supplier._id) return;
+
+      console.log('Fetching payments for supplier:', purchase.supplier._id);
+      console.log('Purchase number:', purchase.purchaseNumber);
+
+      const response = await api.get(`/payments?direction=made&supplier=${purchase.supplier._id}`);
+      console.log('Payments response:', response.data);
+
       // Filter payments related to this purchase
       const purchasePayments = response.data.data.filter(
-        (payment: Payment) => payment.reference === purchase?.purchaseNumber
+        (payment: Payment) => payment.reference === purchase.purchaseNumber
       );
+
+      console.log('Filtered purchase payments:', purchasePayments);
       setPayments(purchasePayments);
     } catch (err: any) {
       console.error('Failed to fetch payments:', err);
+      showToast('Failed to fetch payment history', 'error');
     }
   };
 
@@ -129,7 +174,7 @@ const PurchaseDetail = () => {
       // Calculate remaining amount
       const paidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
       const remainingAmount = purchase.total - paidAmount;
-      
+
       // Set default payment amount to remaining amount
       setPaymentAmount(remainingAmount.toString());
       setShowPaymentModal(true);
@@ -138,29 +183,94 @@ const PurchaseDetail = () => {
 
   const handleSubmitPayment = async () => {
     if (!purchase) return;
-    
+
     try {
       setIsSubmittingPayment(true);
-      
+
+      // Validate payment amount
+      const amount = parseFloat(paymentAmount);
+      if (isNaN(amount) || amount <= 0) {
+        showToast('Please enter a valid payment amount', 'error');
+        setIsSubmittingPayment(false);
+        return;
+      }
+
+      // Calculate total paid and determine new payment status
+      const paidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+      const newTotalPaid = paidAmount + amount;
+      let newPaymentStatus = 'unpaid';
+
+      if (newTotalPaid >= purchase.total) {
+        newPaymentStatus = 'paid';
+      } else if (newTotalPaid > 0) {
+        newPaymentStatus = 'partial';
+      }
+
+      console.log('Creating payment with amount:', amount);
+      console.log('New payment status will be:', newPaymentStatus);
+
+      // Create payment record
+      // Generate a payment number on the client side as a fallback
+      const date = new Date();
+      const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+      const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase();
+      const paymentNumber = `PYMT-${dateStr}-${randomStr}`;
+
       const paymentData = {
-        amount: parseFloat(paymentAmount),
+        paymentNumber, // Include the generated payment number
+        amount: amount,
+        paymentDate: new Date().toISOString(), // Ensure we have a payment date
         paymentMethod,
         reference: purchase.purchaseNumber,
         notes: paymentNotes,
         direction: PaymentDirection.MADE,
         supplier: purchase.supplier._id
       };
-      
-      await api.post('/payments', paymentData);
-      
+
+      const paymentResponse = await api.post('/payments', paymentData);
+      console.log('Payment created:', paymentResponse.data);
+
+      // Update purchase payment status
+      const updateResponse = await api.patch(`/purchases/${purchase._id}`, {
+        paymentStatus: newPaymentStatus
+      });
+      console.log('Purchase updated:', updateResponse.data);
+
       showToast('Payment recorded successfully', 'success');
       setShowPaymentModal(false);
-      
+
+      // Reset form fields
+      setPaymentAmount('');
+      setPaymentMethod(PaymentMethod.CASH);
+      setPaymentReference('');
+      setPaymentNotes('');
+
       // Refresh purchase and payments data
       fetchPurchaseDetails();
-      fetchPayments();
     } catch (err: any) {
-      showToast(err.response?.data?.message || 'Failed to record payment', 'error');
+      console.error('Payment error:', err);
+
+      // Extract detailed error message if available
+      let errorMessage = 'Failed to record payment';
+
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+
+      // Check for validation errors
+      if (err.response?.data?.errors && err.response.data.errors.length > 0) {
+        const validationErrors = err.response.data.errors.map((e: any) => e.message || e).join(', ');
+        errorMessage = `Validation error: ${validationErrors}`;
+      }
+
+      // Log detailed error information for debugging
+      console.error('Detailed payment error:', {
+        message: errorMessage,
+        data: err.response?.data,
+        paymentData
+      });
+
+      showToast(errorMessage, 'error');
     } finally {
       setIsSubmittingPayment(false);
     }
@@ -208,7 +318,20 @@ const PurchaseDetail = () => {
 
   // Calculate payment summary
   const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const remainingAmount = purchase.total - totalPaid;
+  const remainingAmount = Math.max(0, purchase.total - totalPaid);
+
+  // Force payment status to be consistent with payment amounts
+  let effectivePaymentStatus = purchase.paymentStatus;
+  if (totalPaid >= purchase.total && purchase.paymentStatus !== 'paid') {
+    effectivePaymentStatus = 'paid';
+    console.log('Overriding payment status to paid based on payment amounts');
+  } else if (totalPaid > 0 && totalPaid < purchase.total && purchase.paymentStatus !== 'partial') {
+    effectivePaymentStatus = 'partial';
+    console.log('Overriding payment status to partial based on payment amounts');
+  } else if (totalPaid === 0 && purchase.paymentStatus !== 'unpaid') {
+    effectivePaymentStatus = 'unpaid';
+    console.log('Overriding payment status to unpaid based on payment amounts');
+  }
 
   return (
     <div className="space-y-6">
@@ -219,11 +342,11 @@ const PurchaseDetail = () => {
           </h1>
           <div className="mt-1 flex items-center space-x-2">
             {getStatusBadge(purchase.status)}
-            {getPaymentStatusBadge(purchase.paymentStatus)}
+            {getPaymentStatusBadge(effectivePaymentStatus)}
           </div>
         </div>
         <div className="flex space-x-3">
-          {purchase.paymentStatus !== 'paid' && (
+          {effectivePaymentStatus !== 'paid' && (
             <Button variant="primary" onClick={handlePayInvoice}>
               Pay Invoice
             </Button>
@@ -346,7 +469,7 @@ const PurchaseDetail = () => {
                   {formatCurrency(remainingAmount)}
                 </span>
               </div>
-              {purchase.paymentStatus !== 'paid' && (
+              {effectivePaymentStatus !== 'paid' && (
                 <div className="mt-4">
                   <Button
                     variant="primary"
@@ -396,11 +519,11 @@ const PurchaseDetail = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {purchase.items.map((item) => (
-                  <tr key={item._id}>
+                {purchase.items.map((item, index) => (
+                  <tr key={item._id || index}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {item.product.name}
+                        {item.product?.name || item.productName || 'Unknown Product'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
