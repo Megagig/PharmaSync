@@ -35,13 +35,16 @@ const ProductSearch = ({
     const fetchProducts = async () => {
       setIsLoading(true);
       try {
-        // Fetch medications
-        const response = await api.get('/medications');
+        // Fetch products instead of medications
+        const response = await api.get('/products');
         console.log('ProductSearch - API response:', response.data);
 
         let productsArray: Product[] = [];
 
-        if (response.data && response.data.data) {
+        if (response.data && response.data.data && response.data.data.products) {
+          // Handle the products array nested in data.products
+          productsArray = response.data.data.products;
+        } else if (response.data && response.data.data) {
           productsArray = response.data.data;
         } else if (response.data && Array.isArray(response.data)) {
           productsArray = response.data;
@@ -99,6 +102,11 @@ const ProductSearch = ({
       );
       setFilteredProducts(filtered);
       console.log('Filtered products:', filtered.length);
+
+      // If no products found, show a message
+      if (filtered.length === 0) {
+        console.log('No products found matching:', term);
+      }
     } catch (error) {
       console.error('Error filtering products:', error);
       setFilteredProducts([]);

@@ -5,6 +5,7 @@ import Modal from '@/components/common/Modal/Modal';
 import api from '@/services/api';
 import SupplierForm from './SupplierForm';
 import { useToast } from '@/hooks/useToast';
+import { FiUser, FiPhone } from 'react-icons/fi';
 
 interface Supplier {
   _id: string;
@@ -35,6 +36,7 @@ const SupplierSearch = ({
   const [isLoading, setIsLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -189,6 +191,7 @@ const SupplierSearch = ({
     onSelect(formattedSupplier);
 
     // Update UI state
+    setSelectedSupplier(formattedSupplier);
     setSearchTerm('');
     setShowDropdown(false);
 
@@ -272,15 +275,43 @@ const SupplierSearch = ({
     <div className={`relative ${className}`}>
       <div className="flex space-x-2">
         <div className="flex-1 relative">
-          <Input
-            ref={inputRef}
-            placeholder={placeholder}
-            value={searchTerm}
-            onChange={handleSearch}
-            onFocus={() => setShowDropdown(true)}
-            disabled={disabled}
-          />
-          {isLoading && (
+          {selectedSupplier ? (
+            <div className="border border-gray-300 rounded-md p-2 bg-white">
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="font-medium">{selectedSupplier.name}</div>
+                  <div className="text-sm text-gray-600 flex items-center">
+                    <FiUser className="mr-1" size={14} />
+                    {selectedSupplier.contactPerson}
+                    <span className="mx-2">|</span>
+                    <FiPhone className="mr-1" size={14} />
+                    {selectedSupplier.phone}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="text"
+                  onClick={() => {
+                    setSelectedSupplier(null);
+                    setSearchTerm('');
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  Change
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Input
+              ref={inputRef}
+              placeholder={placeholder}
+              value={searchTerm}
+              onChange={handleSearch}
+              onFocus={() => setShowDropdown(true)}
+              disabled={disabled}
+            />
+          )}
+          {isLoading && !selectedSupplier && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-500"></div>
             </div>

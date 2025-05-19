@@ -35,10 +35,13 @@ const CreatePurchase = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [selectedSupplierInfo, setSelectedSupplierInfo] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [quantity, setQuantity] = useState(1);
-  const [unitPrice, setUnitPrice] = useState(0);
+  const [costPrice, setCostPrice] = useState(0);
+  const [retailPrice, setRetailPrice] = useState(0);
+  const [wholesalePrice, setWholesalePrice] = useState(0);
 
   const [formData, setFormData] = useState<PurchaseFormData>({
     supplier: '',
@@ -92,7 +95,7 @@ const CreatePurchase = () => {
   };
 
   const handleAddItem = () => {
-    if (!selectedProduct || quantity <= 0 || unitPrice <= 0) {
+    if (!selectedProduct || quantity <= 0 || costPrice <= 0) {
       showToast(
         'Please select a product, and enter valid quantity and price',
         'error'
@@ -102,14 +105,16 @@ const CreatePurchase = () => {
 
     console.log('Adding item to purchase:', selectedProduct);
 
-    const subtotal = quantity * unitPrice;
+    const subtotal = quantity * costPrice;
 
     const newItem = {
       medication: selectedProduct._id,
       quantity,
-      unitPrice,
+      unitPrice: costPrice,
       subtotal,
       notes: '',
+      retailPrice,
+      wholesalePrice
     };
 
     setFormData((prev) => {
@@ -130,7 +135,9 @@ const CreatePurchase = () => {
     // Reset item form
     setSelectedProduct(null);
     setQuantity(1);
-    setUnitPrice(0);
+    setCostPrice(0);
+    setRetailPrice(0);
+    setWholesalePrice(0);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -213,6 +220,9 @@ const CreatePurchase = () => {
                           supplier: supplier._id,
                           paymentTerms: supplier.paymentTerms || 'net30',
                         }));
+
+                        // Store the supplier info for display
+                        setSelectedSupplierInfo(supplier);
 
                         // Show a success message
                         showToast(
@@ -319,19 +329,31 @@ const CreatePurchase = () => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Product
+                    Product Search
                   </label>
                   <ProductSearch
                     onSelect={(product) => {
                       console.log('Product selected in CreatePurchase:', product);
                       setSelectedProduct(product);
-                      setUnitPrice(product.costPrice || product.defaultPrice || 0);
+                      setCostPrice(product.costPrice || product.defaultPrice || 0);
+                      setRetailPrice(product.retailPrice || product.defaultPrice || 0);
+                      setWholesalePrice(product.wholesalePrice || product.defaultPrice || 0);
                     }}
                   />
                 </div>
 
                 {selectedProduct && (
                   <>
+                    <div className="border border-gray-300 rounded-md p-3 bg-gray-50 mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Selected Product
+                      </label>
+                      <div className="font-medium text-gray-900">{selectedProduct.name}</div>
+                      <div className="text-sm text-gray-500">
+                        SKU: {selectedProduct.sku} | Stock: {selectedProduct.totalStock || 0}
+                      </div>
+                    </div>
+
                     <Input
                       type="number"
                       label="Quantity"
@@ -342,9 +364,27 @@ const CreatePurchase = () => {
 
                     <Input
                       type="number"
-                      label="Unit Price (₦)"
-                      value={unitPrice}
-                      onChange={(e) => setUnitPrice(Number(e.target.value))}
+                      label="Cost Price (₦)"
+                      value={costPrice}
+                      onChange={(e) => setCostPrice(Number(e.target.value))}
+                      min="0"
+                      step="0.01"
+                    />
+
+                    <Input
+                      type="number"
+                      label="Retail Price (₦)"
+                      value={retailPrice}
+                      onChange={(e) => setRetailPrice(Number(e.target.value))}
+                      min="0"
+                      step="0.01"
+                    />
+
+                    <Input
+                      type="number"
+                      label="Wholesale Price (₦)"
+                      value={wholesalePrice}
+                      onChange={(e) => setWholesalePrice(Number(e.target.value))}
                       min="0"
                       step="0.01"
                     />
@@ -353,7 +393,7 @@ const CreatePurchase = () => {
                       type="button"
                       variant="secondary"
                       onClick={handleAddItem}
-                      className="w-full"
+                      className="w-full mt-4"
                     >
                       Add Item
                     </Button>
