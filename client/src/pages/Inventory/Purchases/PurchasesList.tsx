@@ -39,6 +39,7 @@ interface Purchase {
   tax: number;
   shippingCost: number;
   total: number;
+  paymentStatus: 'unpaid' | 'partial' | 'paid';
   notes?: string;
   createdBy: {
     _id: string;
@@ -157,6 +158,19 @@ const PurchasesList = () => {
     }
   };
 
+  const getPaymentStatusBadge = (status: string) => {
+    switch (status) {
+      case 'unpaid':
+        return <Badge color="red">Unpaid</Badge>;
+      case 'partial':
+        return <Badge color="yellow">Partially Paid</Badge>;
+      case 'paid':
+        return <Badge color="green">Paid</Badge>;
+      default:
+        return <Badge color="gray">{status}</Badge>;
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -270,6 +284,12 @@ const PurchasesList = () => {
                     </th>
                     <th
                       scope="col"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Payment Status
+                    </th>
+                    <th
+                      scope="col"
                       className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
                       Actions
@@ -310,6 +330,9 @@ const PurchasesList = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getStatusBadge(purchase.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {getPaymentStatusBadge(purchase.paymentStatus)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">

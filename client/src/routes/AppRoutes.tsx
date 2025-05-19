@@ -67,6 +67,7 @@ import PriceManagementList from '@/pages/Inventory/PriceManagement/PriceManageme
 import ExpiryTrackingList from '@/pages/Inventory/ExpiryTracking/ExpiryTrackingList';
 import PurchasesList from '@/pages/Inventory/Purchases/PurchasesList';
 import CreatePurchase from '@/pages/Inventory/Purchases/CreatePurchase';
+import PurchaseDetail from '@/pages/Inventory/Purchases/PurchaseDetail';
 import CustomersList from '@/pages/Inventory/Customers/CustomersList';
 import SuppliersList from '@/pages/Inventory/Suppliers/SuppliersList';
 import LocationList from '@/pages/Inventory/Locations/LocationList';
@@ -351,6 +352,7 @@ const AppRoutes = () => {
             path="/inventory/purchases/create"
             element={<CreatePurchase />}
           />
+          <Route path="/inventory/purchases/:id" element={<PurchaseDetail />} />
           <Route path="/inventory/customers" element={<CustomersList />} />
           <Route path="/inventory/suppliers" element={<SuppliersList />} />
           <Route
