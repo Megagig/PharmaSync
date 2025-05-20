@@ -62,12 +62,19 @@ const CreatePayment = () => {
     supplier: initialSupplierId,
   });
 
+  // Helper function to add delay between API calls
+  const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
   useEffect(() => {
     // Load customers if receiving payment
     if (formData.direction === PaymentDirection.RECEIVED) {
       const fetchCustomers = async () => {
         try {
+          // Add delay to avoid rate limiting
+          await delay(300);
           const response = await api.get('/customers?isActive=true');
+          console.log('Customer response:', response.data);
+
           // Check if response.data.data exists and is an array
           if (
             response.data &&
@@ -75,9 +82,28 @@ const CreatePayment = () => {
             Array.isArray(response.data.data)
           ) {
             setCustomers(response.data.data);
+            console.log('Found customers in data.data property');
           } else if (response.data && Array.isArray(response.data)) {
             // Handle case where API returns array directly
             setCustomers(response.data);
+            console.log('Found customers in direct array');
+          } else if (response.data && response.data.customers && Array.isArray(response.data.customers)) {
+            // Handle case where customers are in a nested property
+            setCustomers(response.data.customers);
+            console.log('Found customers in customers property');
+          } else if (response.data && typeof response.data === 'object') {
+            // Try to find any array property that might contain customers
+            const arrayProps = Object.keys(response.data).filter(key =>
+              Array.isArray(response.data[key])
+            );
+
+            if (arrayProps.length > 0) {
+              setCustomers(response.data[arrayProps[0]]);
+              console.log(`Extracted customers from ${arrayProps[0]} property`);
+            } else {
+              console.error('Unexpected API response format:', response.data);
+              setCustomers([]);
+            }
           } else {
             console.error('Unexpected API response format:', response.data);
             setCustomers([]);
@@ -94,7 +120,11 @@ const CreatePayment = () => {
     if (formData.direction === PaymentDirection.MADE) {
       const fetchSuppliers = async () => {
         try {
+          // Add delay to avoid rate limiting
+          await delay(300);
           const response = await api.get('/suppliers?isActive=true');
+          console.log('Supplier response:', response.data);
+
           // Check if response.data.data exists and is an array
           if (
             response.data &&
@@ -102,9 +132,28 @@ const CreatePayment = () => {
             Array.isArray(response.data.data)
           ) {
             setSuppliers(response.data.data);
+            console.log('Found suppliers in data.data property');
           } else if (response.data && Array.isArray(response.data)) {
             // Handle case where API returns array directly
             setSuppliers(response.data);
+            console.log('Found suppliers in direct array');
+          } else if (response.data && response.data.suppliers && Array.isArray(response.data.suppliers)) {
+            // Handle case where suppliers are in a nested property
+            setSuppliers(response.data.suppliers);
+            console.log('Found suppliers in suppliers property');
+          } else if (response.data && typeof response.data === 'object') {
+            // Try to find any array property that might contain suppliers
+            const arrayProps = Object.keys(response.data).filter(key =>
+              Array.isArray(response.data[key])
+            );
+
+            if (arrayProps.length > 0) {
+              setSuppliers(response.data[arrayProps[0]]);
+              console.log(`Extracted suppliers from ${arrayProps[0]} property`);
+            } else {
+              console.error('Unexpected API response format:', response.data);
+              setSuppliers([]);
+            }
           } else {
             console.error('Unexpected API response format:', response.data);
             setSuppliers([]);
@@ -120,6 +169,8 @@ const CreatePayment = () => {
     // Load invoices based on direction
     const fetchInvoices = async () => {
       try {
+        // Add delay to avoid rate limiting
+        await delay(600);
         const type =
           formData.direction === PaymentDirection.RECEIVED
             ? 'sales'
@@ -128,6 +179,8 @@ const CreatePayment = () => {
         const response = await api.get(
           `/invoices?type=${type}&status=${status}`
         );
+        console.log('Invoice response:', response.data);
+
         // Check if response.data.data exists and is an array
         if (
           response.data &&
@@ -135,9 +188,28 @@ const CreatePayment = () => {
           Array.isArray(response.data.data)
         ) {
           setInvoices(response.data.data);
+          console.log('Found invoices in data.data property');
         } else if (response.data && Array.isArray(response.data)) {
           // Handle case where API returns array directly
           setInvoices(response.data);
+          console.log('Found invoices in direct array');
+        } else if (response.data && response.data.invoices && Array.isArray(response.data.invoices)) {
+          // Handle case where invoices are in a nested property
+          setInvoices(response.data.invoices);
+          console.log('Found invoices in invoices property');
+        } else if (response.data && typeof response.data === 'object') {
+          // Try to find any array property that might contain invoices
+          const arrayProps = Object.keys(response.data).filter(key =>
+            Array.isArray(response.data[key])
+          );
+
+          if (arrayProps.length > 0) {
+            setInvoices(response.data[arrayProps[0]]);
+            console.log(`Extracted invoices from ${arrayProps[0]} property`);
+          } else {
+            console.error('Unexpected API response format:', response.data);
+            setInvoices([]);
+          }
         } else {
           console.error('Unexpected API response format:', response.data);
           setInvoices([]);
@@ -153,7 +225,11 @@ const CreatePayment = () => {
     if (formData.direction === PaymentDirection.RECEIVED) {
       const fetchSales = async () => {
         try {
+          // Add delay to avoid rate limiting
+          await delay(900);
           const response = await api.get('/sales?paymentStatus=unpaid,partial');
+          console.log('Sales response:', response.data);
+
           // Check if response.data.data exists and is an array
           if (
             response.data &&
@@ -161,9 +237,28 @@ const CreatePayment = () => {
             Array.isArray(response.data.data)
           ) {
             setSales(response.data.data);
+            console.log('Found sales in data.data property');
           } else if (response.data && Array.isArray(response.data)) {
             // Handle case where API returns array directly
             setSales(response.data);
+            console.log('Found sales in direct array');
+          } else if (response.data && response.data.sales && Array.isArray(response.data.sales)) {
+            // Handle case where sales are in a nested property
+            setSales(response.data.sales);
+            console.log('Found sales in sales property');
+          } else if (response.data && typeof response.data === 'object') {
+            // Try to find any array property that might contain sales
+            const arrayProps = Object.keys(response.data).filter(key =>
+              Array.isArray(response.data[key])
+            );
+
+            if (arrayProps.length > 0) {
+              setSales(response.data[arrayProps[0]]);
+              console.log(`Extracted sales from ${arrayProps[0]} property`);
+            } else {
+              console.error('Unexpected API response format:', response.data);
+              setSales([]);
+            }
           } else {
             console.error('Unexpected API response format:', response.data);
             setSales([]);
@@ -180,9 +275,13 @@ const CreatePayment = () => {
     if (formData.direction === PaymentDirection.MADE) {
       const fetchPurchaseOrders = async () => {
         try {
+          // Add delay to avoid rate limiting
+          await delay(900);
           const response = await api.get(
             '/purchase-orders?paymentStatus=unpaid,partial'
           );
+          console.log('Purchase orders response:', response.data);
+
           // Check if response.data.data exists and is an array
           if (
             response.data &&
@@ -190,9 +289,28 @@ const CreatePayment = () => {
             Array.isArray(response.data.data)
           ) {
             setPurchaseOrders(response.data.data);
+            console.log('Found purchase orders in data.data property');
           } else if (response.data && Array.isArray(response.data)) {
             // Handle case where API returns array directly
             setPurchaseOrders(response.data);
+            console.log('Found purchase orders in direct array');
+          } else if (response.data && response.data.purchaseOrders && Array.isArray(response.data.purchaseOrders)) {
+            // Handle case where purchase orders are in a nested property
+            setPurchaseOrders(response.data.purchaseOrders);
+            console.log('Found purchase orders in purchaseOrders property');
+          } else if (response.data && typeof response.data === 'object') {
+            // Try to find any array property that might contain purchase orders
+            const arrayProps = Object.keys(response.data).filter(key =>
+              Array.isArray(response.data[key])
+            );
+
+            if (arrayProps.length > 0) {
+              setPurchaseOrders(response.data[arrayProps[0]]);
+              console.log(`Extracted purchase orders from ${arrayProps[0]} property`);
+            } else {
+              console.error('Unexpected API response format:', response.data);
+              setPurchaseOrders([]);
+            }
           } else {
             console.error('Unexpected API response format:', response.data);
             setPurchaseOrders([]);
@@ -291,8 +409,86 @@ const CreatePayment = () => {
     if (initialCustomerId) {
       const fetchCustomer = async () => {
         try {
+          console.log(`Fetching initial customer: ${initialCustomerId}`);
           const response = await api.get(`/customers/${initialCustomerId}`);
           setSelectedCustomer(response.data.data);
+
+          // Set form data
+          setFormData((prev) => ({
+            ...prev,
+            customer: initialCustomerId,
+          }));
+
+          // Fetch invoices and sales for this customer
+          console.log(`Fetching invoices for customer ${initialCustomerId}`);
+          const invoiceResponse = await api.get(`/invoices?type=sales&status=sent,partial,overdue&customer=${initialCustomerId}`);
+          let customerInvoices = [];
+
+          console.log('Customer invoice response:', invoiceResponse.data);
+
+          if (invoiceResponse.data && invoiceResponse.data.data && Array.isArray(invoiceResponse.data.data)) {
+            customerInvoices = invoiceResponse.data.data;
+            console.log(`Found ${customerInvoices.length} invoices for customer (data.data format)`);
+          } else if (invoiceResponse.data && Array.isArray(invoiceResponse.data)) {
+            customerInvoices = invoiceResponse.data;
+            console.log(`Found ${customerInvoices.length} invoices for customer (array format)`);
+          } else if (invoiceResponse.data && typeof invoiceResponse.data === 'object') {
+            // Handle case where API returns object with nested structure
+            if (invoiceResponse.data.invoices && Array.isArray(invoiceResponse.data.invoices)) {
+              customerInvoices = invoiceResponse.data.invoices;
+              console.log(`Found ${customerInvoices.length} invoices for customer (invoices property)`);
+            } else {
+              console.log('Customer invoice response has unexpected format:', invoiceResponse.data);
+              // Try to extract any array property from the response
+              const arrayProps = Object.keys(invoiceResponse.data).filter(key =>
+                Array.isArray(invoiceResponse.data[key])
+              );
+
+              if (arrayProps.length > 0) {
+                customerInvoices = invoiceResponse.data[arrayProps[0]];
+                console.log(`Found ${customerInvoices.length} invoices for customer (extracted from ${arrayProps[0]})`);
+              }
+            }
+          }
+
+          // Filter to only include unpaid or partially paid invoices
+          const unpaidInvoices = customerInvoices.filter(invoice =>
+            invoice.status !== 'paid' && invoice.balance > 0
+          );
+
+          console.log(`After filtering, ${unpaidInvoices.length} unpaid invoices remain`);
+          setInvoices(unpaidInvoices);
+
+          // Also fetch unpaid sales for this customer
+          console.log(`Fetching sales for customer ${initialCustomerId}`);
+          const salesResponse = await api.get(`/sales?customer=${initialCustomerId}&paymentStatus=unpaid,partial`);
+          let customerSales = [];
+
+          console.log('Sales response:', salesResponse.data);
+
+          if (salesResponse.data && salesResponse.data.data && Array.isArray(salesResponse.data.data)) {
+            customerSales = salesResponse.data.data;
+            console.log(`Found ${customerSales.length} sales for customer (data.data format)`);
+          } else if (salesResponse.data && Array.isArray(salesResponse.data)) {
+            customerSales = salesResponse.data;
+            console.log(`Found ${customerSales.length} sales for customer (array format)`);
+          } else if (salesResponse.data && salesResponse.data.sales && Array.isArray(salesResponse.data.sales)) {
+            customerSales = salesResponse.data.sales;
+            console.log(`Found ${customerSales.length} sales for customer (sales property)`);
+          } else if (salesResponse.data && typeof salesResponse.data === 'object') {
+            console.log('Sales response has unexpected format:', salesResponse.data);
+            // Try to extract any array property from the response
+            const arrayProps = Object.keys(salesResponse.data).filter(key =>
+              Array.isArray(salesResponse.data[key])
+            );
+
+            if (arrayProps.length > 0) {
+              customerSales = salesResponse.data[arrayProps[0]];
+              console.log(`Found ${customerSales.length} sales for customer (extracted from ${arrayProps[0]})`);
+            }
+          }
+
+          setSales(customerSales);
         } catch (error) {
           console.error('Error fetching customer:', error);
         }
@@ -304,8 +500,130 @@ const CreatePayment = () => {
     if (initialSupplierId) {
       const fetchSupplier = async () => {
         try {
+          console.log(`Fetching initial supplier: ${initialSupplierId}`);
           const response = await api.get(`/suppliers/${initialSupplierId}`);
           setSelectedSupplier(response.data.data);
+
+          // Set form data
+          setFormData((prev) => ({
+            ...prev,
+            supplier: initialSupplierId,
+          }));
+
+          // Fetch invoices and purchases for this supplier
+          console.log(`Fetching invoices for supplier ${initialSupplierId}`);
+          const invoiceResponse = await api.get(`/invoices?type=purchase&status=sent,partial,overdue&supplier=${initialSupplierId}`);
+          let supplierInvoices = [];
+
+          console.log('Invoice response:', invoiceResponse.data);
+
+          if (invoiceResponse.data && invoiceResponse.data.data && Array.isArray(invoiceResponse.data.data)) {
+            supplierInvoices = invoiceResponse.data.data;
+            console.log(`Found ${supplierInvoices.length} invoices for supplier (data.data format)`);
+          } else if (invoiceResponse.data && Array.isArray(invoiceResponse.data)) {
+            supplierInvoices = invoiceResponse.data;
+            console.log(`Found ${supplierInvoices.length} invoices for supplier (array format)`);
+          } else if (invoiceResponse.data && typeof invoiceResponse.data === 'object') {
+            // Handle case where API returns object with nested structure
+            if (invoiceResponse.data.invoices && Array.isArray(invoiceResponse.data.invoices)) {
+              supplierInvoices = invoiceResponse.data.invoices;
+              console.log(`Found ${supplierInvoices.length} invoices for supplier (invoices property)`);
+            } else {
+              console.log('Invoice response has unexpected format:', invoiceResponse.data);
+              // Try to extract any array property from the response
+              const arrayProps = Object.keys(invoiceResponse.data).filter(key =>
+                Array.isArray(invoiceResponse.data[key])
+              );
+
+              if (arrayProps.length > 0) {
+                supplierInvoices = invoiceResponse.data[arrayProps[0]];
+                console.log(`Found ${supplierInvoices.length} invoices for supplier (extracted from ${arrayProps[0]})`);
+              }
+            }
+          }
+
+          // Filter to only include unpaid or partially paid invoices
+          const unpaidInvoices = supplierInvoices.filter(invoice =>
+            invoice.status !== 'paid' && invoice.balance > 0
+          );
+
+          console.log(`After filtering, ${unpaidInvoices.length} unpaid invoices remain`);
+          setInvoices(unpaidInvoices);
+
+          // Also fetch unpaid purchase orders for this supplier
+          console.log(`Fetching purchase orders for supplier ${initialSupplierId}`);
+          const poResponse = await api.get(`/purchase-orders?paymentStatus=unpaid,partial&supplier=${initialSupplierId}`);
+          let supplierPOs = [];
+
+          console.log('Purchase orders response:', poResponse.data);
+
+          if (poResponse.data && poResponse.data.data && Array.isArray(poResponse.data.data)) {
+            supplierPOs = poResponse.data.data;
+            console.log(`Found ${supplierPOs.length} purchase orders for supplier (data.data format)`);
+          } else if (poResponse.data && Array.isArray(poResponse.data)) {
+            supplierPOs = poResponse.data;
+            console.log(`Found ${supplierPOs.length} purchase orders for supplier (array format)`);
+          } else if (poResponse.data && typeof poResponse.data === 'object') {
+            // Handle case where API returns object with nested structure
+            if (poResponse.data.purchaseOrders && Array.isArray(poResponse.data.purchaseOrders)) {
+              supplierPOs = poResponse.data.purchaseOrders;
+              console.log(`Found ${supplierPOs.length} purchase orders for supplier (purchaseOrders property)`);
+            } else {
+              console.log('Purchase orders response has unexpected format:', poResponse.data);
+              // Try to extract any array property from the response
+              const arrayProps = Object.keys(poResponse.data).filter(key =>
+                Array.isArray(poResponse.data[key])
+              );
+
+              if (arrayProps.length > 0) {
+                supplierPOs = poResponse.data[arrayProps[0]];
+                console.log(`Found ${supplierPOs.length} purchase orders for supplier (extracted from ${arrayProps[0]})`);
+              }
+            }
+          }
+
+          // Also fetch unpaid purchases for this supplier
+          console.log(`Fetching purchases for supplier ${initialSupplierId}`);
+          const purchasesResponse = await api.get(`/purchases?supplier=${initialSupplierId}&paymentStatus=unpaid,partial`);
+          let supplierPurchases = [];
+
+          console.log('Purchases response:', purchasesResponse.data);
+
+          if (purchasesResponse.data && purchasesResponse.data.data && Array.isArray(purchasesResponse.data.data)) {
+            supplierPurchases = purchasesResponse.data.data;
+            console.log(`Found ${supplierPurchases.length} purchases for supplier (data.data format)`);
+          } else if (purchasesResponse.data && Array.isArray(purchasesResponse.data)) {
+            supplierPurchases = purchasesResponse.data;
+            console.log(`Found ${supplierPurchases.length} purchases for supplier (array format)`);
+          } else if (purchasesResponse.data && purchasesResponse.data.purchases && Array.isArray(purchasesResponse.data.purchases)) {
+            supplierPurchases = purchasesResponse.data.purchases;
+            console.log(`Found ${supplierPurchases.length} purchases for supplier (purchases property)`);
+          } else if (purchasesResponse.data && typeof purchasesResponse.data === 'object') {
+            console.log('Purchases response has unexpected format:', purchasesResponse.data);
+            // Try to extract any array property from the response
+            const arrayProps = Object.keys(purchasesResponse.data).filter(key =>
+              Array.isArray(purchasesResponse.data[key])
+            );
+
+            if (arrayProps.length > 0) {
+              supplierPurchases = purchasesResponse.data[arrayProps[0]];
+              console.log(`Found ${supplierPurchases.length} purchases for supplier (extracted from ${arrayProps[0]})`);
+            }
+          }
+
+          // Add purchases to the purchase orders list since they're similar
+          const formattedPurchases = supplierPurchases.map(purchase => ({
+            ...purchase,
+            _id: purchase._id,
+            orderNumber: purchase.purchaseNumber, // Map to match PO structure
+            total: purchase.total,
+            isPurchase: true // Flag to identify as purchase vs PO
+          }));
+
+          // Combine purchase orders and purchases
+          const combinedPOs = [...supplierPOs, ...formattedPurchases];
+          console.log(`Combined ${combinedPOs.length} purchase orders/purchases`);
+          setPurchaseOrders(combinedPOs);
         } catch (error) {
           console.error('Error fetching supplier:', error);
         }
@@ -371,9 +689,13 @@ const CreatePayment = () => {
       const invoice = invoices.find((inv) => inv._id === invoiceId);
       if (invoice) {
         setSelectedInvoice(invoice);
+
+        // Set the payment amount to the remaining balance
+        const remainingBalance = invoice.balance || (invoice.total - (invoice.amountPaid || 0));
+
         setFormData((prev) => ({
           ...prev,
-          amount: invoice.balance,
+          amount: remainingBalance,
           customer:
             invoice.type === 'sales' && invoice.customer
               ? typeof invoice.customer === 'object'
@@ -408,9 +730,17 @@ const CreatePayment = () => {
       const sale = sales.find((s) => s._id === saleId);
       if (sale) {
         setSelectedSale(sale);
+
+        // Calculate remaining balance
+        // If sale has amountPaid property, use it, otherwise assume it's the full amount
+        const remainingBalance = sale.balance ||
+          (sale.paymentStatus === 'partial' ?
+            (sale.total - (sale.amountPaid || 0)) :
+            sale.total);
+
         setFormData((prev) => ({
           ...prev,
-          amount: sale.total,
+          amount: remainingBalance,
           customer:
             typeof sale.customer === 'object'
               ? sale.customer._id
@@ -439,9 +769,27 @@ const CreatePayment = () => {
       const po = purchaseOrders.find((p) => p._id === poId);
       if (po) {
         setSelectedPurchaseOrder(po);
+
+        // Calculate remaining balance
+        // If it's a purchase (not a PO), handle differently
+        let remainingBalance;
+        if (po.isPurchase) {
+          // This is a purchase, not a purchase order
+          remainingBalance = po.balance ||
+            (po.paymentStatus === 'partial' ?
+              (po.total - (po.amountPaid || 0)) :
+              po.total);
+        } else {
+          // This is a purchase order
+          remainingBalance = po.balance ||
+            (po.paymentStatus === 'partial' ?
+              (po.total - (po.amountPaid || 0)) :
+              po.total);
+        }
+
         setFormData((prev) => ({
           ...prev,
-          amount: po.total,
+          amount: remainingBalance,
           supplier:
             typeof po.supplier === 'object' ? po.supplier._id : po.supplier,
         }));
@@ -451,20 +799,251 @@ const CreatePayment = () => {
     }
   };
 
-  const handleCustomerChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleCustomerChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const customerId = e.target.value;
     setFormData((prev) => ({
       ...prev,
       customer: customerId || undefined,
     }));
+
+    // Clear previous data
+    setInvoices([]);
+    setSales([]);
+    setSelectedCustomer(null);
+
+    // Fetch unpaid/partially paid invoices for this customer
+    if (customerId) {
+      try {
+        // Add delay to avoid rate limiting
+        await delay(300);
+        // First, fetch the customer details
+        const customerResponse = await api.get(`/customers/${customerId}`);
+        if (customerResponse.data && customerResponse.data.data) {
+          setSelectedCustomer(customerResponse.data.data);
+        }
+
+        // Fetch sales invoices for this customer
+        console.log(`Fetching invoices for customer ${customerId}`);
+        await delay(300);
+        const response = await api.get(`/invoices?type=sales&status=sent,partial,overdue&customer=${customerId}`);
+        let customerInvoices = [];
+
+        console.log('Customer invoice response:', response.data);
+
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          customerInvoices = response.data.data;
+          console.log(`Found ${customerInvoices.length} invoices for customer (data.data format)`);
+        } else if (response.data && Array.isArray(response.data)) {
+          customerInvoices = response.data;
+          console.log(`Found ${customerInvoices.length} invoices for customer (array format)`);
+        } else if (response.data && typeof response.data === 'object') {
+          // Handle case where API returns object with nested structure
+          if (response.data.invoices && Array.isArray(response.data.invoices)) {
+            customerInvoices = response.data.invoices;
+            console.log(`Found ${customerInvoices.length} invoices for customer (invoices property)`);
+          } else {
+            console.log('Customer invoice response has unexpected format:', response.data);
+            // Try to extract any array property from the response
+            const arrayProps = Object.keys(response.data).filter(key =>
+              Array.isArray(response.data[key])
+            );
+
+            if (arrayProps.length > 0) {
+              customerInvoices = response.data[arrayProps[0]];
+              console.log(`Found ${customerInvoices.length} invoices for customer (extracted from ${arrayProps[0]})`);
+            }
+          }
+        }
+
+        // Filter to only include unpaid or partially paid invoices
+        const unpaidInvoices = customerInvoices.filter(invoice =>
+          invoice.status !== 'paid' && invoice.balance > 0
+        );
+
+        console.log(`After filtering, ${unpaidInvoices.length} unpaid invoices remain`);
+        setInvoices(unpaidInvoices);
+
+        // Also fetch unpaid sales for this customer
+        console.log(`Fetching sales for customer ${customerId}`);
+        await delay(300);
+        const salesResponse = await api.get(`/sales?customer=${customerId}&paymentStatus=unpaid,partial`);
+        let customerSales = [];
+
+        console.log('Sales response:', salesResponse.data);
+
+        if (salesResponse.data && salesResponse.data.data && Array.isArray(salesResponse.data.data)) {
+          customerSales = salesResponse.data.data;
+          console.log(`Found ${customerSales.length} sales for customer (data.data format)`);
+        } else if (salesResponse.data && Array.isArray(salesResponse.data)) {
+          customerSales = salesResponse.data;
+          console.log(`Found ${customerSales.length} sales for customer (array format)`);
+        } else if (salesResponse.data && salesResponse.data.sales && Array.isArray(salesResponse.data.sales)) {
+          customerSales = salesResponse.data.sales;
+          console.log(`Found ${customerSales.length} sales for customer (sales property)`);
+        } else if (salesResponse.data && typeof salesResponse.data === 'object') {
+          console.log('Sales response has unexpected format:', salesResponse.data);
+          // Try to extract any array property from the response
+          const arrayProps = Object.keys(salesResponse.data).filter(key =>
+            Array.isArray(salesResponse.data[key])
+          );
+
+          if (arrayProps.length > 0) {
+            customerSales = salesResponse.data[arrayProps[0]];
+            console.log(`Found ${customerSales.length} sales for customer (extracted from ${arrayProps[0]})`);
+          }
+        }
+
+        setSales(customerSales);
+      } catch (error) {
+        console.error('Error fetching customer invoices:', error);
+      }
+    }
   };
 
-  const handleSupplierChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSupplierChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const supplierId = e.target.value;
     setFormData((prev) => ({
       ...prev,
       supplier: supplierId || undefined,
     }));
+
+    // Clear previous data
+    setInvoices([]);
+    setPurchaseOrders([]);
+    setSelectedSupplier(null);
+
+    // Fetch unpaid/partially paid invoices for this supplier
+    if (supplierId) {
+      try {
+        // Add delay to avoid rate limiting
+        await delay(300);
+        // First, fetch the supplier details
+        const supplierResponse = await api.get(`/suppliers/${supplierId}`);
+        if (supplierResponse.data && supplierResponse.data.data) {
+          setSelectedSupplier(supplierResponse.data.data);
+        }
+
+        // Fetch purchase invoices for this supplier
+        console.log(`Fetching invoices for supplier ${supplierId}`);
+        await delay(300);
+        const response = await api.get(`/invoices?type=purchase&status=sent,partial,overdue&supplier=${supplierId}`);
+        let supplierInvoices = [];
+
+        console.log('Invoice response:', response.data);
+
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          supplierInvoices = response.data.data;
+          console.log(`Found ${supplierInvoices.length} invoices for supplier (data.data format)`);
+        } else if (response.data && Array.isArray(response.data)) {
+          supplierInvoices = response.data;
+          console.log(`Found ${supplierInvoices.length} invoices for supplier (array format)`);
+        } else if (response.data && typeof response.data === 'object') {
+          // Handle case where API returns object with nested structure
+          if (response.data.invoices && Array.isArray(response.data.invoices)) {
+            supplierInvoices = response.data.invoices;
+            console.log(`Found ${supplierInvoices.length} invoices for supplier (invoices property)`);
+          } else {
+            console.log('Invoice response has unexpected format:', response.data);
+            // Try to extract any array property from the response
+            const arrayProps = Object.keys(response.data).filter(key =>
+              Array.isArray(response.data[key])
+            );
+
+            if (arrayProps.length > 0) {
+              supplierInvoices = response.data[arrayProps[0]];
+              console.log(`Found ${supplierInvoices.length} invoices for supplier (extracted from ${arrayProps[0]})`);
+            }
+          }
+        }
+
+        // Filter to only include unpaid or partially paid invoices
+        const unpaidInvoices = supplierInvoices.filter(invoice =>
+          invoice.status !== 'paid' && invoice.balance > 0
+        );
+
+        console.log(`After filtering, ${unpaidInvoices.length} unpaid invoices remain`);
+        setInvoices(unpaidInvoices);
+
+        // Also fetch unpaid purchase orders for this supplier
+        console.log(`Fetching purchase orders for supplier ${supplierId}`);
+        await delay(300);
+        const poResponse = await api.get(`/purchase-orders?paymentStatus=unpaid,partial&supplier=${supplierId}`);
+        let supplierPOs = [];
+
+        console.log('Purchase orders response:', poResponse.data);
+
+        if (poResponse.data && poResponse.data.data && Array.isArray(poResponse.data.data)) {
+          supplierPOs = poResponse.data.data;
+          console.log(`Found ${supplierPOs.length} purchase orders for supplier (data.data format)`);
+        } else if (poResponse.data && Array.isArray(poResponse.data)) {
+          supplierPOs = poResponse.data;
+          console.log(`Found ${supplierPOs.length} purchase orders for supplier (array format)`);
+        } else if (poResponse.data && typeof poResponse.data === 'object') {
+          // Handle case where API returns object with nested structure
+          if (poResponse.data.purchaseOrders && Array.isArray(poResponse.data.purchaseOrders)) {
+            supplierPOs = poResponse.data.purchaseOrders;
+            console.log(`Found ${supplierPOs.length} purchase orders for supplier (purchaseOrders property)`);
+          } else {
+            console.log('Purchase orders response has unexpected format:', poResponse.data);
+            // Try to extract any array property from the response
+            const arrayProps = Object.keys(poResponse.data).filter(key =>
+              Array.isArray(poResponse.data[key])
+            );
+
+            if (arrayProps.length > 0) {
+              supplierPOs = poResponse.data[arrayProps[0]];
+              console.log(`Found ${supplierPOs.length} purchase orders for supplier (extracted from ${arrayProps[0]})`);
+            }
+          }
+        }
+
+        // Also fetch unpaid purchases for this supplier
+        console.log(`Fetching purchases for supplier ${supplierId}`);
+        await delay(300);
+        const purchasesResponse = await api.get(`/purchases?supplier=${supplierId}&paymentStatus=unpaid,partial`);
+        let supplierPurchases = [];
+
+        console.log('Purchases response:', purchasesResponse.data);
+
+        if (purchasesResponse.data && purchasesResponse.data.data && Array.isArray(purchasesResponse.data.data)) {
+          supplierPurchases = purchasesResponse.data.data;
+          console.log(`Found ${supplierPurchases.length} purchases for supplier (data.data format)`);
+        } else if (purchasesResponse.data && Array.isArray(purchasesResponse.data)) {
+          supplierPurchases = purchasesResponse.data;
+          console.log(`Found ${supplierPurchases.length} purchases for supplier (array format)`);
+        } else if (purchasesResponse.data && purchasesResponse.data.purchases && Array.isArray(purchasesResponse.data.purchases)) {
+          supplierPurchases = purchasesResponse.data.purchases;
+          console.log(`Found ${supplierPurchases.length} purchases for supplier (purchases property)`);
+        } else if (purchasesResponse.data && typeof purchasesResponse.data === 'object') {
+          console.log('Purchases response has unexpected format:', purchasesResponse.data);
+          // Try to extract any array property from the response
+          const arrayProps = Object.keys(purchasesResponse.data).filter(key =>
+            Array.isArray(purchasesResponse.data[key])
+          );
+
+          if (arrayProps.length > 0) {
+            supplierPurchases = purchasesResponse.data[arrayProps[0]];
+            console.log(`Found ${supplierPurchases.length} purchases for supplier (extracted from ${arrayProps[0]})`);
+          }
+        }
+
+        // Add purchases to the purchase orders list since they're similar
+        const formattedPurchases = supplierPurchases.map(purchase => ({
+          ...purchase,
+          _id: purchase._id,
+          orderNumber: purchase.purchaseNumber, // Map to match PO structure
+          total: purchase.total,
+          isPurchase: true // Flag to identify as purchase vs PO
+        }));
+
+        // Combine purchase orders and purchases
+        const combinedPOs = [...supplierPOs, ...formattedPurchases];
+        console.log(`Combined ${combinedPOs.length} purchase orders/purchases`);
+        setPurchaseOrders(combinedPOs);
+      } catch (error) {
+        console.error('Error fetching supplier invoices:', error);
+      }
+    }
   };
 
   const validateForm = () => {
@@ -496,12 +1075,38 @@ const CreatePayment = () => {
     }
 
     try {
-      const resultAction = await dispatch(createPayment(formData) as any);
+      // Convert amount to number before submitting
+      const paymentData = {
+        ...formData,
+        amount: parseFloat(formData.amount as string)
+      };
+
+      console.log('Submitting payment with data:', paymentData);
+
+      const resultAction = await dispatch(createPayment(paymentData) as any);
       if (createPayment.fulfilled.match(resultAction)) {
-        navigate(`/payments/${resultAction.payload._id}`);
+        showToast('Payment created successfully', 'success');
+
+        // Redirect based on payment direction
+        if (formData.direction === PaymentDirection.RECEIVED) {
+          // If it's a payment received, redirect to sales page
+          navigate('/sales');
+        } else {
+          // If it's a payment made, redirect to purchases page
+          navigate('/purchases');
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create payment:', error);
+      let errorMessage = 'Failed to create payment';
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -650,8 +1255,8 @@ const CreatePayment = () => {
                           .filter((inv) => inv.type === 'sales')
                           .map((invoice) => (
                             <option key={invoice._id} value={invoice._id}>
-                              {invoice.invoiceNumber} -{' '}
-                              {formatCurrency(invoice.balance)}
+                              {invoice.invoiceNumber} - {invoice.status === 'partial' ? 'Partially Paid' : 'Unpaid'} -
+                              Balance: {formatCurrency(invoice.balance)}
                             </option>
                           ))
                       ) : (
@@ -675,7 +1280,8 @@ const CreatePayment = () => {
                       {Array.isArray(sales) && sales.length > 0 ? (
                         sales.map((sale) => (
                           <option key={sale._id} value={sale._id}>
-                            {sale.saleNumber} - {formatCurrency(sale.total)}
+                            {sale.saleNumber} - {sale.paymentStatus === 'partial' ? 'Partially Paid' : 'Unpaid'} -
+                            Total: {formatCurrency(sale.total)}
                           </option>
                         ))
                       ) : (
@@ -726,8 +1332,8 @@ const CreatePayment = () => {
                           .filter((inv) => inv.type === 'purchase')
                           .map((invoice) => (
                             <option key={invoice._id} value={invoice._id}>
-                              {invoice.invoiceNumber} -{' '}
-                              {formatCurrency(invoice.balance)}
+                              {invoice.invoiceNumber} - {invoice.status === 'partial' ? 'Partially Paid' : 'Unpaid'} -
+                              Balance: {formatCurrency(invoice.balance)}
                             </option>
                           ))
                       ) : (
@@ -738,7 +1344,7 @@ const CreatePayment = () => {
                     </Select>
 
                     <Select
-                      label="Purchase Order"
+                      label="Purchase Order/Purchase"
                       value={formData.purchaseOrder || ''}
                       onChange={handlePurchaseOrderChange}
                       disabled={
@@ -747,17 +1353,20 @@ const CreatePayment = () => {
                         !!initialPurchaseOrderId
                       }
                     >
-                      <option value="">Select Purchase Order</option>
+                      <option value="">Select Purchase Order/Purchase</option>
                       {Array.isArray(purchaseOrders) &&
                       purchaseOrders.length > 0 ? (
                         purchaseOrders.map((po) => (
                           <option key={po._id} value={po._id}>
-                            {po.orderNumber} - {formatCurrency(po.total)}
+                            {po.orderNumber || po.purchaseNumber} -
+                            {po.paymentStatus === 'partial' ? 'Partially Paid' : 'Unpaid'} -
+                            {po.isPurchase ? 'Purchase' : 'Purchase Order'} -
+                            Total: {formatCurrency(po.total)}
                           </option>
                         ))
                       ) : (
                         <option value="" disabled>
-                          No purchase orders available
+                          No purchase orders/purchases available
                         </option>
                       )}
                     </Select>
