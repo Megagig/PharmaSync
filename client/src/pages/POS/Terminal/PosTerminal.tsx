@@ -1,20 +1,43 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '@/store/store';
+import { RootState, AppDispatch } from '@/store/store';
 import {
   fetchActivePosSession,
   createPosTransaction,
+  createPosSession,
 } from '@/store/slices/posSlice';
-import { PosTransactionType, PaymentStatus } from '@/types/pos.types';
+import { PosTransactionType, PaymentStatus, PosSession, PosTransactionFormData } from '@/types/pos.types';
 import { useToast } from '@/hooks/useToast';
 import api from '@/services/api';
 import { formatCurrency } from '@/utils/formatters';
+import Card from '@/components/common/Card/Card';
+import Button from '@/components/common/Button/Button';
+import Input from '@/components/common/Input/Input';
+import Select from '@/components/common/Select/Select';
+import LoadingSpinner from '@/components/common/LoadingSpinner/LoadingSpinner';
+import ErrorMessage from '@/components/common/ErrorMessage/ErrorMessage';
+import ProductSearch from '@/components/common/ProductSearch/ProductSearch';
+import CustomerSearch from '@/components/common/CustomerSearch/CustomerSearch';
+import PosCart from './components/PosCart';
+import PosPayment from './components/PosPayment';
+import PosHeader from './components/PosHeader';
+import PosProductGrid from './components/PosProductGrid';
 
-const PosTerminal = () => {
+interface Customer {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  customerNumber: string;
+  phone?: string;
+  email?: string;
+}
+
+const PosTerminal: React.FC = () => {
   const location = useLocation();
-  const dispatch = useDispatch();
-  const { activeSession } = useSelector(
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { activeSession, isLoading, error: posError } = useSelector(
     (state: RootState) => state.pos
   );
   const { showToast } = useToast();
@@ -24,14 +47,14 @@ const PosTerminal = () => {
   const sessionId = queryParams.get('session');
 
   // State declarations
-  const [showExpiryModal, setShowExpiryModal] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [locations, setLocations] = useState<{ _id: string; name: string }[]>([]);
   const [selectedLocation, setSelectedLocation] = useState('');
   const [register, setRegister] = useState('Main Register');
   const [transactionType, setTransactionType] = useState<PosTransactionType>(
     PosTransactionType.SALE
   );
-  const [selectedCustomer, setSelectedCustomer] = useState({
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer>({
     _id: 'walk-in-customer',
     firstName: 'Walk-in',
     lastName: 'Customer',
@@ -58,62 +81,109 @@ const PosTerminal = () => {
   const subtotal = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
   const total = subtotal - discount + tax;
 
-  useEffect(() => {
-    const initializeTerminal = async () => {
-      try {
-        // Fetch locations
-        const locationsResponse = await api.get('/locations/active');
-        if (Array.isArray(locationsResponse.data.data)) {
-          setLocations(locationsResponse.data.data);
-          if (locationsResponse.data.data.length > 0) {
-            setSelectedLocation(locationsResponse.data.data[0]._id);
+  // Initialize terminal
+  const initializeTerminal = useCallback(async () => {
+    try {
+      setIsInitializing(true);
+      setError('');
+
+      // Fetch locations
+      const locationsResponse = await api.get('/locations/active');
+      if (Array.isArray(locationsResponse.data.data)) {
+        setLocations(locationsResponse.data.data);
+        if (locationsResponse.data.data.length > 0) {
+          setSelectedLocation(locationsResponse.data.data[0]._id);
+        }
+      }
+
+      // Fetch payment methods
+      const paymentMethodsResponse = await api.get('/payment-methods');
+      if (Array.isArray(paymentMethodsResponse.data.data) && paymentMethodsResponse.data.data.length > 0) {
+        setPaymentMethods(paymentMethodsResponse.data.data);
+      } else {
+        setPaymentMethods([]);
+      }
+
+      // Check for existing session
+      if (selectedLocation) {
+        try {
+          const activeSession = await dispatch(fetchActivePosSession({
+            location: selectedLocation,
+            register: register || 'Main Register'
+          })).unwrap();
+
+          if (!activeSession) {
+            // No active session found, create a new one
+            const newSession = await dispatch(createPosSession({
+              location: selectedLocation,
+              register: register || 'Main Register',
+              openingBalance: 0,
+              notes: ''
+            })).unwrap();
+
+            showToast('New POS session created successfully', 'success');
+          } else {
+            showToast('Resumed existing POS session', 'info');
+          }
+        } catch (err: any) {
+          if (err.message?.includes('already an open session')) {
+            // If there's a session conflict, try to fetch the existing session
+            const existingSession = await dispatch(fetchActivePosSession({
+              location: selectedLocation,
+              register: register || 'Main Register'
+            })).unwrap();
+
+            if (existingSession) {
+              showToast('Resumed existing POS session', 'info');
+            } else {
+              throw new Error('Failed to fetch existing session');
+            }
+          } else {
+            throw err;
           }
         }
-
-        // Fetch payment methods
-        const paymentMethodsResponse = await api.get('/payment-methods');
-        if (Array.isArray(paymentMethodsResponse.data.data)) {
-          setPaymentMethods(paymentMethodsResponse.data.data);
-        }
-
-        // Fetch active session if not already loaded
-        if (!activeSession && sessionId) {
-          await dispatch(fetchActivePosSession({ location: selectedLocation })).unwrap();
-        }
-      } catch (err: any) {
-        console.error('Error initializing POS terminal:', err);
-        setError(err.message || 'Failed to initialize POS terminal');
       }
-    };
+    } catch (err: any) {
+      console.error('Error initializing POS terminal:', err);
+      setError(err.message || 'Failed to initialize POS terminal');
+      showToast(err.message || 'Failed to initialize POS terminal', 'error');
+    } finally {
+      setIsInitializing(false);
+    }
+  }, [dispatch, selectedLocation, register, showToast]);
 
-    initializeTerminal();
-  }, [dispatch, sessionId, activeSession, selectedLocation]);
-
+  // Load initial data
   useEffect(() => {
-    // If session ID is provided and location is selected, fetch the session
+    initializeTerminal();
+  }, [initializeTerminal]);
+
+  // Fetch active session when location or register changes
+  useEffect(() => {
     if (sessionId && selectedLocation) {
       dispatch(
         fetchActivePosSession({
           location: selectedLocation,
           register: register || 'Main Register'
-        }) as any
+        })
       );
     }
   }, [dispatch, sessionId, selectedLocation, register]);
 
-  useEffect(() => {
-    // If product is selected, fetch available batches
-    if (selectedProduct && selectedProduct._id) {
-      console.log('Product selected in PosTerminal:', selectedProduct);
-      fetchProductBatches();
+  // Handle product selection
+  const handleProductSelect = useCallback((product: any) => {
+    if (product && product._id) {
+      setSelectedProduct(product);
+      setUnitPrice(product.price);
+      setQuantity(1);
+      setProductDiscount(0);
+      fetchProductBatches(product._id);
     }
-  }, [selectedProduct, selectedLocation]);
+  }, []);
 
-  const fetchProductBatches = async () => {
+  // Fetch product batches
+  const fetchProductBatches = async (productId: string) => {
     try {
-      if (!selectedProduct || !selectedProduct._id) return;
-
-      const response = await api.get(`/products/${selectedProduct._id}/batches`);
+      const response = await api.get(`/products/${productId}/batches`);
       const batches = response.data.data || [];
 
       if (batches.length > 0) {
@@ -143,19 +213,23 @@ const PosTerminal = () => {
     } catch (error: any) {
       console.error('Error fetching product batches:', error);
       setAvailableExpiryDates([]);
+      showToast('Error loading product inventory', 'error');
     }
   };
 
-  } catch (error) {
-      console.error('Failed to fetch product inventory:', error);
-      setAvailableExpiryDates([]);
-      setSelectedExpiryDate('');
-      showToast('Error loading product inventory. Please try again.', 'error');
-    }
-  };
+  // Add a helper to check if Add to Cart should be enabled
+  const canAddToCart =
+    selectedProduct &&
+    quantity > 0 &&
+    (!selectedProduct.inventoryType || selectedProduct.inventoryType !== 'tracked' || selectedProduct.quantity >= quantity);
 
-  const { showToast } = useToast();
+  // Add a warning for out of stock
+  const outOfStockWarning =
+    selectedProduct && selectedProduct.inventoryType === 'tracked' && selectedProduct.quantity <= 0
+      ? 'This product is out of stock.'
+      : '';
 
+  // Handle adding item to cart
   const handleAddToCart = async () => {
     if (!selectedProduct || quantity <= 0) {
       showToast('Please select a valid product and quantity', 'error');
@@ -181,26 +255,20 @@ const PosTerminal = () => {
         return;
       }
 
-      // Check if product has expiry dates
-      if (product.expiryDates && product.expiryDates.length > 0) {
-        setAvailableExpiryDates(product.expiryDates);
-        setShowExpiryModal(true);
-        return;
-      }
-
       // Add to cart
       const cartItem = {
         productId: product._id,
         productName: product.name,
         quantity,
-        unitPrice: product.price,
+        unitPrice: unitPrice || product.price,
         discount: productDiscount,
-        subtotal: (product.price * quantity) * (1 - productDiscount / 100),
+        subtotal: (unitPrice * quantity) * (1 - productDiscount / 100),
+        batchNumber: selectedExpiryDate,
       };
 
       // Check if item already exists in cart
       const existingItemIndex = cartItems.findIndex(
-        (item: any) => item.productId === product._id
+        (item) => item.productId === product._id
       );
 
       if (existingItemIndex >= 0) {
@@ -224,6 +292,7 @@ const PosTerminal = () => {
       setProductDiscount(0);
       setAvailableExpiryDates([]);
       setSelectedExpiryDate('');
+      setUnitPrice(0);
 
     } catch (error: any) {
       console.error('Error adding to cart:', error);
@@ -234,20 +303,12 @@ const PosTerminal = () => {
     }
   };
 
+  // Handle removing item from cart
   const handleRemoveFromCart = (index: number) => {
     try {
-      console.log('Removing item at index:', index);
-      console.log('Current cart items:', cartItems);
-
-      // Create a new array without the item at the specified index
       const newCartItems = [...cartItems];
       newCartItems.splice(index, 1);
-
-      console.log('New cart items after removal:', newCartItems);
-
-      // Update the state with the new array
-      setCartItems([...newCartItems]);
-
+      setCartItems(newCartItems);
       showToast('Item removed from cart', 'success');
     } catch (error) {
       console.error('Error removing item from cart:', error);
@@ -255,44 +316,30 @@ const PosTerminal = () => {
     }
   };
 
+  // Handle updating cart item
   const handleUpdateCartItem = (index: number, field: string, value: any) => {
     try {
-      console.log(
-        `Updating item at index ${index}, field: ${field}, value: ${value}`
-      );
-      console.log('Current cart items:', cartItems);
-
       if (index < 0 || index >= cartItems.length) {
-        console.error(
-          `Invalid index: ${index}, cart length: ${cartItems.length}`
-        );
         showToast('Invalid item index', 'error');
         return;
       }
 
-      // Create a deep copy of the cart items
       const newCartItems = [...cartItems];
       const item = { ...newCartItems[index] };
 
       if (field === 'quantity') {
         item.quantity = value;
-        item.subtotal = item.quantity * item.unitPrice - item.discount;
+        item.subtotal = item.quantity * item.unitPrice * (1 - item.discount / 100);
       } else if (field === 'unitPrice') {
         item.unitPrice = value;
-        item.subtotal = item.quantity * item.unitPrice - item.discount;
+        item.subtotal = item.quantity * item.unitPrice * (1 - item.discount / 100);
       } else if (field === 'discount') {
         item.discount = value;
-        item.subtotal = item.quantity * item.unitPrice - item.discount;
+        item.subtotal = item.quantity * item.unitPrice * (1 - item.discount / 100);
       }
 
-      // Update the item in the array
       newCartItems[index] = item;
-
-      console.log('Updated cart items:', newCartItems);
-
-      // Update the state with the new array
-      setCartItems([...newCartItems]);
-
+      setCartItems(newCartItems);
       showToast('Item updated', 'success');
     } catch (error) {
       console.error('Error updating cart item:', error);
@@ -300,6 +347,7 @@ const PosTerminal = () => {
     }
   };
 
+  // Handle proceeding to payment
   const handleProceedToPayment = () => {
     if (!selectedCustomer) {
       showToast('Please select a customer', 'error');
@@ -314,11 +362,13 @@ const PosTerminal = () => {
     setShowPaymentModal(true);
   };
 
+  // Handle payment completion
   const handlePaymentComplete = (paymentData: any[]) => {
     setPaymentMethods(paymentData);
     handleCompleteTransaction();
   };
 
+  // Handle completing transaction
   const handleCompleteTransaction = async () => {
     if (cartItems.length === 0) {
       setError('Please add items to cart');
@@ -345,24 +395,28 @@ const PosTerminal = () => {
       const change = totalPaid - totalAmount;
 
       // Create transaction
-      const transactionData = {
+      const transactionData: PosTransactionFormData = {
         customer: selectedCustomer._id,
-        transactionType: transactionType as PosTransactionType,
+        transactionType: transactionType,
         location: selectedLocation,
-        cashier: activeSession.cashier,
+        register: register,
         posSession: activeSession._id,
-        cartItems,
-        subtotal,
+        items: cartItems.map(item => ({
+          product: item.productId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          discount: item.discount,
+          batchNumber: item.batchNumber
+        })),
         discount,
         tax,
-        total: totalAmount,
-        notes,
-        payments: paymentMethods.map((method) => ({
+        paymentMethods: paymentMethods.map((method) => ({
           method: method._id,
           amount: method.amount,
           reference: method.reference,
         })),
-        paymentStatus: totalPaid >= totalAmount ? PaymentStatus.PAID : PaymentStatus.PARTIAL,
+        notes,
+        barcodeScanned: false
       };
 
       const result = await dispatch(createPosTransaction(transactionData)).unwrap();
@@ -388,16 +442,37 @@ const PosTerminal = () => {
       });
       setPaymentMethods([]);
 
-      showToast('success', 'Transaction completed successfully' as ToastType);
+      showToast('Transaction completed successfully', 'success');
       navigate(`/pos/transactions/${result._id}`);
     } catch (err: any) {
       console.error('Error completing transaction:', err);
       setError(err.message || 'Failed to complete transaction');
-      showToast('error', 'Failed to complete transaction' as ToastType);
+      showToast('Failed to complete transaction', 'error');
     } finally {
       setIsProcessing(false);
     }
   };
+
+  // Show loading state
+  if (isInitializing) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <LoadingSpinner size="large" />
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error || posError) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <ErrorMessage
+          message={error || posError || 'An error occurred'}
+          onRetry={initializeTerminal}
+        />
+      </div>
+    );
+  }
 
   // If no active session, show message to create one
   if (!activeSession && !isLoading) {
@@ -407,8 +482,7 @@ const PosTerminal = () => {
           <div className="p-6 text-center">
             <h2 className="text-xl font-medium mb-4">No Active POS Session</h2>
             <p className="mb-4">
-              You need to create or open a POS session before using the
-              terminal.
+              You need to create or open a POS session before using the terminal.
             </p>
             <Button
               variant="primary"
@@ -424,10 +498,12 @@ const PosTerminal = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-100">
-      <PosHeader
-        activeSession={activeSession}
-        onExitTerminal={() => navigate('/pos/sessions')}
-      />
+      {activeSession && (
+        <PosHeader
+          activeSession={activeSession}
+          onExitTerminal={() => navigate('/pos/sessions')}
+        />
+      )}
 
       <div className="flex-1 flex overflow-hidden">
         {/* Left side - Product selection */}
@@ -436,25 +512,7 @@ const PosTerminal = () => {
             <div className="w-1/2">
               <CustomerSearch
                 value={selectedCustomer}
-                onChange={(customer) => {
-                  console.log('Customer selected in POS Terminal:', customer);
-                  if (customer && customer._id) {
-                    // Make a deep copy to ensure state update is recognized
-                    const customerCopy = {
-                      _id: customer._id,
-                      firstName: customer.firstName || '',
-                      lastName: customer.lastName || '',
-                      customerNumber: customer.customerNumber || '',
-                      phone: customer.phone || '',
-                      email: customer.email || '',
-                    };
-                    setSelectedCustomer(customerCopy);
-                    showToast(
-                      `Customer ${customerCopy.firstName} ${customerCopy.lastName} selected`,
-                      'success'
-                    );
-                  }
-                }}
+                onChange={setSelectedCustomer}
                 placeholder="Search for customer..."
                 allowCreate
               />
@@ -462,14 +520,7 @@ const PosTerminal = () => {
             <div className="w-1/2">
               <ProductSearch
                 value={selectedProduct}
-                onChange={(product) => {
-                  console.log('Product selected in POS Terminal:', product);
-                  if (product && product._id) {
-                    setSelectedProduct(product);
-                    // Trigger the fetch of product batches
-                    fetchProductBatches();
-                  }
-                }}
+                onChange={handleProductSelect}
                 placeholder="Search for product..."
               />
             </div>
@@ -480,14 +531,17 @@ const PosTerminal = () => {
               <div className="p-4 grid grid-cols-4 gap-4">
                 {availableExpiryDates.length > 0 && (
                   <div className="col-span-4 mb-2">
-                    <div className="text-sm text-gray-600">
-                      Available Stock: {availableExpiryDates[0].totalQuantity}{' '}
-                      units (Expires:{' '}
-                      {new Date(
-                        availableExpiryDates[0].expiryDate
-                      ).toLocaleDateString()}
-                      )
-                    </div>
+                    <Select
+                      label="Select Batch"
+                      value={selectedExpiryDate}
+                      onChange={(e) => setSelectedExpiryDate(e.target.value)}
+                      options={availableExpiryDates.map((group) => ({
+                        value: group.expiryDate,
+                        label: `${group.totalQuantity} units (Expires: ${new Date(
+                          group.expiryDate
+                        ).toLocaleDateString()})`,
+                      }))}
+                    />
                   </div>
                 )}
                 <div>
@@ -496,8 +550,8 @@ const PosTerminal = () => {
                     label="Quantity"
                     value={quantity}
                     onChange={(e) => setQuantity(Number(e.target.value))}
-                    min="0.01"
-                    step="0.01"
+                    min="1"
+                    step="1"
                   />
                 </div>
                 <div>
@@ -525,16 +579,20 @@ const PosTerminal = () => {
                     variant="primary"
                     onClick={handleAddToCart}
                     className="w-full"
+                    disabled={!canAddToCart || isProcessing}
                   >
-                    Add to Cart
+                    {isProcessing ? 'Adding...' : 'Add to Cart'}
                   </Button>
                 </div>
               </div>
+              {outOfStockWarning && (
+                <div className="text-red-600 text-sm mt-2">{outOfStockWarning}</div>
+              )}
             </Card>
           )}
 
           <div className="flex-1 overflow-auto">
-            <PosProductGrid onSelectProduct={setSelectedProduct} />
+            <PosProductGrid onSelectProduct={handleProductSelect} />
           </div>
         </div>
 
@@ -600,21 +658,13 @@ const PosTerminal = () => {
               variant="primary"
               className="w-full py-3 text-lg"
               onClick={handleProceedToPayment}
-              disabled={cartItems.length === 0 || !selectedCustomer}
+              disabled={cartItems.length === 0 || !selectedCustomer || isProcessing || paymentMethods.length === 0}
             >
-              Pay Now ({formatCurrency(total)})
+              {isProcessing ? 'Processing...' : `Pay Now (${formatCurrency(total)})`}
             </Button>
           </div>
         </div>
       </div>
-
-      {/* Payment Modal */}
-      <PosPayment
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        total={total}
-        onComplete={handlePaymentComplete}
-      />
     </div>
   );
 };

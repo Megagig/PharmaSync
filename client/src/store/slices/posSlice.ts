@@ -7,7 +7,7 @@ import {
   PosTransactionFormData,
   PosReceiptData,
 } from '../../types/pos.types';
-import posService from '../../services/pos.service';
+import PosService from '@/services/pos.service';
 
 interface PosState {
   sessions: PosSession[];
@@ -58,42 +58,17 @@ const initialState: PosState = {
 // Session Thunks
 export const fetchPosSessions = createAsyncThunk(
   'pos/fetchSessions',
-  async (
-    {
-      page = 1,
-      limit = 10,
-      status = '',
-      location = '',
-      user = '',
-      startDate = '',
-      endDate = '',
-    }: {
-      page?: number;
-      limit?: number;
-      status?: string;
-      location?: string;
-      user?: string;
-      startDate?: string;
-      endDate?: string;
-    },
-    { rejectWithValue }
-  ) => {
-    try {
-      const response = await posService.getAllPosSessions(
-        page,
-        limit,
-        status,
-        location,
-        user,
-        startDate,
-        endDate
-      );
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch POS sessions'
-      );
-    }
+  async (params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    location?: string;
+    user?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const response = await PosService.getPosSessions(params);
+    return response;
   }
 );
 
@@ -101,7 +76,7 @@ export const fetchPosSessionById = createAsyncThunk(
   'pos/fetchSessionById',
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await posService.getPosSessionById(id);
+      const response = await PosService.getPosSessionById(id);
       return response;
     } catch (error: any) {
       return rejectWithValue(
@@ -113,32 +88,17 @@ export const fetchPosSessionById = createAsyncThunk(
 
 export const fetchActivePosSession = createAsyncThunk(
   'pos/fetchActiveSession',
-  async (
-    { location, register }: { location: string; register: string },
-    { rejectWithValue }
-  ) => {
-    try {
-      const response = await posService.getActivePosSession(location, register);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch active POS session'
-      );
-    }
+  async ({ location, register }: { location: string; register: string }) => {
+    const response = await PosService.getActivePosSession(location, register);
+    return response;
   }
 );
 
 export const createPosSession = createAsyncThunk(
   'pos/createSession',
-  async (sessionData: PosSessionFormData, { rejectWithValue }) => {
-    try {
-      const response = await posService.createPosSession(sessionData);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to create POS session'
-      );
-    }
+  async (sessionData: PosSessionFormData) => {
+    const response = await PosService.createPosSession(sessionData);
+    return response;
   }
 );
 
@@ -149,7 +109,7 @@ export const closePosSession = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await posService.closePosSession(id, closeData);
+      const response = await PosService.closePosSession(id, closeData);
       return response;
     } catch (error: any) {
       return rejectWithValue(
@@ -163,7 +123,7 @@ export const deletePosSession = createAsyncThunk(
   'pos/deleteSession',
   async (id: string, { rejectWithValue }) => {
     try {
-      await posService.deletePosSession(id);
+      await PosService.deletePosSession(id);
       return id; // Return the ID for removing from state
     } catch (error: any) {
       return rejectWithValue(
@@ -176,57 +136,20 @@ export const deletePosSession = createAsyncThunk(
 // Transaction Thunks
 export const fetchPosTransactions = createAsyncThunk(
   'pos/fetchTransactions',
-  async (
-    {
-      page = 1,
-      limit = 10,
-      type = '',
-      status = '',
-      paymentStatus = '',
-      customer = '',
-      location = '',
-      session = '',
-      cashier = '',
-      search = '',
-      startDate = '',
-      endDate = '',
-    }: {
-      page?: number;
-      limit?: number;
-      type?: string;
-      status?: string;
-      paymentStatus?: string;
-      customer?: string;
-      location?: string;
-      session?: string;
-      cashier?: string;
-      search?: string;
-      startDate?: string;
-      endDate?: string;
-    },
-    { rejectWithValue }
-  ) => {
-    try {
-      const response = await posService.getAllPosTransactions(
-        page,
-        limit,
-        type,
-        status,
-        paymentStatus,
-        customer,
-        location,
-        session,
-        cashier,
-        search,
-        startDate,
-        endDate
-      );
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to fetch POS transactions'
-      );
-    }
+  async (params: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    status?: string;
+    paymentStatus?: string;
+    customer?: string;
+    location?: string;
+    session?: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const response = await PosService.getPosTransactions(params);
+    return response;
   }
 );
 
@@ -234,7 +157,7 @@ export const fetchPosTransactionById = createAsyncThunk(
   'pos/fetchTransactionById',
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await posService.getPosTransactionById(id);
+      const response = await PosService.getPosTransactionById(id);
       return response;
     } catch (error: any) {
       return rejectWithValue(
@@ -246,15 +169,9 @@ export const fetchPosTransactionById = createAsyncThunk(
 
 export const createPosTransaction = createAsyncThunk(
   'pos/createTransaction',
-  async (transactionData: PosTransactionFormData, { rejectWithValue }) => {
-    try {
-      const response = await posService.createPosTransaction(transactionData);
-      return response;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data?.message || 'Failed to create POS transaction'
-      );
-    }
+  async (transactionData: PosTransactionFormData) => {
+    const response = await PosService.createPosTransaction(transactionData);
+    return response;
   }
 );
 
@@ -262,7 +179,7 @@ export const generatePosReceipt = createAsyncThunk(
   'pos/generateReceipt',
   async (id: string, { rejectWithValue }) => {
     try {
-      const response = await posService.generatePosReceipt(id);
+      const response = await PosService.generatePosReceipt(id);
       return response;
     } catch (error: any) {
       return rejectWithValue(
@@ -285,6 +202,9 @@ const posSlice = createSlice({
     setError: (state, action: PayloadAction<string>) => {
       state.error = action.payload;
     },
+    clearActiveSession: (state) => {
+      state.activeSession = null;
+    },
   },
   extraReducers: (builder) => {
     // Session reducers
@@ -300,7 +220,7 @@ const posSlice = createSlice({
       })
       .addCase(fetchPosSessions.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Failed to fetch sessions';
       })
       .addCase(fetchPosSessionById.pending, (state) => {
         state.isLoading = true;
@@ -324,7 +244,7 @@ const posSlice = createSlice({
       })
       .addCase(fetchActivePosSession.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Failed to fetch active session';
       })
       .addCase(createPosSession.pending, (state) => {
         state.isLoading = true;
@@ -337,7 +257,7 @@ const posSlice = createSlice({
       })
       .addCase(createPosSession.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Failed to create session';
       })
       .addCase(closePosSession.pending, (state) => {
         state.isLoading = true;
@@ -386,11 +306,16 @@ const posSlice = createSlice({
       .addCase(fetchPosTransactions.fulfilled, (state, action) => {
         state.isLoading = false;
         state.transactions = action.payload.data;
-        state.transactionsMeta = action.payload.meta;
+        state.transactionsMeta = {
+          total: action.payload.total,
+          pages: action.payload.pages,
+          page: action.payload.page,
+          limit: action.payload.limit
+        };
       })
       .addCase(fetchPosTransactions.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Failed to fetch transactions';
       })
       .addCase(fetchPosTransactionById.pending, (state) => {
         state.isLoading = true;
@@ -415,7 +340,7 @@ const posSlice = createSlice({
       })
       .addCase(createPosTransaction.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Failed to create transaction';
       })
       .addCase(generatePosReceipt.pending, (state) => {
         state.isLoading = true;
@@ -432,6 +357,6 @@ const posSlice = createSlice({
   },
 });
 
-export const { clearPosError, clearReceiptData, setError } = posSlice.actions;
+export const { clearPosError, clearReceiptData, setError, clearActiveSession } = posSlice.actions;
 
 export default posSlice.reducer;

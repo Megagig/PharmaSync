@@ -1,195 +1,111 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { formatCurrency } from '@/utils/formatters';
 import Button from '@/components/common/Button/Button';
 import Input from '@/components/common/Input/Input';
-import { formatCurrency } from '@/utils/formatters';
+
+interface CartItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  discount: number;
+  subtotal: number;
+  batchNumber?: string;
+}
 
 interface PosCartProps {
-  items: any[];
+  items: CartItem[];
   onRemoveItem: (index: number) => void;
   onUpdateItem: (index: number, field: string, value: any) => void;
 }
 
-const PosCart = ({ items, onRemoveItem, onUpdateItem }: PosCartProps) => {
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editQuantity, setEditQuantity] = useState(0);
-  const [editUnitPrice, setEditUnitPrice] = useState(0);
-  const [editDiscount, setEditDiscount] = useState(0);
-  const [cartItems, setCartItems] = useState<any[]>([]);
-
-  // Update local state when props change
-  useEffect(() => {
-    console.log('PosCart - Items prop changed:', items);
-    setCartItems(items);
-  }, [items]);
-
-  // Log cart items for debugging
-  console.log('PosCart - Rendering with items:', cartItems);
-
-  const handleEdit = (index: number) => {
-    if (index < 0 || index >= items.length) {
-      console.error(`Invalid index: ${index}, items length: ${items.length}`);
-      return;
-    }
-
-    const item = items[index];
-    console.log('PosCart - Editing item:', item);
-    setEditQuantity(item.quantity);
-    setEditUnitPrice(item.unitPrice);
-    setEditDiscount(item.discount || 0);
-    setEditingIndex(index);
-  };
-
-  const handleSaveEdit = () => {
-    if (editingIndex !== null) {
-      onUpdateItem(editingIndex, 'quantity', editQuantity);
-      onUpdateItem(editingIndex, 'unitPrice', editUnitPrice);
-      onUpdateItem(editingIndex, 'discount', editDiscount);
-      setEditingIndex(null);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingIndex(null);
-  };
-
+const PosCart: React.FC<PosCartProps> = ({
+  items,
+  onRemoveItem,
+  onUpdateItem,
+}) => {
   return (
-    <div className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-medium">Cart Items</h2>
-        <span className="text-sm text-gray-600">{cartItems.length} items</span>
-      </div>
-
-      <div className="flex-1 overflow-auto">
-        {cartItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 mb-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            <p>Cart is empty</p>
-            <p className="text-sm mt-1">Add products to get started</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {cartItems.map((item, index) => (
-              <div
-                key={`cart-item-${index}`}
-                className="border rounded-md p-3 bg-gray-50 relative"
-              >
-                {editingIndex === index ? (
-                  <div className="space-y-2">
-                    <div className="font-medium">
-                      {item.productDetails?.name || 'Product'}
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Input
-                        type="number"
-                        label="Quantity"
-                        value={editQuantity}
-                        onChange={(e) =>
-                          setEditQuantity(Number(e.target.value))
-                        }
-                        min="0.01"
-                        step="0.01"
-                      />
-                      <Input
-                        type="number"
-                        label="Unit Price (₦)"
-                        value={editUnitPrice}
-                        onChange={(e) =>
-                          setEditUnitPrice(Number(e.target.value))
-                        }
-                        min="0"
-                        step="0.01"
-                      />
-                      <Input
-                        type="number"
-                        label="Discount (₦)"
-                        value={editDiscount}
-                        onChange={(e) =>
-                          setEditDiscount(Number(e.target.value))
-                        }
-                        min="0"
-                        step="0.01"
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2 mt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCancelEdit}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={handleSaveEdit}
-                      >
-                        Save
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <button
-                      className="absolute top-2 right-2 text-red-500 hover:text-red-700"
-                      onClick={() => {
-                        console.log('Remove button clicked for index:', index);
-                        onRemoveItem(index);
-                      }}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                    <div className="pr-6">
-                      <div className="font-medium">
-                        {item.productDetails?.name || 'Product'}
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">
-                        {item.quantity} x {formatCurrency(item.unitPrice)}
-                        {item.discount > 0 &&
-                          ` - ${formatCurrency(item.discount)} discount`}
-                      </div>
-                      <div className="flex justify-between items-center mt-2">
-                        <Button
-                          variant="outline"
-                          size="xs"
-                          onClick={() => handleEdit(index)}
-                        >
-                          Edit
-                        </Button>
-                        <span className="font-medium">
-                          {formatCurrency(item.subtotal)}
-                        </span>
-                      </div>
-                    </div>
-                  </>
+    <div className="flex-1 overflow-auto">
+      <div className="space-y-2">
+        {items.map((item, index) => (
+          <div
+            key={`${item.productId}-${index}`}
+            className="bg-gray-50 rounded-lg p-3"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h4 className="font-medium text-gray-900">{item.productName}</h4>
+                {item.batchNumber && (
+                  <p className="text-sm text-gray-500">
+                    Batch: {item.batchNumber}
+                  </p>
                 )}
               </div>
-            ))}
+              <Button
+                variant="text"
+                size="sm"
+                onClick={() => onRemoveItem(index)}
+                className="text-red-600 hover:text-red-700"
+              >
+                Remove
+              </Button>
+            </div>
+
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              <div>
+                <label className="text-sm text-gray-600">Quantity</label>
+                <Input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) =>
+                    onUpdateItem(index, 'quantity', Number(e.target.value))
+                  }
+                  min="0.01"
+                  step="0.01"
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">Price</label>
+                <Input
+                  type="number"
+                  value={item.unitPrice}
+                  onChange={(e) =>
+                    onUpdateItem(index, 'unitPrice', Number(e.target.value))
+                  }
+                  min="0"
+                  step="0.01"
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-600">Discount (%)</label>
+                <Input
+                  type="number"
+                  value={item.discount}
+                  onChange={(e) =>
+                    onUpdateItem(index, 'discount', Number(e.target.value))
+                  }
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="mt-2 flex justify-between items-center">
+              <span className="text-sm text-gray-600">Subtotal:</span>
+              <span className="font-medium text-gray-900">
+                {formatCurrency(item.subtotal)}
+              </span>
+            </div>
+          </div>
+        ))}
+
+        {items.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No items in cart
           </div>
         )}
       </div>

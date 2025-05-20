@@ -31,6 +31,7 @@ import expenseReducer from './slices/expenseSlice';
 import budgetReducer from './slices/budgetSlice';
 import accountingReducer from './slices/accountingSlice';
 import rxnavReducer from './slices/rxnavSlice';
+import productReducer from './slices/productSlice';
 
 export const store = configureStore({
   reducer: {
@@ -66,6 +67,7 @@ export const store = configureStore({
     budgets: budgetReducer,
     accounting: accountingReducer,
     rxnav: rxnavReducer,
+    products: productReducer,
     // Add other reducers here as they are created
   },
   devTools: true,

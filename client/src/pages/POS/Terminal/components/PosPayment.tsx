@@ -1,100 +1,79 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Modal from '@/components/common/Modal/Modal';
 import Button from '@/components/common/Button/Button';
 import Input from '@/components/common/Input/Input';
 import Select from '@/components/common/Select/Select';
 import { formatCurrency } from '@/utils/formatters';
 
+interface PaymentMethod {
+  _id: string;
+  name: string;
+  type: string;
+  isActive: boolean;
+}
+
+interface Payment {
+  method: string;
+  amount: number;
+  reference: string;
+}
+
 interface PosPaymentProps {
   isOpen: boolean;
   onClose: () => void;
   total: number;
-  onComplete: (paymentMethods: any[]) => void;
+  onComplete: (payments: Payment[]) => void;
+  paymentMethods: PaymentMethod[];
 }
 
-const PosPayment = ({ isOpen, onClose, total, onComplete }: PosPaymentProps) => {
-  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
-  const [currentMethod, setCurrentMethod] = useState('cash');
-  const [currentAmount, setCurrentAmount] = useState(total);
+const PosPayment: React.FC<PosPaymentProps> = ({
+  isOpen,
+  onClose,
+  total,
+  onComplete,
+  paymentMethods = [],
+}) => {
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [selectedMethod, setSelectedMethod] = useState('');
+  const [amount, setAmount] = useState('');
   const [reference, setReference] = useState('');
-  const [cardType, setCardType] = useState('');
-  const [cardLast4, setCardLast4] = useState('');
-  
-  const [totalPaid, setTotalPaid] = useState(0);
-  const [changeDue, setChangeDue] = useState(0);
-  const [remaining, setRemaining] = useState(total);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      // Reset form when modal opens
-      setPaymentMethods([]);
-      setCurrentMethod('cash');
-      setCurrentAmount(total);
-      setReference('');
-      setCardType('');
-      setCardLast4('');
-      setTotalPaid(0);
-      setChangeDue(0);
-      setRemaining(total);
-    }
-  }, [isOpen, total]);
+  // Calculate remaining amount
+  const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const remaining = total - totalPaid;
 
-  useEffect(() => {
-    // Calculate totals when payment methods change
-    const newTotalPaid = paymentMethods.reduce((sum, method) => sum + method.amount, 0);
-    setTotalPaid(newTotalPaid);
-    
-    const newRemaining = Math.max(0, total - newTotalPaid);
-    setRemaining(newRemaining);
-    
-    const newChangeDue = Math.max(0, newTotalPaid - total);
-    setChangeDue(newChangeDue);
-    
-    // Update current amount to remaining if there's still an amount to pay
-    if (newRemaining > 0) {
-      setCurrentAmount(newRemaining);
-    }
-  }, [paymentMethods, total]);
-
-  const handleAddPaymentMethod = () => {
-    if (currentAmount <= 0) {
+  // Handle adding payment
+  const handleAddPayment = () => {
+    if (!selectedMethod || !amount || Number(amount) <= 0) {
       return;
     }
 
-    const newPaymentMethod: any = {
-      method: currentMethod,
-      amount: currentAmount,
+    const newPayment: Payment = {
+      method: selectedMethod,
+      amount: Number(amount),
+      reference: reference || '',
     };
 
-    if (currentMethod === 'card') {
-      newPaymentMethod.cardType = cardType;
-      newPaymentMethod.cardLast4 = cardLast4;
-      newPaymentMethod.reference = reference;
-    } else if (currentMethod === 'transfer') {
-      newPaymentMethod.reference = reference;
-    }
-
-    setPaymentMethods([...paymentMethods, newPaymentMethod]);
-    
-    // Reset form for next payment method
+    setPayments([...payments, newPayment]);
+    setSelectedMethod('');
+    setAmount('');
     setReference('');
-    setCardType('');
-    setCardLast4('');
   };
 
-  const handleRemovePaymentMethod = (index: number) => {
-    const newPaymentMethods = [...paymentMethods];
-    newPaymentMethods.splice(index, 1);
-    setPaymentMethods(newPaymentMethods);
+  // Handle removing payment
+  const handleRemovePayment = (index: number) => {
+    const newPayments = [...payments];
+    newPayments.splice(index, 1);
+    setPayments(newPayments);
   };
 
+  // Handle completing payment
   const handleComplete = () => {
     if (totalPaid < total) {
-      return; // Cannot complete if not fully paid
+      return;
     }
-    
-    onComplete(paymentMethods);
-    onClose();
+    onComplete(payments);
   };
 
   return (
@@ -104,172 +83,128 @@ const PosPayment = ({ isOpen, onClose, total, onComplete }: PosPaymentProps) => 
       title="Payment"
       size="lg"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h3 className="font-medium mb-4">Add Payment Method</h3>
-          
-          <div className="space-y-4">
+      <div className="space-y-4">
+        {/* Payment summary */}
+        <div className="bg-gray-50 rounded-lg p-4">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-gray-600">Total Amount:</span>
+            <span className="text-lg font-semibold">{formatCurrency(total)}</span>
+          </div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-gray-600">Amount Paid:</span>
+            <span className="text-lg font-semibold text-green-600">
+              {formatCurrency(totalPaid)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-gray-600">Remaining:</span>
+            <span
+              className={`text-lg font-semibold ${remaining > 0 ? 'text-red-600' : 'text-green-600'
+                }`}
+            >
+              {formatCurrency(remaining)}
+            </span>
+          </div>
+        </div>
+
+        {/* Add payment form */}
+        <div className="grid grid-cols-3 gap-4">
+          <div>
             <Select
               label="Payment Method"
-              value={currentMethod}
-              onChange={(e) => setCurrentMethod(e.target.value)}
+              value={selectedMethod}
+              onChange={(e) => setSelectedMethod(e.target.value)}
             >
-              <option value="cash">Cash</option>
-              <option value="card">Card</option>
-              <option value="transfer">Bank Transfer</option>
-              <option value="credit">Credit</option>
+              <option value="">Select Method</option>
+              {paymentMethods
+                .filter((method) => method.isActive)
+                .map((method) => (
+                  <option key={method._id} value={method._id}>
+                    {method.name}
+                  </option>
+                ))}
             </Select>
-            
+          </div>
+          <div>
             <Input
               type="number"
-              label="Amount (₦)"
-              value={currentAmount}
-              onChange={(e) => setCurrentAmount(Number(e.target.value))}
+              label="Amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
               min="0"
               step="0.01"
             />
-            
-            {currentMethod === 'card' && (
-              <>
-                <Select
-                  label="Card Type"
-                  value={cardType}
-                  onChange={(e) => setCardType(e.target.value)}
-                >
-                  <option value="">Select Card Type</option>
-                  <option value="visa">Visa</option>
-                  <option value="mastercard">Mastercard</option>
-                  <option value="verve">Verve</option>
-                  <option value="other">Other</option>
-                </Select>
-                
-                <Input
-                  type="text"
-                  label="Last 4 Digits"
-                  value={cardLast4}
-                  onChange={(e) => setCardLast4(e.target.value)}
-                  maxLength={4}
-                  placeholder="e.g., 1234"
-                />
-                
-                <Input
-                  type="text"
-                  label="Reference/Authorization"
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  placeholder="e.g., Transaction ID"
-                />
-              </>
-            )}
-            
-            {currentMethod === 'transfer' && (
-              <Input
-                type="text"
-                label="Reference"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                placeholder="e.g., Transfer Reference"
-              />
-            )}
-            
-            <Button
-              variant="primary"
-              onClick={handleAddPaymentMethod}
-              disabled={currentAmount <= 0}
-              className="w-full"
-            >
-              Add Payment Method
-            </Button>
+          </div>
+          <div>
+            <Input
+              type="text"
+              label="Reference"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder="Optional"
+            />
           </div>
         </div>
-        
-        <div>
-          <h3 className="font-medium mb-4">Payment Summary</h3>
-          
-          <div className="bg-gray-50 p-4 rounded-md mb-4">
-            <div className="flex justify-between mb-2">
-              <span>Total Amount:</span>
-              <span className="font-medium">{formatCurrency(total)}</span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span>Total Paid:</span>
-              <span className="font-medium">{formatCurrency(totalPaid)}</span>
-            </div>
-            {remaining > 0 ? (
-              <div className="flex justify-between text-red-600 font-medium">
-                <span>Remaining:</span>
-                <span>{formatCurrency(remaining)}</span>
-              </div>
-            ) : (
-              <div className="flex justify-between text-green-600 font-medium">
-                <span>Change Due:</span>
-                <span>{formatCurrency(changeDue)}</span>
-              </div>
-            )}
-          </div>
-          
-          <div className="mb-4">
-            <h4 className="font-medium mb-2">Payment Methods</h4>
-            {paymentMethods.length === 0 ? (
-              <p className="text-gray-500 text-sm">No payment methods added yet</p>
-            ) : (
-              <div className="space-y-2">
-                {paymentMethods.map((method, index) => (
-                  <div
-                    key={index}
-                    className="flex justify-between items-center bg-white p-2 border rounded-md"
-                  >
-                    <div>
-                      <div className="font-medium capitalize">{method.method}</div>
-                      {method.reference && (
-                        <div className="text-xs text-gray-600">Ref: {method.reference}</div>
-                      )}
-                      {method.cardType && (
-                        <div className="text-xs text-gray-600">
-                          {method.cardType} **** {method.cardLast4}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center">
-                      <span className="mr-2">{formatCurrency(method.amount)}</span>
-                      <button
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => handleRemovePaymentMethod(index)}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
-                    </div>
+
+        <Button
+          variant="primary"
+          onClick={handleAddPayment}
+          disabled={!selectedMethod || !amount || Number(amount) <= 0}
+        >
+          Add Payment
+        </Button>
+
+        {/* Payment list */}
+        {payments.length > 0 && (
+          <div className="mt-4">
+            <h3 className="text-lg font-medium mb-2">Payment Details</h3>
+            <div className="space-y-2">
+              {payments.map((payment, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center bg-gray-50 p-3 rounded-lg"
+                >
+                  <div>
+                    <span className="font-medium">
+                      {paymentMethods.find((m) => m._id === payment.method)?.name}
+                    </span>
+                    {payment.reference && (
+                      <span className="text-sm text-gray-500 ml-2">
+                        ({payment.reference})
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="flex items-center space-x-4">
+                    <span className="font-medium">
+                      {formatCurrency(payment.amount)}
+                    </span>
+                    <Button
+                      variant="text"
+                      size="sm"
+                      onClick={() => handleRemovePayment(index)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          
-          <div className="flex justify-end space-x-2 mt-6">
-            <Button variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleComplete}
-              disabled={totalPaid < total}
-            >
-              Complete Payment
-            </Button>
-          </div>
+        )}
+
+        {/* Action buttons */}
+        <div className="flex justify-end space-x-2 mt-6">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleComplete}
+            disabled={totalPaid < total || isLoading}
+          >
+            {isLoading ? 'Processing...' : 'Complete Payment'}
+          </Button>
         </div>
       </div>
     </Modal>

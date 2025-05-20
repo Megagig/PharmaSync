@@ -84,19 +84,23 @@ export interface PosSession {
   _id: string;
   sessionNumber: string;
   status: PosSessionStatus;
-  startDate: Date;
-  endDate?: Date;
-  cashier: string;
-  location: string;
+  openedBy: {
+    firstName: string;
+    lastName: string;
+  };
+  openingTime: string;
+  location: {
+    name: string;
+  };
   register: string;
-  openingBalance?: number;
-  closingBalance?: number;
-  expectedClosingBalance?: number;
-  actualClosingBalance?: number;
+  openingBalance: number;
+  closingBalance: number;
+  expectedClosingBalance: number;
+  actualClosingBalance: number;
   cashVariance?: number;
-  totalSales?: number;
-  totalReturns?: number;
-  totalPayments?: number;
+  totalSales: number;
+  totalReturns: number;
+  totalPayments: number;
 }
 
 export interface PosSessionFormData {
