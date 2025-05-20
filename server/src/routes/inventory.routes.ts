@@ -4,6 +4,7 @@ import {
   getExpiringStockAlerts,
   getInventoryValuation,
   getInventoryMovement,
+  sendExpiryNotifications,
 } from '../controllers/inventory.controller';
 import { protect, restrictTo } from '../middleware/auth.middleware';
 import { RoleType } from '../interfaces/role.interface';
@@ -42,6 +43,13 @@ router.get(
   '/movement',
   cacheMiddleware({ expiration: 300 }), // Cache for 5 minutes
   getInventoryMovement
+);
+
+// Send expiry notifications
+router.post(
+  '/send-expiry-notifications',
+  restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
+  sendExpiryNotifications
 );
 
 // TODO: Implement these routes when the controllers are ready

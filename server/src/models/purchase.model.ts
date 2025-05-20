@@ -36,6 +36,13 @@ const purchaseItemSchema = new Schema(
       type: String,
       trim: true,
     },
+    batchNumber: {
+      type: String,
+      trim: true,
+    },
+    expiryDate: {
+      type: Date,
+    },
   },
   { _id: true }
 );

@@ -145,10 +145,36 @@ const InventoryReportsList = () => {
       }
 
       const response = await api.get(`${config.endpoint}?${params.toString()}`);
-      setReportData(response.data.data);
-    } catch (error) {
+
+      // Check if response data is valid
+      if (response.data && response.data.data) {
+        setReportData(response.data.data);
+      } else {
+        console.error('Invalid response format:', response.data);
+        showToast('Invalid response format from server', 'error');
+        // Set empty array as fallback
+        setReportData([]);
+      }
+    } catch (error: any) {
       console.error('Error generating report:', error);
-      showToast('Error generating report', 'error');
+
+      // Handle specific error cases
+      if (error.response) {
+        if (error.response.status === 401) {
+          showToast('Authentication error. Please log in again.', 'error');
+        } else if (error.response.status === 500) {
+          showToast('Server error. Please try again later.', 'error');
+        } else {
+          showToast(`Error: ${error.response.data?.message || 'Unknown error'}`, 'error');
+        }
+      } else if (error.request) {
+        showToast('Network error. Please check your connection.', 'error');
+      } else {
+        showToast('Error generating report', 'error');
+      }
+
+      // Set empty array as fallback
+      setReportData([]);
     } finally {
       setIsGeneratingReport(false);
     }
@@ -349,7 +375,8 @@ const InventoryReportsList = () => {
   };
 
   const renderExpiryReport = (data: any) => {
-    if (!data || data.length === 0) {
+    // Ensure data is an array
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return (
         <div className="text-center py-4">
           <p className="text-gray-500">
@@ -456,7 +483,8 @@ const InventoryReportsList = () => {
   };
 
   const renderLowStockReport = (data: any) => {
-    if (!data || data.length === 0) {
+    // Ensure data is an array
+    if (!data || !Array.isArray(data) || data.length === 0) {
       return (
         <div className="text-center py-4">
           <p className="text-gray-500">No low stock items found.</p>

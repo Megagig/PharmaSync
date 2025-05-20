@@ -410,17 +410,17 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto lg:z-auto ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto lg:z-auto ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="h-full flex flex-col">
           {/* Sidebar header */}
-          <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
+          <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-white">
             <h2 className="text-xl font-bold text-primary-600">PharmaSync</h2>
             <button
               type="button"
-              className="text-gray-500 hover:text-gray-600 lg:hidden"
+              className="text-gray-500 hover:text-gray-600 lg:hidden focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md"
               onClick={toggleSidebar}
               aria-label="Close sidebar"
             >
@@ -442,23 +442,23 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 overflow-y-auto py-4">
-            <ul className="space-y-1 px-2">
+          <nav className="flex-1 overflow-y-auto py-4 bg-white">
+            <ul className="space-y-0.5 px-3">
               {allNavItems.map((item) => (
                 <li key={item.name} className="mb-1">
                   {item.children ? (
                     <div>
                       <button
                         onClick={() => toggleMenu(item.name)}
-                        className={`w-full flex items-center justify-between px-4 py-2 text-sm font-medium rounded-md ${
+                        className={`w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium rounded-md ${
                           isMenuActive(item)
                             ? 'bg-primary-50 text-primary-600'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                         }`}
                       >
                         <div className="flex items-center">
                           <svg
-                            className="mr-3 h-5 w-5"
+                            className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-gray-900"
                             xmlns="http://www.w3.org/2000/svg"
                             fill="none"
                             viewBox="0 0 24 24"
@@ -471,10 +471,10 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                               d={item.icon}
                             />
                           </svg>
-                          {item.name}
+                          <span className="truncate">{item.name}</span>
                         </div>
                         <svg
-                          className={`h-5 w-5 transform transition-transform duration-200 ${
+                          className={`h-4 w-4 text-gray-500 transform transition-transform duration-200 ${
                             expandedMenus[item.name] ? 'rotate-90' : ''
                           }`}
                           xmlns="http://www.w3.org/2000/svg"
@@ -497,21 +497,21 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                           expandedMenus[item.name] ? 'max-h-96' : 'max-h-0'
                         }`}
                       >
-                        <ul className="mt-1 pl-8 space-y-1 py-1">
+                        <ul className="mt-1 space-y-0.5 py-1 border-l border-gray-200 ml-6">
                           {item.children.map((child) => (
                             <li key={child.path}>
                               <NavLink
                                 to={child.path}
                                 className={({ isActive }) =>
-                                  `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                                  `flex items-center px-4 py-2 text-sm font-medium rounded-md ml-2 ${
                                     isActive
-                                      ? 'bg-primary-50 text-primary-600'
-                                      : 'text-gray-700 hover:bg-gray-50'
+                                      ? 'bg-primary-50 text-primary-600 border-l-2 border-primary-600 -ml-[2px]'
+                                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                   }`
                                 }
                               >
                                 <svg
-                                  className="mr-3 h-4 w-4"
+                                  className="mr-3 h-4 w-4 flex-shrink-0"
                                   xmlns="http://www.w3.org/2000/svg"
                                   fill="none"
                                   viewBox="0 0 24 24"
@@ -524,7 +524,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                                     d={child.icon}
                                   />
                                 </svg>
-                                {child.name}
+                                <span className="truncate">{child.name}</span>
                               </NavLink>
                             </li>
                           ))}
@@ -535,15 +535,15 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                     <NavLink
                       to={item.path}
                       className={({ isActive }) =>
-                        `flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                        `flex items-center px-4 py-2.5 text-sm font-medium rounded-md ${
                           isActive
                             ? 'bg-primary-50 text-primary-600'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                         }`
                       }
                     >
                       <svg
-                        className="mr-3 h-5 w-5"
+                        className="mr-3 h-5 w-5 flex-shrink-0 text-gray-500 group-hover:text-gray-900"
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
                         viewBox="0 0 24 24"
@@ -556,7 +556,7 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
                           d={item.icon}
                         />
                       </svg>
-                      {item.name}
+                      <span className="truncate">{item.name}</span>
                     </NavLink>
                   )}
                 </li>
@@ -565,17 +565,17 @@ const Sidebar = ({ isOpen, toggleSidebar }: SidebarProps) => {
           </nav>
 
           {/* User info */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-gray-200 bg-gray-50">
             <div className="flex items-center">
-              <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-medium">
+              <div className="h-9 w-9 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-medium shadow-sm">
                 {user?.firstName?.charAt(0)}
                 {user?.lastName?.charAt(0)}
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">
+              <div className="ml-3 overflow-hidden">
+                <p className="text-sm font-medium text-gray-800 truncate">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-xs text-gray-500 capitalize">
+                <p className="text-xs text-gray-500 capitalize truncate">
                   {user?.role || 'User'}
                 </p>
               </div>

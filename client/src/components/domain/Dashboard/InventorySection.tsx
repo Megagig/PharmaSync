@@ -35,7 +35,7 @@ const InventorySection: React.FC<InventorySectionProps> = ({ dateRange }) => {
   useEffect(() => {
     // Fetch inventory data
     dispatch(fetchLowStockAlerts());
-    dispatch(fetchExpiringStockAlerts());
+    dispatch(fetchExpiringStockAlerts(90)); // Fetch expiring items within 90 days
     dispatch(fetchInventoryReport());
   }, [dispatch]);
 
@@ -172,45 +172,80 @@ const InventorySection: React.FC<InventorySectionProps> = ({ dateRange }) => {
           <div>
             <h3 className="text-md font-medium text-gray-700 mb-2">
               Expiring Soon
+              <span className="ml-2 text-xs font-normal text-gray-500">
+                (Next 90 days)
+              </span>
             </h3>
             {expiringStockAlerts && expiringStockAlerts.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Product
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Expiry
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Qty
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {expiringStockAlerts.slice(0, 3).map((item, index) => (
-                      <tr
-                        key={item.id || index}
-                        className="cursor-pointer hover:bg-gray-50"
-                        onClick={() =>
-                          navigate(`/inventory/products/${item.productId}`)
-                        }
-                      >
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                          {item.productName}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-amber-500">
-                          {item.daysUntilExpiry} days
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                          {item.quantity}
-                        </td>
+              <div>
+                <div className="flex space-x-2 mb-2">
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    &lt; 30 days
+                  </span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                    30-60 days
+                  </span>
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    60-90 days
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Product
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Expires In
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Qty
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {expiringStockAlerts.slice(0, 3).map((item, index) => (
+                        <tr
+                          key={item.id || index}
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() =>
+                            navigate(`/inventory/products/${item.productId}`)
+                          }
+                        >
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                            {item.productName}
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                item.daysUntilExpiry <= 30
+                                  ? 'bg-red-100 text-red-800'
+                                  : item.daysUntilExpiry <= 60
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}
+                            >
+                              {item.daysUntilExpiry} days
+                            </span>
+                          </td>
+                          <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                            {item.quantity}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mt-2 text-right">
+                  <Button
+                    variant="text"
+                    size="sm"
+                    onClick={() => navigate('/inventory/expiry-tracking')}
+                  >
+                    View All
+                  </Button>
+                </div>
               </div>
             ) : (
               <p className="text-sm text-gray-500">

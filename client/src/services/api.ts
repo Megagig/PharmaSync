@@ -25,11 +25,12 @@ api.interceptors.request.use(
   }
 );
 
-// Add a response interceptor to handle token refresh
+// Add a response interceptor to handle token refresh and errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    console.log('API Error:', error);
 
     // If the error is 401 (Unauthorized) and we haven't tried to refresh the token yet
     if (
@@ -63,31 +64,24 @@ api.interceptors.response.use(
           return api(originalRequest);
         } else {
           console.error('No access token received from refresh token request');
+          localStorage.removeItem('token');
+          window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
           return Promise.reject(error);
         }
       } catch (refreshError) {
         console.error('Error refreshing token:', refreshError);
+        localStorage.removeItem('token');
+        window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
         return Promise.reject(refreshError);
       }
     }
-
-    return Promise.reject(error);
-  }
-);
-
-// Add a response interceptor
-api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    console.log('API Error:', error);
 
     if (error.response) {
       // Handle 401 Unauthorized errors (token expired or invalid)
       if (error.response.status === 401) {
         // Clear token from localStorage
         localStorage.removeItem('token');
+        window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
       }
 
       // Log the error details
@@ -98,7 +92,7 @@ api.interceptors.response.use(
       });
 
       // Return the error response data
-      return Promise.reject(error.response.data);
+      return Promise.reject(error);
     }
 
     if (error.request) {

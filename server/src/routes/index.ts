@@ -44,6 +44,7 @@ import loyaltyRoutes from './loyalty.routes';
 import receiptRoutes from './receipt.routes';
 import insuranceRoutes from './insurance.routes';
 import advancedAnalyticsRoutes from './advancedAnalytics.routes';
+import settingsRoutes from './settings.routes';
 // Import other routes as they are created
 
 const router = Router();
@@ -102,5 +103,6 @@ router.use('/loyalty', loyaltyRoutes);
 router.use('/receipts', receiptRoutes);
 router.use('/insurance', insuranceRoutes);
 router.use('/analytics/advanced', advancedAnalyticsRoutes);
+router.use('/settings', settingsRoutes);
 
 export default router;

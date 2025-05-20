@@ -38,7 +38,15 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use(limiter);
+
+// Apply rate limiting to all routes except specific endpoints
+app.use((req, res, next) => {
+  // Skip rate limiting for purchases endpoints in development
+  if (env.NODE_ENV === 'development' && req.path.includes('/api/purchases')) {
+    return next();
+  }
+  return limiter(req, res, next);
+});
 
 // Body parsing middleware
 app.use(express.json());

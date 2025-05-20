@@ -24,6 +24,8 @@ interface PurchaseFormData {
     notes?: string;
     retailPrice?: number;
     wholesalePrice?: number;
+    batchNumber?: string;
+    expiryDate?: string;
   }[];
   discount: number;
   tax: number;
@@ -47,6 +49,8 @@ const CreatePurchase = () => {
   const [costPrice, setCostPrice] = useState<number | string>('');
   const [retailPrice, setRetailPrice] = useState<number | string>('');
   const [wholesalePrice, setWholesalePrice] = useState<number | string>('');
+  const [batchNumber, setBatchNumber] = useState<string>('');
+  const [expiryDate, setExpiryDate] = useState<string>('');
 
   // Initialize form data from localStorage if available
   const [formData, setFormData] = useState<PurchaseFormData>(() => {
@@ -196,6 +200,8 @@ const CreatePurchase = () => {
       notes: '',
       retailPrice: Number(retailPrice) || 0,
       wholesalePrice: Number(wholesalePrice) || 0,
+      batchNumber: batchNumber || '',
+      expiryDate: expiryDate || '',
     };
 
     setFormData((prev) => {
@@ -219,6 +225,8 @@ const CreatePurchase = () => {
     setCostPrice('');
     setRetailPrice('');
     setWholesalePrice('');
+    setBatchNumber('');
+    setExpiryDate('');
   };
 
   const handleRemoveItem = (index: number) => {
@@ -562,6 +570,21 @@ const CreatePurchase = () => {
                       }`}
                     />
 
+                    <Input
+                      type="text"
+                      label="Batch Number"
+                      value={batchNumber}
+                      onChange={(e) => setBatchNumber(e.target.value)}
+                      placeholder="Enter batch number (optional)"
+                    />
+
+                    <DatePicker
+                      label="Expiry Date"
+                      value={expiryDate}
+                      onChange={(date) => setExpiryDate(date)}
+                      placeholder="Select expiry date (optional)"
+                    />
+
                     <Button
                       type="button"
                       variant="secondary"
@@ -602,6 +625,12 @@ const CreatePurchase = () => {
                         Subtotal
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Batch
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expiry Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
@@ -623,6 +652,12 @@ const CreatePurchase = () => {
                             {formatCurrency(item.subtotal)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
+                            {item.batchNumber || 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <Button
                               type="button"
                               variant="danger"
@@ -639,7 +674,7 @@ const CreatePurchase = () => {
                   <tfoot>
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={5}
                         className="px-6 py-4 text-right font-medium"
                       >
                         Subtotal:
@@ -651,7 +686,7 @@ const CreatePurchase = () => {
                     </tr>
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={5}
                         className="px-6 py-4 text-right font-medium"
                       >
                         Discount:
@@ -663,7 +698,7 @@ const CreatePurchase = () => {
                     </tr>
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={5}
                         className="px-6 py-4 text-right font-medium"
                       >
                         Tax:
@@ -675,7 +710,7 @@ const CreatePurchase = () => {
                     </tr>
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={5}
                         className="px-6 py-4 text-right font-medium"
                       >
                         Shipping:
@@ -687,7 +722,7 @@ const CreatePurchase = () => {
                     </tr>
                     <tr>
                       <td
-                        colSpan={3}
+                        colSpan={5}
                         className="px-6 py-4 text-right font-bold"
                       >
                         Total:

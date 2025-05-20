@@ -29,6 +29,7 @@ const ProductList = () => {
       params.append('page', currentPage.toString());
 
       const response = await api.get(`/products?${params.toString()}`);
+      console.log('Products data:', response.data.data.products);
       setProducts(response.data.data.products);
       setTotalPages(response.data.data.meta.totalPages);
     } catch (error) {
@@ -168,7 +169,7 @@ const ProductList = () => {
                       scope="col"
                       className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                     >
-                      Stock
+                      Stock Qty
                     </th>
                     <th
                       scope="col"
@@ -216,8 +217,12 @@ const ProductList = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {product.totalStock}
+                        <div className="text-sm font-medium text-gray-900">
+                          {typeof product.totalStock === 'number'
+                            ? product.totalStock
+                            : product.inventory
+                              ? product.inventory.reduce((sum, item) => sum + (item.quantity || 0), 0)
+                              : 0}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">

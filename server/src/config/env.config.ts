@@ -12,7 +12,7 @@ const env = cleanEnv(process.env, {
   API_VERSION: str({ default: 'v1' }),
   CORS_ORIGIN: str({ default: 'http://localhost:5173,http://localhost:3000' }),
   RATE_LIMIT_WINDOW_MS: num({ default: 15 * 60 * 1000 }), // 15 minutes
-  RATE_LIMIT_MAX: num({ default: 100 }), // 100 requests per windowMs
+  RATE_LIMIT_MAX: num({ default: 1000 }), // 1000 requests per windowMs
 
   // MongoDB Configuration
   MONGODB_URI: str({

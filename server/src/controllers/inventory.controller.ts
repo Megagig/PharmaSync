@@ -2,10 +2,13 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import Product from '../models/product.model';
 import Medication from '../models/medication.model';
+import User from '../models/user.model';
+import Setting from '../models/setting.model';
 import { AppError } from '../utils/error';
 import { IMedication } from '../interfaces/medication.interface';
 import { IProduct } from '../interfaces/product.interface';
 import asyncHandler from 'express-async-handler';
+import { sendEmail } from '../utils/email';
 
 /**
  * @desc    Get low stock alerts
@@ -100,6 +103,8 @@ export const getExpiringStockAlerts = asyncHandler(
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + days);
     const productType = req.query.productType as string;
+    const category = req.query.category as string;
+    const location = req.query.location as string;
 
     // Get medications with inventory items expiring within the specified days
     const medications = await Medication.aggregate([
@@ -153,10 +158,20 @@ export const getExpiringStockAlerts = asyncHandler(
       },
     ];
 
-    if (productType) {
+    // Add filters to the query if provided
+    const matchStage: any = {};
+    if (productType) matchStage.type = productType;
+    if (category) matchStage.category = category;
+
+    if (Object.keys(matchStage).length > 0) {
       productQuery.unshift({
-        $match: { type: productType },
+        $match: matchStage,
       });
+    }
+
+    // Add location filter if provided
+    if (location) {
+      productQuery[1].$match['inventory.location'] = location;
     }
 
     const products = await Product.aggregate([
@@ -195,7 +210,7 @@ export const getExpiringStockAlerts = asyncHandler(
     allItems.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
 
     res.status(200).json({
-      status: 'success',
+      success: true,
       data: allItems,
     });
   }
@@ -284,7 +299,7 @@ export const getInventoryValuation = asyncHandler(
     valuationData.sort((a, b) => b.value - a.value);
 
     res.status(200).json({
-      status: 'success',
+      success: true,
       data: {
         totalValue,
         items: valuationData,
@@ -438,5 +453,172 @@ export const getInventoryMovement = asyncHandler(
       status: 'success',
       data: results,
     });
+  }
+);
+
+/**
+ * @desc    Send expiry notifications
+ * @route   POST /api/inventory/send-expiry-notifications
+ * @access  Private/Admin
+ */
+export const sendExpiryNotifications = asyncHandler(
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Get notification settings
+      const settings = await Setting.findOne({ key: 'expiryNotifications' });
+
+      if (!settings || !settings.value.enabled) {
+        res.status(400).json({
+          success: false,
+          message: 'Expiry notifications are not enabled',
+        });
+        return;
+      }
+
+      const { emailRecipients, notificationDays, includeInventoryReport } = settings.value;
+
+      if (!emailRecipients || emailRecipients.length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'No email recipients configured',
+        });
+        return;
+      }
+
+      // Get expiring products for each notification day
+      const expiryData: any = {};
+
+      for (const days of notificationDays) {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + days);
+
+        // Get products expiring on this specific day (not range)
+        const startDate = new Date(expiryDate);
+        startDate.setHours(0, 0, 0, 0);
+
+        const endDate = new Date(expiryDate);
+        endDate.setHours(23, 59, 59, 999);
+
+        const products = await Product.aggregate([
+          {
+            $unwind: '$inventory',
+          },
+          {
+            $match: {
+              'inventory.expiryDate': { $gte: startDate, $lte: endDate },
+              'inventory.quantity': { $gt: 0 },
+            },
+          },
+          {
+            $project: {
+              id: '$_id',
+              name: '$name',
+              type: '$type',
+              category: '$category',
+              sku: '$sku',
+              batchNumber: '$inventory.batchNumber',
+              quantity: '$inventory.quantity',
+              location: '$inventory.location',
+              expiryDate: '$inventory.expiryDate',
+            },
+          },
+        ]);
+
+        if (products.length > 0) {
+          expiryData[days] = products;
+        }
+      }
+
+      // If no products are expiring, don't send email
+      if (Object.keys(expiryData).length === 0) {
+        res.status(200).json({
+          success: true,
+          message: 'No products expiring on notification days',
+        });
+        return;
+      }
+
+      // Prepare email content
+      let emailContent = `<h1>Product Expiry Notification</h1>`;
+
+      for (const days in expiryData) {
+        emailContent += `<h2>Products Expiring in ${days} Days</h2>`;
+        emailContent += `<table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">`;
+        emailContent += `<tr><th>Product</th><th>SKU</th><th>Batch</th><th>Quantity</th><th>Location</th><th>Expiry Date</th></tr>`;
+
+        for (const product of expiryData[days]) {
+          const expiryDate = new Date(product.expiryDate).toLocaleDateString();
+          emailContent += `<tr>`;
+          emailContent += `<td>${product.name}</td>`;
+          emailContent += `<td>${product.sku}</td>`;
+          emailContent += `<td>${product.batchNumber}</td>`;
+          emailContent += `<td>${product.quantity}</td>`;
+          emailContent += `<td>${product.location}</td>`;
+          emailContent += `<td>${expiryDate}</td>`;
+          emailContent += `</tr>`;
+        }
+
+        emailContent += `</table><br/>`;
+      }
+
+      // Add inventory report if enabled
+      if (includeInventoryReport) {
+        // Get inventory summary
+        const inventorySummary = await Product.aggregate([
+          {
+            $project: {
+              name: 1,
+              sku: 1,
+              type: 1,
+              category: 1,
+              totalStock: { $size: '$inventory' },
+              totalQuantity: { $sum: '$inventory.quantity' },
+            },
+          },
+          {
+            $sort: { name: 1 },
+          },
+        ]);
+
+        if (inventorySummary.length > 0) {
+          emailContent += `<h2>Inventory Summary</h2>`;
+          emailContent += `<table border="1" cellpadding="5" style="border-collapse: collapse; width: 100%;">`;
+          emailContent += `<tr><th>Product</th><th>SKU</th><th>Type</th><th>Category</th><th>Total Quantity</th></tr>`;
+
+          for (const item of inventorySummary) {
+            emailContent += `<tr>`;
+            emailContent += `<td>${item.name}</td>`;
+            emailContent += `<td>${item.sku}</td>`;
+            emailContent += `<td>${item.type}</td>`;
+            emailContent += `<td>${item.category}</td>`;
+            emailContent += `<td>${item.totalQuantity}</td>`;
+            emailContent += `</tr>`;
+          }
+
+          emailContent += `</table>`;
+        }
+      }
+
+      // Send email to all recipients
+      for (const recipient of emailRecipients) {
+        await sendEmail({
+          to: recipient,
+          subject: 'PharmaSync - Product Expiry Notification',
+          html: emailContent,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: `Expiry notifications sent to ${emailRecipients.length} recipients`,
+      });
+    } catch (error) {
+      console.error('Error sending expiry notifications:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error sending expiry notifications',
+        error: (error as Error).message,
+      });
+    }
   }
 );

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import { toast } from 'react-toastify';
+import ExpiryNotificationSettings from '../ExpiryNotificationSettings';
 
 const NotificationSettings: React.FC = () => {
   const [settings, setSettings] = useState({
@@ -21,7 +22,7 @@ const NotificationSettings: React.FC = () => {
     },
     emailDigest: 'daily',
   });
-  
+
   const handleToggle = (category: 'inApp' | 'email', setting: string) => {
     setSettings({
       ...settings,
@@ -31,25 +32,25 @@ const NotificationSettings: React.FC = () => {
       },
     });
   };
-  
+
   const handleEmailDigestChange = (value: string) => {
     setSettings({
       ...settings,
       emailDigest: value,
     });
   };
-  
+
   const handleSaveSettings = () => {
     // In a real app, this would save the settings to the server
     toast.success('Notification settings saved successfully');
   };
-  
+
   return (
     <div className="space-y-6">
       <Card>
         <div className="p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">In-App Notifications</h2>
-          
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Follow-up Reminders</span>
@@ -70,7 +71,7 @@ const NotificationSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Drug Therapy Problems</span>
               <div>
@@ -90,7 +91,7 @@ const NotificationSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Care Plan Updates</span>
               <div>
@@ -110,7 +111,7 @@ const NotificationSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Inventory Alerts</span>
               <div>
@@ -130,7 +131,7 @@ const NotificationSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">System Updates</span>
               <div>
@@ -153,11 +154,11 @@ const NotificationSettings: React.FC = () => {
           </div>
         </div>
       </Card>
-      
+
       <Card>
         <div className="p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Email Notifications</h2>
-          
+
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Follow-up Reminders</span>
@@ -178,7 +179,7 @@ const NotificationSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Drug Therapy Problems</span>
               <div>
@@ -198,7 +199,7 @@ const NotificationSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Care Plan Updates</span>
               <div>
@@ -218,7 +219,7 @@ const NotificationSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Inventory Alerts</span>
               <div>
@@ -238,7 +239,7 @@ const NotificationSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">System Updates</span>
               <div>
@@ -258,7 +259,7 @@ const NotificationSettings: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="mt-6">
               <label htmlFor="emailDigest" className="block text-sm font-medium text-gray-700">
                 Email Digest Frequency
@@ -278,7 +279,9 @@ const NotificationSettings: React.FC = () => {
           </div>
         </div>
       </Card>
-      
+
+      <ExpiryNotificationSettings />
+
       <div className="flex justify-end">
         <Button
           variant="primary"

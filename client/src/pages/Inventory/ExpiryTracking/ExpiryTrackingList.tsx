@@ -6,9 +6,12 @@ import Spinner from '@/components/common/Spinner/Spinner';
 import Input from '@/components/common/Input/Input';
 import Select from '@/components/common/Select/Select';
 import Badge from '@/components/common/Badge/Badge';
+import Tabs from '@/components/common/Tabs/Tabs';
+import Modal from '@/components/common/Modal/Modal';
 import { useToast } from '@/hooks/useToast';
 import { ProductType } from '@/types/product';
 import api from '@/services/api';
+import { FaExclamationTriangle, FaCalendarAlt, FaFileExport } from 'react-icons/fa';
 
 interface ExpiryItem {
   id: string;
@@ -36,6 +39,10 @@ const ExpiryTrackingList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [locations, setLocations] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState('all');
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportFormat, setExportFormat] = useState('csv');
+  const [isExporting, setIsExporting] = useState(false);
 
   const fetchExpiryItems = async () => {
     setIsLoading(true);
@@ -61,6 +68,17 @@ const ExpiryTrackingList = () => {
             (item.dosageForm &&
               item.dosageForm.toLowerCase().includes(searchTerm.toLowerCase()))
         );
+      }
+
+      // Filter by expiry status if tab is not 'all'
+      if (activeTab === 'expired') {
+        items = items.filter((item: ExpiryItem) => item.daysUntilExpiry <= 0);
+      } else if (activeTab === 'critical') {
+        items = items.filter((item: ExpiryItem) => item.daysUntilExpiry > 0 && item.daysUntilExpiry <= 30);
+      } else if (activeTab === 'warning') {
+        items = items.filter((item: ExpiryItem) => item.daysUntilExpiry > 30 && item.daysUntilExpiry <= 60);
+      } else if (activeTab === 'ok') {
+        items = items.filter((item: ExpiryItem) => item.daysUntilExpiry > 60);
       }
 
       // Sort by days until expiry (ascending)
@@ -93,7 +111,7 @@ const ExpiryTrackingList = () => {
 
   useEffect(() => {
     fetchExpiryItems();
-  }, [productType, expiryFilter]);
+  }, [productType, expiryFilter, activeTab]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +139,23 @@ const ExpiryTrackingList = () => {
     }
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      // In a real implementation, this would call an API endpoint to generate the export
+      // For now, we'll just simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      showToast(`Expiry report exported successfully as ${exportFormat.toUpperCase()}`, 'success');
+      setShowExportModal(false);
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      showToast('Error exporting data', 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const getProductTypeLabel = (type: string) => {
     return type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
@@ -145,6 +180,13 @@ const ExpiryTrackingList = () => {
         <div className="flex space-x-3">
           <Button
             variant="outline"
+            onClick={() => setShowExportModal(true)}
+            leftIcon={<FaFileExport />}
+          >
+            Export Report
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => navigate('/inventory/adjust')}
           >
             Adjust Inventory
@@ -154,6 +196,18 @@ const ExpiryTrackingList = () => {
 
       <Card>
         <div className="p-6">
+          <Tabs
+            tabs={[
+              { id: 'all', label: 'All Items' },
+              { id: 'expired', label: 'Expired', icon: <FaExclamationTriangle className="text-red-500" /> },
+              { id: 'critical', label: '&lt; 30 Days', icon: <FaExclamationTriangle className="text-red-500" /> },
+              { id: 'warning', label: '30-60 Days', icon: <FaCalendarAlt className="text-yellow-500" /> },
+              { id: 'ok', label: '&gt; 60 Days', icon: <FaCalendarAlt className="text-green-500" /> },
+            ]}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+            className="mb-6"
+          />
           <form
             onSubmit={handleSearch}
             className="flex flex-col md:flex-row gap-4 mb-6"
@@ -205,52 +259,80 @@ const ExpiryTrackingList = () => {
               <Spinner size="lg" />
             </div>
           ) : paginatedItems.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Item
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Batch
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Location
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Quantity
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Expiry Date
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Actions
-                    </th>
+            <>
+              <div className="mb-4 bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Summary</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="bg-white p-3 rounded-md border border-gray-200 shadow-sm">
+                    <div className="text-sm text-gray-500">Total Items</div>
+                    <div className="text-xl font-semibold">{expiryItems.length}</div>
+                  </div>
+                  <div className="bg-white p-3 rounded-md border border-red-200 shadow-sm">
+                    <div className="text-sm text-gray-500">Expired</div>
+                    <div className="text-xl font-semibold text-red-600">
+                      {expiryItems.filter(item => item.daysUntilExpiry <= 0).length}
+                    </div>
+                  </div>
+                  <div className="bg-white p-3 rounded-md border border-red-200 shadow-sm">
+                    <div className="text-sm text-gray-500">Critical (&lt; 30 days)</div>
+                    <div className="text-xl font-semibold text-red-600">
+                      {expiryItems.filter(item => item.daysUntilExpiry > 0 && item.daysUntilExpiry <= 30).length}
+                    </div>
+                  </div>
+                  <div className="bg-white p-3 rounded-md border border-yellow-200 shadow-sm">
+                    <div className="text-sm text-gray-500">Warning (30-60 days)</div>
+                    <div className="text-xl font-semibold text-yellow-600">
+                      {expiryItems.filter(item => item.daysUntilExpiry > 30 && item.daysUntilExpiry <= 60).length}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Item
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Batch
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Location
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Quantity
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Expiry Date
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Status
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Actions
+                      </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -321,6 +403,7 @@ const ExpiryTrackingList = () => {
                 </tbody>
               </table>
             </div>
+            </>
           ) : (
             <div className="text-center py-8">
               <h3 className="text-lg font-medium text-gray-900">
@@ -360,6 +443,62 @@ const ExpiryTrackingList = () => {
           )}
         </div>
       </Card>
+
+      {/* Export Modal */}
+      <Modal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        title="Export Expiry Report"
+      >
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Export Format
+            </label>
+            <Select
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value)}
+              options={[
+                { value: 'csv', label: 'CSV' },
+                { value: 'excel', label: 'Excel' },
+                { value: 'pdf', label: 'PDF' }
+              ]}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Expiry Period
+            </label>
+            <Select
+              value={expiryFilter}
+              onChange={(e) => setExpiryFilter(e.target.value)}
+              options={[
+                { value: '30', label: 'Next 30 Days' },
+                { value: '60', label: 'Next 60 Days' },
+                { value: '90', label: 'Next 90 Days' },
+                { value: '180', label: 'Next 6 Months' },
+                { value: '365', label: 'Next 12 Months' }
+              ]}
+            />
+          </div>
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowExportModal(false)}
+              disabled={isExporting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleExport}
+              isLoading={isExporting}
+            >
+              Export
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

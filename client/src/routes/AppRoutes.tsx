@@ -76,6 +76,7 @@ import InventoryReportsList from '@/pages/Inventory/Reports/InventoryReportsList
 // Purchase Order pages
 import PurchaseOrderList from '@/pages/purchase-orders/PurchaseOrderList';
 import PurchaseOrderDetail from '@/pages/purchase-orders/PurchaseOrderDetail';
+import ReceivePurchaseOrder from '@/pages/purchase-orders/ReceivePurchaseOrder';
 
 // Sales pages
 import SalesList from '@/pages/Sales/SalesList';
@@ -365,6 +366,7 @@ const AppRoutes = () => {
           {/* Purchase Orders */}
           <Route path="/purchase-orders" element={<PurchaseOrderList />} />
           <Route path="/purchase-orders/:id" element={<PurchaseOrderDetail />} />
+          <Route path="/purchase-orders/:id/receive" element={<ReceivePurchaseOrder />} />
 
           {/* Reports */}
           <Route path="/reports" element={<ReportsModule />} />

@@ -123,6 +123,8 @@ export const createPurchase = asyncHandler(
         retailPrice,
         wholesalePrice,
         notes,
+        batchNumber,
+        expiryDate,
       } = item;
 
       // Verify product exists
@@ -144,6 +146,8 @@ export const createPurchase = asyncHandler(
         wholesalePrice: wholesalePrice || productExists.wholesalePrice || 0,
         subtotal: itemSubtotal,
         notes,
+        batchNumber,
+        expiryDate: expiryDate ? new Date(expiryDate) : undefined,
       });
     }
 
@@ -182,8 +186,6 @@ export const createPurchase = asyncHandler(
     for (const item of processedItems) {
       const product = await Product.findById(item.product);
       if (product) {
-        product.totalStock = (product.totalStock || 0) + item.quantity;
-
         // Update product prices if they've changed
         if (item.retailPrice) {
           product.retailPrice = item.retailPrice;
@@ -193,6 +195,31 @@ export const createPurchase = asyncHandler(
         }
         if (item.unitPrice) {
           product.costPrice = item.unitPrice;
+        }
+
+        // Add to inventory with batch and expiry information if provided
+        if (item.batchNumber) {
+          // Check if batch already exists
+          const existingBatchIndex = product.inventory.findIndex(
+            (inv) => inv.batchNumber === item.batchNumber
+          );
+
+          if (existingBatchIndex >= 0) {
+            // Update existing batch
+            product.inventory[existingBatchIndex].quantity += item.quantity;
+          } else {
+            // Add new batch
+            product.inventory.push({
+              batchNumber: item.batchNumber,
+              expiryDate: item.expiryDate || new Date(new Date().setFullYear(new Date().getFullYear() + 2)), // Default to 2 years if not provided
+              quantity: item.quantity,
+              location: 'main', // Default location
+              costPrice: item.unitPrice,
+            });
+          }
+        } else {
+          // If no batch information, just update total stock
+          product.totalStock = (product.totalStock || 0) + item.quantity;
         }
 
         await product.save();

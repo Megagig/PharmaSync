@@ -13,6 +13,8 @@ export interface IPurchaseItem extends Document {
   wholesalePrice?: number;
   subtotal: number;
   notes?: string;
+  batchNumber?: string;
+  expiryDate?: Date;
   _id: Types.ObjectId;
 }
 
@@ -46,6 +48,8 @@ export interface IPurchaseCreate {
     retailPrice?: number;
     wholesalePrice?: number;
     notes?: string;
+    batchNumber?: string;
+    expiryDate?: string;
   }[];
   discount?: number;
   tax?: number;
