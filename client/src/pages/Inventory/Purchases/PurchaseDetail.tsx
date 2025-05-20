@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import Badge from '@/components/common/Badge/Badge';
-import Modal from '@/components/common/Modal/Modal';
+import PaymentModal from './components/PaymentModal';
 import Select from '@/components/common/Select/Select';
 import Input from '@/components/common/Input/Input';
 import Spinner from '@/components/common/Spinner/Spinner';
@@ -108,7 +108,6 @@ const PurchaseDetail = () => {
     try {
       setIsLoading(true);
       const response = await api.get(`/purchases/${id}`);
-      console.log('Purchase details response:', response.data);
 
       // Handle different API response structures
       const purchaseData = response.data.data || response.data;
@@ -135,10 +134,8 @@ const PurchaseDetail = () => {
         });
       }
 
-      console.log('Processed purchase data:', purchaseData);
       setPurchase(purchaseData);
     } catch (err: any) {
-      console.error('Error fetching purchase details:', err);
       setError(err.response?.data?.message || 'Failed to fetch purchase details');
       showToast(err.response?.data?.message || 'Failed to fetch purchase details', 'error');
     } finally {
@@ -150,30 +147,28 @@ const PurchaseDetail = () => {
     try {
       if (!purchase || !purchase.supplier || !purchase.supplier._id) return;
 
-      console.log('Fetching payments for supplier:', purchase.supplier._id);
-      console.log('Purchase number:', purchase.purchaseNumber);
-
+      // Fetch payments for this supplier
       const response = await api.get(`/payments?direction=made&supplier=${purchase.supplier._id}`);
-      console.log('Payments response:', response.data);
 
-      // Filter payments related to this purchase
+      // Filter payments related to this purchase by reference
       const purchasePayments = response.data.data.filter(
         (payment: Payment) => payment.reference === purchase.purchaseNumber
       );
 
-      console.log('Filtered purchase payments:', purchasePayments);
       setPayments(purchasePayments);
     } catch (err: any) {
-      console.error('Failed to fetch payments:', err);
+      console.error('Error fetching payments:', err);
       showToast('Failed to fetch payment history', 'error');
     }
   };
+
+
 
   const handlePayInvoice = () => {
     if (purchase) {
       // Calculate remaining amount
       const paidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-      const remainingAmount = purchase.total - paidAmount;
+      const remainingAmount = Math.max(0, purchase.total - paidAmount);
 
       // Set default payment amount to remaining amount
       setPaymentAmount(remainingAmount.toString());
@@ -195,46 +190,45 @@ const PurchaseDetail = () => {
         return;
       }
 
-      // Calculate total paid and determine new payment status
-      const paidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
-      const newTotalPaid = paidAmount + amount;
-      let newPaymentStatus = 'unpaid';
-
-      if (newTotalPaid >= purchase.total) {
-        newPaymentStatus = 'paid';
-      } else if (newTotalPaid > 0) {
-        newPaymentStatus = 'partial';
-      }
-
-      console.log('Creating payment with amount:', amount);
-      console.log('New payment status will be:', newPaymentStatus);
-
-      // Create payment record
-      // Generate a payment number on the client side as a fallback
+      // Generate a payment number
       const date = new Date();
       const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
       const randomStr = Math.random().toString(36).substring(2, 7).toUpperCase();
-      const paymentNumber = `PYMT-${dateStr}-${randomStr}`;
+      const generatedPaymentNumber = `PYMT-${dateStr}-${randomStr}`;
 
+      // Prepare payment data
       const paymentData = {
-        paymentNumber, // Include the generated payment number
+        paymentNumber: generatedPaymentNumber, // Explicitly set payment number
         amount: amount,
-        paymentDate: new Date().toISOString(), // Ensure we have a payment date
-        paymentMethod,
-        reference: purchase.purchaseNumber,
+        paymentDate: new Date().toISOString(),
+        paymentMethod: paymentMethod,
+        reference: paymentReference || purchase.purchaseNumber,
         notes: paymentNotes,
-        direction: PaymentDirection.MADE,
-        supplier: purchase.supplier._id
+        direction: PaymentDirection.MADE, // Payment to supplier
+        supplier: purchase.supplier._id,
       };
 
+      // Create the payment record in the database
       const paymentResponse = await api.post('/payments', paymentData);
-      console.log('Payment created:', paymentResponse.data);
+      const newPayment = paymentResponse.data.data;
+
+      // Calculate total paid and determine new payment status
+      const paidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0) + amount;
+      let newPaymentStatus = 'unpaid';
+
+      if (paidAmount >= purchase.total) {
+        newPaymentStatus = 'paid';
+      } else if (paidAmount > 0) {
+        newPaymentStatus = 'partial';
+      }
 
       // Update purchase payment status
-      const updateResponse = await api.patch(`/purchases/${purchase._id}`, {
+      await api.patch(`/purchases/${purchase._id}`, {
         paymentStatus: newPaymentStatus
       });
-      console.log('Purchase updated:', updateResponse.data);
+
+      // Add the new payment to the list
+      setPayments(prevPayments => [...prevPayments, newPayment]);
 
       showToast('Payment recorded successfully', 'success');
       setShowPaymentModal(false);
@@ -245,12 +239,10 @@ const PurchaseDetail = () => {
       setPaymentReference('');
       setPaymentNotes('');
 
-      // Refresh purchase and payments data
+      // Refresh purchase data
       fetchPurchaseDetails();
     } catch (err: any) {
       console.error('Payment error:', err);
-
-      // Extract detailed error message if available
       let errorMessage = 'Failed to record payment';
 
       if (err.response?.data?.message) {
@@ -262,13 +254,6 @@ const PurchaseDetail = () => {
         const validationErrors = err.response.data.errors.map((e: any) => e.message || e).join(', ');
         errorMessage = `Validation error: ${validationErrors}`;
       }
-
-      // Log detailed error information for debugging
-      console.error('Detailed payment error:', {
-        message: errorMessage,
-        data: err.response?.data,
-        paymentData
-      });
 
       showToast(errorMessage, 'error');
     } finally {
@@ -290,11 +275,38 @@ const PurchaseDetail = () => {
   const getPaymentStatusBadge = (status: string) => {
     switch (status) {
       case 'unpaid':
-        return <Badge color="red">Unpaid</Badge>;
+        return (
+          <Badge color="red">
+            <span className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Unpaid
+            </span>
+          </Badge>
+        );
       case 'partial':
-        return <Badge color="yellow">Partially Paid</Badge>;
+        return (
+          <Badge color="yellow">
+            <span className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Partially Paid
+            </span>
+          </Badge>
+        );
       case 'paid':
-        return <Badge color="green">Paid</Badge>;
+        return (
+          <Badge color="green">
+            <span className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Paid
+            </span>
+          </Badge>
+        );
       default:
         return <Badge color="gray">{status}</Badge>;
     }
@@ -316,21 +328,19 @@ const PurchaseDetail = () => {
     return <div className="text-gray-500">Purchase not found.</div>;
   }
 
-  // Calculate payment summary
-  const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0);
-  const remainingAmount = Math.max(0, purchase.total - totalPaid);
-
-  // Force payment status to be consistent with payment amounts
+  // Calculate effective payment status based on payments
   let effectivePaymentStatus = purchase.paymentStatus;
-  if (totalPaid >= purchase.total && purchase.paymentStatus !== 'paid') {
-    effectivePaymentStatus = 'paid';
-    console.log('Overriding payment status to paid based on payment amounts');
-  } else if (totalPaid > 0 && totalPaid < purchase.total && purchase.paymentStatus !== 'partial') {
-    effectivePaymentStatus = 'partial';
-    console.log('Overriding payment status to partial based on payment amounts');
-  } else if (totalPaid === 0 && purchase.paymentStatus !== 'unpaid') {
-    effectivePaymentStatus = 'unpaid';
-    console.log('Overriding payment status to unpaid based on payment amounts');
+
+  // If we have payments, recalculate the status
+  if (payments.length > 0) {
+    const paidAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    if (paidAmount >= purchase.total) {
+      effectivePaymentStatus = 'paid';
+    } else if (paidAmount > 0) {
+      effectivePaymentStatus = 'partial';
+    } else {
+      effectivePaymentStatus = 'unpaid';
+    }
   }
 
   return (
@@ -346,10 +356,24 @@ const PurchaseDetail = () => {
           </div>
         </div>
         <div className="flex space-x-3">
-          {effectivePaymentStatus !== 'paid' && (
-            <Button variant="primary" onClick={handlePayInvoice}>
-              Pay Invoice
+          {effectivePaymentStatus !== 'paid' ? (
+            <Button
+              variant="primary"
+              onClick={handlePayInvoice}
+              className="flex items-center space-x-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span>Pay Invoice</span>
             </Button>
+          ) : (
+            <span className="text-green-600 font-medium flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Fully Paid
+            </span>
           )}
           <Button
             variant="outline"
@@ -458,7 +482,7 @@ const PurchaseDetail = () => {
                   Amount Paid
                 </span>
                 <span className="block mt-1 text-lg font-semibold text-green-600">
-                  {formatCurrency(totalPaid)}
+                  {formatCurrency(payments.reduce((sum, payment) => sum + payment.amount, 0))}
                 </span>
               </div>
               <div>
@@ -466,17 +490,20 @@ const PurchaseDetail = () => {
                   Remaining Amount
                 </span>
                 <span className="block mt-1 text-lg font-semibold text-red-600">
-                  {formatCurrency(remainingAmount)}
+                  {formatCurrency(Math.max(0, purchase.total - payments.reduce((sum, payment) => sum + payment.amount, 0)))}
                 </span>
               </div>
               {effectivePaymentStatus !== 'paid' && (
                 <div className="mt-4">
                   <Button
                     variant="primary"
-                    className="w-full"
+                    className="w-full flex items-center justify-center space-x-2"
                     onClick={handlePayInvoice}
                   >
-                    Pay Invoice
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>Pay Invoice</span>
                   </Button>
                 </div>
               )}
@@ -634,7 +661,7 @@ const PurchaseDetail = () => {
                     <tr key={payment._id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-blue-600 cursor-pointer"
-                          onClick={() => navigate(`/payments/${payment._id}`)}>
+                          onClick={() => payment._id.startsWith('temp-') ? null : navigate(`/payments/${payment._id}`)}>
                           {payment.paymentNumber}
                         </div>
                       </td>
@@ -672,61 +699,22 @@ const PurchaseDetail = () => {
       )}
 
       {/* Payment Modal */}
-      <Modal
+      <PaymentModal
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        title="Record Payment"
-      >
-        <div className="space-y-4">
-          <Input
-            type="number"
-            label="Amount (₦)"
-            value={paymentAmount}
-            onChange={(e) => setPaymentAmount(e.target.value)}
-            min="0.01"
-            step="0.01"
-            required
-          />
-          <Select
-            label="Payment Method"
-            value={paymentMethod}
-            onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-            required
-          >
-            <option value={PaymentMethod.CASH}>Cash</option>
-            <option value={PaymentMethod.CARD}>Card</option>
-            <option value={PaymentMethod.TRANSFER}>Bank Transfer</option>
-            <option value={PaymentMethod.CHEQUE}>Cheque</option>
-            <option value={PaymentMethod.MOBILE_MONEY}>Mobile Money</option>
-          </Select>
-          <Input
-            label="Reference (Optional)"
-            value={paymentReference}
-            onChange={(e) => setPaymentReference(e.target.value)}
-          />
-          <Input
-            label="Notes (Optional)"
-            value={paymentNotes}
-            onChange={(e) => setPaymentNotes(e.target.value)}
-          />
-          <div className="flex justify-end space-x-3 mt-6">
-            <Button
-              variant="outline"
-              onClick={() => setShowPaymentModal(false)}
-              disabled={isSubmittingPayment}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSubmitPayment}
-              disabled={isSubmittingPayment}
-            >
-              {isSubmittingPayment ? <Spinner size="sm" /> : 'Record Payment'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        paymentAmount={paymentAmount}
+        setPaymentAmount={setPaymentAmount}
+        paymentMethod={paymentMethod}
+        setPaymentMethod={setPaymentMethod}
+        paymentReference={paymentReference}
+        setPaymentReference={setPaymentReference}
+        paymentNotes={paymentNotes}
+        setPaymentNotes={setPaymentNotes}
+        isSubmittingPayment={isSubmittingPayment}
+        onSubmit={handleSubmitPayment}
+        totalAmount={purchase.total}
+        amountPaid={payments.reduce((sum, payment) => sum + payment.amount, 0)}
+      />
     </div>
   );
 };

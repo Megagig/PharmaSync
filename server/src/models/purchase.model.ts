@@ -98,7 +98,7 @@ const purchaseSchema = new Schema<IPurchase>(
     paymentStatus: {
       type: String,
       enum: ['unpaid', 'partial', 'paid'],
-      default: 'paid',
+      default: 'unpaid',
     },
     notes: {
       type: String,

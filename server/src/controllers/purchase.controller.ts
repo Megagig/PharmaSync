@@ -172,7 +172,7 @@ export const createPurchase = asyncHandler(
       shippingCost: shippingAmount,
       total,
       paymentTerms: paymentTerms || supplierExists.paymentTerms || 'cod',
-      paymentStatus: 'paid', // Purchases are completed transactions
+      paymentStatus: 'unpaid', // Default to unpaid so payments can be made later
       status: PurchaseStatus.COMPLETED,
       notes,
       createdBy: new mongoose.Types.ObjectId(req.user.id), // From auth middleware

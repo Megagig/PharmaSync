@@ -12,6 +12,7 @@ import { InvoiceStatus } from '../interfaces/invoice.interface';
 import { PaymentStatus } from '../interfaces/sale.interface';
 import { CreditTransactionType } from '../interfaces/credit.interface';
 import { AppError } from '../utils/error';
+import { generateRandomString } from '../utils/helpers';
 
 /**
  * @desc    Get all payments with pagination and filtering
@@ -151,6 +152,7 @@ export const createPayment = asyncHandler(
       invoice,
       sale,
       purchaseOrder,
+      paymentNumber, // Extract paymentNumber from request body if provided
     } = req.body;
 
     // Verify related entities exist
@@ -189,8 +191,18 @@ export const createPayment = asyncHandler(
       }
     }
 
+    // Generate payment number if not provided
+    let generatedPaymentNumber = paymentNumber;
+    if (!generatedPaymentNumber) {
+      const date = new Date();
+      const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+      const prefix = direction === PaymentDirection.RECEIVED ? 'RCPT' : 'PYMT';
+      generatedPaymentNumber = `${prefix}-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+    }
+
     // Create payment record
     const payment = await Payment.create({
+      paymentNumber: generatedPaymentNumber,
       amount,
       paymentDate: paymentDate || new Date(),
       paymentMethod,
