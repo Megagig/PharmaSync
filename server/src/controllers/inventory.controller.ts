@@ -17,38 +17,85 @@ import { sendEmail } from '../utils/email';
  */
 export const getLowStockAlerts = asyncHandler(
   async (req: Request, res: Response) => {
+    // Wrap in try-catch for better error handling
     try {
       const threshold = parseInt(req.query.threshold as string) || 10;
       const productType = req.query.productType as string;
 
       // Get medications with stock below threshold
-      const medications = await Medication.find({
-        $or: [
-          { totalStock: { $lte: threshold } },
-          { totalStock: { $lte: '$reorderLevel' } },
-        ],
-      }).select(
-        'name genericName brandName strength dosageForm totalStock reorderLevel minimumStockLevel'
-      );
+      // totalStock is a virtual property, so we need to use aggregation
+      const medications = await Medication.aggregate([
+        {
+          $addFields: {
+            totalStock: { $sum: "$inventory.quantity" },
+            reorderLevel: { $ifNull: ["$reorderLevel", "$minimumStockLevel"] }
+          }
+        },
+        {
+          $match: {
+            $or: [
+              { totalStock: { $lte: threshold } },
+              { $expr: { $lte: ["$totalStock", "$reorderLevel"] } }
+            ]
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            genericName: 1,
+            brandName: 1,
+            strength: 1,
+            dosageForm: 1,
+            totalStock: 1,
+            reorderLevel: 1,
+            minimumStockLevel: 1
+          }
+        }
+      ]);
 
       // Get products with stock below threshold
-      const productQuery: any = {
-        $or: [
-          { totalStock: { $lte: threshold } },
-          { totalStock: { $lte: '$reorderPoint' } },
-        ],
-      };
+      // totalStock is a virtual property, so we need to use aggregation
+      const productPipeline: any[] = [
+        {
+          $addFields: {
+            totalStock: { $sum: "$inventory.quantity" }
+          }
+        },
+        {
+          $match: {
+            $or: [
+              { totalStock: { $lte: threshold } },
+              { $expr: { $lte: ["$totalStock", "$reorderPoint"] } }
+            ]
+          }
+        }
+      ];
 
       if (productType) {
-        productQuery.type = productType;
+        productPipeline.unshift({
+          $match: { type: productType }
+        });
       }
 
-      const products = await Product.find(productQuery).select(
-        'name sku type category totalStock minimumStockLevel reorderPoint'
-      );
+      // Add projection stage
+      productPipeline.push({
+        $project: {
+          _id: 1,
+          name: 1,
+          sku: 1,
+          type: 1,
+          category: 1,
+          totalStock: 1,
+          minimumStockLevel: 1,
+          reorderPoint: 1
+        }
+      });
+
+      const products = await Product.aggregate(productPipeline);
 
       // Transform medications to match the expected format
-      const medicationItems = medications.map((med: IMedication) => ({
+      const medicationItems = medications.map((med: any) => ({
         id: med._id,
         name: med.name,
         type: 'medication',
@@ -62,7 +109,7 @@ export const getLowStockAlerts = asyncHandler(
       }));
 
       // Transform products to match the expected format
-      const productItems = products.map((prod: IProduct) => ({
+      const productItems = products.map((prod: any) => ({
         id: prod._id,
         name: prod.name,
         type: 'product',
@@ -83,6 +130,8 @@ export const getLowStockAlerts = asyncHandler(
       });
     } catch (error) {
       console.error('Error fetching low stock alerts:', error);
+      // Log the full error for debugging
+      console.error(error);
       res.status(500).json({
         success: false,
         message: 'Error fetching low stock alerts',
@@ -99,120 +148,131 @@ export const getLowStockAlerts = asyncHandler(
  */
 export const getExpiringStockAlerts = asyncHandler(
   async (req: Request, res: Response) => {
-    const days = parseInt(req.query.days as string) || 90;
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + days);
-    const productType = req.query.productType as string;
-    const category = req.query.category as string;
-    const location = req.query.location as string;
+    try {
+      const days = parseInt(req.query.days as string) || 90;
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + days);
+      const productType = req.query.productType as string;
+      const category = req.query.category as string;
+      const location = req.query.location as string;
 
-    // Get medications with inventory items expiring within the specified days
-    const medications = await Medication.aggregate([
-      {
-        $unwind: '$inventory',
-      },
-      {
-        $match: {
-          'inventory.expiryDate': { $lte: expiryDate },
-          'inventory.quantity': { $gt: 0 },
+      // Get medications with inventory items expiring within the specified days
+      const medications = await Medication.aggregate([
+        {
+          $unwind: '$inventory',
         },
-      },
-      {
-        $project: {
-          id: '$_id',
-          name: '$name',
-          type: { $literal: 'medication' },
-          genericName: 1,
-          brandName: 1,
-          strength: 1,
-          dosageForm: 1,
-          batchNumber: '$inventory.batchNumber',
-          quantity: '$inventory.quantity',
-          location: '$inventory.location',
-          expiryDate: '$inventory.expiryDate',
-          daysUntilExpiry: {
-            $ceil: {
-              $divide: [
-                { $subtract: ['$inventory.expiryDate', new Date()] },
-                1000 * 60 * 60 * 24,
-              ],
+        {
+          $match: {
+            'inventory.expiryDate': { $lte: expiryDate },
+            'inventory.quantity': { $gt: 0 },
+          },
+        },
+        {
+          $project: {
+            id: '$_id',
+            name: '$name',
+            type: { $literal: 'medication' },
+            genericName: 1,
+            brandName: 1,
+            strength: 1,
+            dosageForm: 1,
+            batchNumber: '$inventory.batchNumber',
+            quantity: '$inventory.quantity',
+            location: '$inventory.location',
+            expiryDate: '$inventory.expiryDate',
+            daysUntilExpiry: {
+              $ceil: {
+                $divide: [
+                  { $subtract: ['$inventory.expiryDate', new Date()] },
+                  1000 * 60 * 60 * 24,
+                ],
+              },
             },
           },
         },
-      },
-      {
-        $sort: { daysUntilExpiry: 1 },
-      },
-    ]);
-
-    // Get products with inventory items expiring within the specified days
-    const productQuery: any[] = [
-      {
-        $unwind: '$inventory',
-      },
-      {
-        $match: {
-          'inventory.expiryDate': { $lte: expiryDate },
-          'inventory.quantity': { $gt: 0 },
+        {
+          $sort: { daysUntilExpiry: 1 },
         },
-      },
-    ];
+      ]);
 
-    // Add filters to the query if provided
-    const matchStage: any = {};
-    if (productType) matchStage.type = productType;
-    if (category) matchStage.category = category;
+      // Get products with inventory items expiring within the specified days
+      const productQuery: any[] = [
+        {
+          $unwind: '$inventory',
+        },
+        {
+          $match: {
+            'inventory.expiryDate': { $lte: expiryDate },
+            'inventory.quantity': { $gt: 0 },
+          },
+        },
+      ];
 
-    if (Object.keys(matchStage).length > 0) {
-      productQuery.unshift({
-        $match: matchStage,
+      // Add filters to the query if provided
+      const matchStage: any = {};
+      if (productType) matchStage.type = productType;
+      if (category) matchStage.category = category;
+
+      if (Object.keys(matchStage).length > 0) {
+        productQuery.unshift({
+          $match: matchStage,
+        });
+      }
+
+      // Add location filter if provided
+      if (location) {
+        productQuery[1].$match['inventory.location'] = location;
+      }
+
+      const products = await Product.aggregate([
+        ...productQuery,
+        {
+          $project: {
+            id: '$_id',
+            name: '$name',
+            type: { $literal: 'product' },
+            productType: '$type',
+            category: '$category',
+            sku: '$sku',
+            batchNumber: '$inventory.batchNumber',
+            quantity: '$inventory.quantity',
+            location: '$inventory.location',
+            expiryDate: '$inventory.expiryDate',
+            daysUntilExpiry: {
+              $ceil: {
+                $divide: [
+                  { $subtract: ['$inventory.expiryDate', new Date()] },
+                  1000 * 60 * 60 * 24,
+                ],
+              },
+            },
+          },
+        },
+        {
+          $sort: { daysUntilExpiry: 1 },
+        },
+      ]);
+
+      // Combine both lists
+      const allItems = [...medications, ...products];
+
+      // Sort by days until expiry
+      allItems.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
+
+      res.status(200).json({
+        success: true,
+        data: allItems,
+      });
+    } catch (error) {
+      console.error('Error fetching expiring stock alerts:', error);
+      // Log the full error for debugging
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching expiring stock alerts',
+        error: (error as Error).message,
       });
     }
-
-    // Add location filter if provided
-    if (location) {
-      productQuery[1].$match['inventory.location'] = location;
-    }
-
-    const products = await Product.aggregate([
-      ...productQuery,
-      {
-        $project: {
-          id: '$_id',
-          name: '$name',
-          type: { $literal: 'product' },
-          productType: '$type',
-          category: '$category',
-          sku: '$sku',
-          batchNumber: '$inventory.batchNumber',
-          quantity: '$inventory.quantity',
-          location: '$inventory.location',
-          expiryDate: '$inventory.expiryDate',
-          daysUntilExpiry: {
-            $ceil: {
-              $divide: [
-                { $subtract: ['$inventory.expiryDate', new Date()] },
-                1000 * 60 * 60 * 24,
-              ],
-            },
-          },
-        },
-      },
-      {
-        $sort: { daysUntilExpiry: 1 },
-      },
-    ]);
-
-    // Combine both lists
-    const allItems = [...medications, ...products];
-
-    // Sort by days until expiry
-    allItems.sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
-
-    res.status(200).json({
-      success: true,
-      data: allItems,
-    });
   }
 );
 
@@ -223,88 +283,99 @@ export const getExpiringStockAlerts = asyncHandler(
  */
 export const getInventoryValuation = asyncHandler(
   async (req: Request, res: Response) => {
-    const productType = req.query.productType as string;
+    try {
+      const productType = req.query.productType as string;
 
-    // Build query for products
-    const productQuery: any = {};
+      // Build query for products
+      const productQuery: any = {};
 
-    if (productType) {
-      productQuery.type = productType;
-    }
-
-    // Get all products with inventory
-    const products = await Product.find(productQuery).select(
-      'name sku type category inventory'
-    );
-
-    // Get all medications with inventory (for backward compatibility)
-    const medications = await Medication.find().select(
-      'name inventory totalStock'
-    );
-
-    // Calculate valuation
-    let totalValue = 0;
-    const valuationData = [];
-
-    // Process products
-    for (const product of products) {
-      let productValue = 0;
-
-      for (const batch of product.inventory) {
-        const batchValue = batch.quantity * batch.costPrice;
-        productValue += batchValue;
+      if (productType) {
+        productQuery.type = productType;
       }
 
-      totalValue += productValue;
+      // Get all products with inventory
+      const products = await Product.find(productQuery).select(
+        'name sku type category inventory'
+      );
 
-      valuationData.push({
-        id: product._id,
-        name: product.name,
-        sku: product.sku,
-        type: 'product',
-        productType: product.type,
-        category: product.category,
-        totalStock: product.inventory.reduce(
-          (total, batch) => total + batch.quantity,
-          0
-        ),
-        value: productValue,
-      });
-    }
+      // Get all medications with inventory (for backward compatibility)
+      const medications = await Medication.find().select(
+        'name inventory totalStock'
+      );
 
-    // Process medications (for backward compatibility)
-    for (const medication of medications) {
-      let medicationValue = 0;
+      // Calculate valuation
+      let totalValue = 0;
+      const valuationData = [];
 
-      for (const batch of medication.inventory) {
-        const batchValue = batch.quantity * batch.unitPrice;
-        medicationValue += batchValue;
+      // Process products
+      for (const product of products) {
+        let productValue = 0;
+
+        for (const batch of product.inventory) {
+          const batchValue = batch.quantity * batch.costPrice;
+          productValue += batchValue;
+        }
+
+        totalValue += productValue;
+
+        valuationData.push({
+          id: product._id,
+          name: product.name,
+          sku: product.sku,
+          type: 'product',
+          productType: product.type,
+          category: product.category,
+          totalStock: product.inventory.reduce(
+            (total, batch) => total + batch.quantity,
+            0
+          ),
+          value: productValue,
+        });
       }
 
-      totalValue += medicationValue;
+      // Process medications (for backward compatibility)
+      for (const medication of medications) {
+        let medicationValue = 0;
 
-      valuationData.push({
-        id: medication._id,
-        name: medication.name,
-        type: 'medication',
-        totalStock: medication.inventory.reduce(
-          (total, batch) => total + batch.quantity,
-          0
-        ),
-        value: medicationValue,
+        for (const batch of medication.inventory) {
+          const batchValue = batch.quantity * batch.unitPrice;
+          medicationValue += batchValue;
+        }
+
+        totalValue += medicationValue;
+
+        valuationData.push({
+          id: medication._id,
+          name: medication.name,
+          type: 'medication',
+          totalStock: medication.inventory.reduce(
+            (total, batch) => total + batch.quantity,
+            0
+          ),
+          value: medicationValue,
+        });
+      }
+
+      // Sort by value (highest first)
+      valuationData.sort((a, b) => b.value - a.value);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          totalValue,
+          items: valuationData,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching inventory valuation:', error);
+      // Log the full error for debugging
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching inventory valuation',
+        error: (error as Error).message,
       });
     }
-
-    // Sort by value (highest first)
-    valuationData.sort((a, b) => b.value - a.value);
-
-    res.status(200).json({
-      success: true,
-      data: {
-        totalValue,
-        items: valuationData,
-      },
-    });
   }
 );
 
@@ -315,144 +386,155 @@ export const getInventoryValuation = asyncHandler(
  */
 export const getInventoryMovement = asyncHandler(
   async (req: Request, res: Response) => {
-    const medicationId = req.query.medicationId as string;
-    const startDate = req.query.startDate
-      ? new Date(req.query.startDate as string)
-      : new Date(0);
-    const endDate = req.query.endDate
-      ? new Date(req.query.endDate as string)
-      : new Date();
+    try {
+      const medicationId = req.query.medicationId as string;
+      const startDate = req.query.startDate
+        ? new Date(req.query.startDate as string)
+        : new Date(0);
+      const endDate = req.query.endDate
+        ? new Date(req.query.endDate as string)
+        : new Date();
 
-    // Validate medication if provided
-    if (medicationId) {
-      const medicationExists = await Medication.findById(medicationId);
-      if (!medicationExists) {
-        throw new AppError('Medication not found', 404);
+      // Validate medication if provided
+      if (medicationId) {
+        const medicationExists = await Medication.findById(medicationId);
+        if (!medicationExists) {
+          throw new AppError('Medication not found', 404);
+        }
       }
-    }
 
-    // Build pipeline for aggregation
-    const pipeline: any[] = [
-      {
-        $match: {
-          ...(medicationId && { _id: medicationId }),
-        },
-      },
-      {
-        $lookup: {
-          from: 'purchaseorders',
-          let: { medicationId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $in: ['$$medicationId', '$items.medication'] },
-                    { $gte: ['$deliveryDate', startDate] },
-                    { $lte: ['$deliveryDate', endDate] },
-                    { $eq: ['$status', 'received'] },
-                  ],
-                },
-              },
-            },
-            {
-              $unwind: '$items',
-            },
-            {
-              $match: {
-                $expr: {
-                  $eq: ['$items.medication', '$$medicationId'],
-                },
-              },
-            },
-            {
-              $project: {
-                date: '$deliveryDate',
-                type: { $literal: 'purchase' },
-                quantity: '$items.receivedQuantity',
-                batchNumber: '$items.batchNumber',
-                reference: '$orderNumber',
-              },
-            },
-          ],
-          as: 'purchases',
-        },
-      },
-      {
-        $lookup: {
-          from: 'dispensings',
-          let: { medicationId: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $in: ['$$medicationId', '$items.medication'] },
-                    { $gte: ['$dispensingDate', startDate] },
-                    { $lte: ['$dispensingDate', endDate] },
-                    { $eq: ['$status', 'completed'] },
-                  ],
-                },
-              },
-            },
-            {
-              $unwind: '$items',
-            },
-            {
-              $match: {
-                $expr: {
-                  $eq: ['$items.medication', '$$medicationId'],
-                },
-              },
-            },
-            {
-              $project: {
-                date: '$dispensingDate',
-                type: { $literal: 'dispensing' },
-                quantity: { $multiply: ['$items.quantity', -1] }, // Negative for outgoing
-                batchNumber: '$items.batchNumber',
-                reference: '$dispensingNumber',
-              },
-            },
-          ],
-          as: 'dispensings',
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          name: 1,
-          movements: {
-            $concatArrays: ['$purchases', '$dispensings'],
+      // Build pipeline for aggregation
+      const pipeline: any[] = [
+        {
+          $match: {
+            ...(medicationId && { _id: medicationId }),
           },
         },
-      },
-      {
-        $unwind: {
-          path: '$movements',
-          preserveNullAndEmptyArrays: true,
+        {
+          $lookup: {
+            from: 'purchaseorders',
+            let: { medicationId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $in: ['$$medicationId', '$items.medication'] },
+                      { $gte: ['$deliveryDate', startDate] },
+                      { $lte: ['$deliveryDate', endDate] },
+                      { $eq: ['$status', 'received'] },
+                    ],
+                  },
+                },
+              },
+              {
+                $unwind: '$items',
+              },
+              {
+                $match: {
+                  $expr: {
+                    $eq: ['$items.medication', '$$medicationId'],
+                  },
+                },
+              },
+              {
+                $project: {
+                  date: '$deliveryDate',
+                  type: { $literal: 'purchase' },
+                  quantity: '$items.receivedQuantity',
+                  batchNumber: '$items.batchNumber',
+                  reference: '$orderNumber',
+                },
+              },
+            ],
+            as: 'purchases',
+          },
         },
-      },
-      {
-        $sort: {
-          'movements.date': 1,
+        {
+          $lookup: {
+            from: 'dispensings',
+            let: { medicationId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $in: ['$$medicationId', '$items.medication'] },
+                      { $gte: ['$dispensingDate', startDate] },
+                      { $lte: ['$dispensingDate', endDate] },
+                      { $eq: ['$status', 'completed'] },
+                    ],
+                  },
+                },
+              },
+              {
+                $unwind: '$items',
+              },
+              {
+                $match: {
+                  $expr: {
+                    $eq: ['$items.medication', '$$medicationId'],
+                  },
+                },
+              },
+              {
+                $project: {
+                  date: '$dispensingDate',
+                  type: { $literal: 'dispensing' },
+                  quantity: { $multiply: ['$items.quantity', -1] }, // Negative for outgoing
+                  batchNumber: '$items.batchNumber',
+                  reference: '$dispensingNumber',
+                },
+              },
+            ],
+            as: 'dispensings',
+          },
         },
-      },
-      {
-        $group: {
-          _id: '$_id',
-          name: { $first: '$name' },
-          movements: { $push: '$movements' },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            movements: {
+              $concatArrays: ['$purchases', '$dispensings'],
+            },
+          },
         },
-      },
-    ];
+        {
+          $unwind: {
+            path: '$movements',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+        {
+          $sort: {
+            'movements.date': 1,
+          },
+        },
+        {
+          $group: {
+            _id: '$_id',
+            name: { $first: '$name' },
+            movements: { $push: '$movements' },
+          },
+        },
+      ];
 
-    const results = await Medication.aggregate(pipeline);
+      const results = await Medication.aggregate(pipeline);
 
-    res.status(200).json({
-      status: 'success',
-      data: results,
-    });
+      res.status(200).json({
+        status: 'success',
+        data: results,
+      });
+    } catch (error) {
+      console.error('Error fetching inventory movement:', error);
+      // Log the full error for debugging
+      console.error(error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching inventory movement',
+        error: (error as Error).message,
+      });
+    }
   }
 );
 
