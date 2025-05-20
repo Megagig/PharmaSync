@@ -66,15 +66,20 @@ export interface SaleFormData {
   saleDate?: string;
   items: {
     product: string;
+    productName?: string; // Added to store product name
     quantity: number;
     unitPrice: number;
     discount?: number;
+    subtotal: number; // Required field
+    finalPrice: number; // Required field
     batchNumber: string;
     expiryDate?: string;
     notes?: string;
   }[];
   discount?: number;
   tax?: number;
+  subtotal?: number; // Added to store total subtotal
+  totalDiscount?: number; // Added to store total discount
   paymentMethod?: 'cash' | 'card' | 'transfer' | 'credit' | 'multiple';
   notes?: string;
   location: string;

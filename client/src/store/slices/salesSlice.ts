@@ -94,7 +94,34 @@ export const createSale = createAsyncThunk(
       const sale = await saleService.createSale(saleData);
       return sale;
     } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to create sale');
+      // Extract detailed error information
+      let errorMessage = 'Failed to create sale';
+
+      if (error.response && error.response.data) {
+        console.error('Error response data in slice:', error.response.data);
+
+        if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
+
+        // Check for validation errors
+        if (error.response.data.errors && Array.isArray(error.response.data.errors)) {
+          const errorDetails = error.response.data.errors
+            .map((err: any) => `${err.field || err.path}: ${err.message}`)
+            .join('\n');
+          errorMessage = `Validation errors:\n${errorDetails}`;
+        }
+
+        // Try to extract validation errors from stack trace
+        if (error.response.data.stack) {
+          const validationMatch = error.response.data.stack.match(/Sale validation failed: ([^\n]+)/);
+          if (validationMatch && validationMatch[1]) {
+            errorMessage = `Validation errors: ${validationMatch[1]}`;
+          }
+        }
+      }
+
+      return rejectWithValue(errorMessage);
     }
   }
 );

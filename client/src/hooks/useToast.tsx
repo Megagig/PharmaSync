@@ -32,7 +32,8 @@ export const ToastProvider = ({ children }: { children: React.ReactNode }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info', duration = 5000) => {
-    const id = Date.now().toString();
+    // Generate a unique ID with a random component to avoid duplicates
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     safelyExecute(() => {
       setToasts(prev => [
         ...prev,

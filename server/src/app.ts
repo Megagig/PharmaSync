@@ -41,8 +41,8 @@ const limiter = rateLimit({
 
 // Apply rate limiting to all routes except specific endpoints
 app.use((req, res, next) => {
-  // Skip rate limiting for purchases endpoints in development
-  if (env.NODE_ENV === 'development' && req.path.includes('/api/purchases')) {
+  // Skip rate limiting for development environment
+  if (env.NODE_ENV === 'development') {
     return next();
   }
   return limiter(req, res, next);

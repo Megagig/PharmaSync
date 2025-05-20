@@ -21,7 +21,7 @@ export interface SaleItem {
   discount?: number;
   subtotal: number;
   finalPrice: number;
-  batchNumber: string;
+  batchNumber?: string;
   expiryDate?: Date;
   notes?: string;
 }

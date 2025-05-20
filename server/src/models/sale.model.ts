@@ -37,7 +37,6 @@ const saleItemSchema = new Schema(
     },
     batchNumber: {
       type: String,
-      required: true,
       trim: true,
     },
     expiryDate: {
@@ -162,12 +161,13 @@ saleSchema.index({ createdBy: 1 });
 
 // Virtuals
 saleSchema.virtual('itemCount').get(function () {
-  return this.items.length;
+  return Array.isArray(this.items) ? this.items.length : 0;
 });
 
 saleSchema.virtual('averageItemPrice').get(function () {
-  if (this.items.length === 0) return 0;
-  return this.total / this.items.length;
+  if (!Array.isArray(this.items) || this.items.length === 0) return 0;
+  const total = typeof this.total === 'number' ? this.total : 0;
+  return total / this.items.length;
 });
 
 // Generate sale number before saving
@@ -182,12 +182,17 @@ saleSchema.pre('save', function (next) {
   }
 
   // Calculate totals
-  if (this.isModified('items') || this.isNew) {
-    // Calculate subtotal
-    this.subtotal = this.items.reduce((sum, item) => sum + item.subtotal, 0);
+  if ((this.isModified('items') || this.isNew) && Array.isArray(this.items) && this.items.length > 0) {
+    // Calculate subtotal with defensive checks
+    this.subtotal = this.items.reduce((sum, item) => {
+      // Make sure item and subtotal exist and are numbers
+      const itemSubtotal = item && typeof item.subtotal === 'number' ? item.subtotal : 0;
+      return sum + itemSubtotal;
+    }, 0);
 
-    // Calculate total
-    this.total = this.subtotal - this.totalDiscount;
+    // Calculate total with defensive checks
+    const totalDiscount = typeof this.totalDiscount === 'number' ? this.totalDiscount : 0;
+    this.total = this.subtotal - totalDiscount;
   }
 
   next();

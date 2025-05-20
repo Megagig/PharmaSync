@@ -225,30 +225,32 @@ const CustomerSearch = ({
   // Display the selected customer's name in the input when value prop changes
   useEffect(() => {
     if (value && value._id) {
-      // Don't update the search term if the dropdown is open or if there's text being typed
-      if (!showDropdown && !searchTerm) {
-        // Just set a display name, not an actual search term
-        console.log('Setting display name for selected customer:', value);
+      console.log('Value prop changed in CustomerSearch:', value);
 
-        // Make sure this customer is in our customers list
-        if (Array.isArray(customers) && customers.length > 0) {
-          const customerExists = customers.some((c) => c._id === value._id);
-          if (!customerExists) {
-            console.log('Adding selected customer to customers list:', value);
-            setCustomers((prev) => [...prev, value]);
-          }
+      // Make sure this customer is in our customers list
+      if (Array.isArray(customers)) {
+        const customerExists = customers.some((c) => c && c._id === value._id);
+        if (!customerExists) {
+          console.log('Adding selected customer to customers list:', value);
+          setCustomers((prev) => {
+            // Filter out any null or undefined values first
+            const validCustomers = prev.filter(c => c);
+            return [...validCustomers, value];
+          });
         }
       }
     }
-  }, [value, showDropdown, searchTerm, customers]);
+  }, [value, customers]);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
     setShowDropdown(true);
 
     // Log for debugging
     console.log('Customers:', customers.length);
     console.log('Filtered customers:', filteredCustomers.length);
+    console.log('Current value prop:', value);
   };
 
   const handleSelectCustomer = (customer: Customer) => {
@@ -283,12 +285,6 @@ const CustomerSearch = ({
     // Update UI state
     setSearchTerm('');
     setShowDropdown(false);
-
-    // Show a success message
-    showToast(
-      `Customer ${formattedCustomer.firstName} ${formattedCustomer.lastName} selected`,
-      'success'
-    );
   };
 
   const handleCreateCustomer = async (customerData: any) => {
@@ -371,8 +367,8 @@ const CustomerSearch = ({
     <div className={`relative ${className}`}>
       <div className="flex space-x-2">
         <div className="flex-1 relative">
-          {value && !searchTerm && (
-            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700 flex items-center pointer-events-none">
+          {value && !showDropdown && (
+            <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-700 flex items-center pointer-events-none z-10">
               <span className="font-medium">
                 {value.firstName} {value.lastName}
               </span>
@@ -390,7 +386,7 @@ const CustomerSearch = ({
             onChange={handleSearch}
             onFocus={() => setShowDropdown(true)}
             disabled={disabled}
-            className={value && !searchTerm ? 'pl-40' : ''}
+            className={value && !showDropdown ? 'pl-40 bg-transparent' : ''}
           />
           {isLoading && (
             <div className="absolute right-3 top-1/2 transform -translate-y-1/2">

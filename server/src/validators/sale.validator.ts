@@ -6,8 +6,10 @@ const saleItemSchema = z.object({
   quantity: z.number().positive('Quantity must be positive'),
   unitPrice: z.number().nonnegative('Unit price must be non-negative'),
   discount: z.number().nonnegative('Discount must be non-negative').optional(),
-  batchNumber: z.string().min(1, 'Batch number is required'),
-  expiryDate: z.string().optional(),
+  subtotal: z.number().nonnegative('Subtotal must be non-negative').optional(),
+  finalPrice: z.number().nonnegative('Final price must be non-negative').optional(),
+  batchNumber: z.string().optional(), // Made optional
+  expiryDate: z.string().nullable().optional(),
   notes: z.string().optional(),
 });
 
@@ -23,6 +25,14 @@ export const createSaleSchema = z.object({
       .optional(),
     notes: z.string().optional(),
     location: z.string().min(1, 'Location ID is required'),
+    // Add additional fields that might be sent from the client
+    saleNumber: z.string().optional(),
+    subtotal: z.number().nonnegative('Subtotal must be non-negative').optional(),
+    totalDiscount: z.number().nonnegative('Total discount must be non-negative').optional(),
+    total: z.number().nonnegative('Total must be non-negative').optional(),
+    status: z.string().optional(),
+    paymentStatus: z.string().optional(),
+    receiptGenerated: z.boolean().optional(),
   }),
 });
 

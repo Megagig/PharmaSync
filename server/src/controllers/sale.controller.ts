@@ -7,6 +7,7 @@ import CreditTransaction from '../models/creditTransaction.model';
 import { SaleStatus, PaymentStatus } from '../interfaces/sale.interface';
 import { CreditTransactionType } from '../interfaces/credit.interface';
 import { AppError } from '../utils/error';
+import { generateRandomString } from '../utils/helpers';
 
 /**
  * @desc    Get all sales with pagination and filtering
@@ -69,9 +70,12 @@ export const getAllSales = asyncHandler(async (req: Request, res: Response) => {
     .skip(skip)
     .limit(limit);
 
+  // Convert to plain objects to avoid Mongoose virtuals issues
+  const plainSales = sales.map(sale => sale.toObject({ virtuals: false }));
+
   res.status(200).json({
     status: 'success',
-    data: sales,
+    data: plainSales,
     meta: {
       total,
       pages: Math.ceil(total / limit),
@@ -100,9 +104,12 @@ export const getSaleById = asyncHandler(async (req: Request, res: Response) => {
     throw new AppError('Sale not found', 404);
   }
 
+  // Convert to plain object to avoid Mongoose virtuals issues
+  const saleObj = sale.toObject({ virtuals: false });
+
   res.status(200).json({
     status: 'success',
-    data: sale,
+    data: saleObj,
   });
 });
 
@@ -121,6 +128,7 @@ export const createSale = asyncHandler(async (req: Request, res: Response) => {
     paymentMethod,
     notes,
     location,
+    saleNumber, // Extract saleNumber from request body
   } = req.body;
 
   // Verify customer exists
@@ -150,16 +158,31 @@ export const createSale = asyncHandler(async (req: Request, res: Response) => {
       throw new AppError(`Product with ID ${product} not found`, 404);
     }
 
-    // Find inventory item with matching batch number
-    const inventoryItem = productDoc.inventory.find(
-      (inv) => inv.batchNumber === batchNumber
-    );
+    // Handle inventory management based on whether batch number is provided
+    let inventoryItem;
 
-    if (!inventoryItem) {
-      throw new AppError(
-        `Inventory item with batch number ${batchNumber} not found`,
-        404
+    if (batchNumber) {
+      // If batch number is provided, find the specific inventory item
+      inventoryItem = productDoc.inventory.find(
+        (inv) => inv.batchNumber === batchNumber
       );
+
+      if (!inventoryItem) {
+        throw new AppError(
+          `Inventory item with batch number ${batchNumber} not found`,
+          404
+        );
+      }
+    } else {
+      // If no batch number is provided, use the first available inventory item with sufficient stock
+      inventoryItem = productDoc.inventory.find(inv => inv.quantity >= quantity);
+
+      if (!inventoryItem) {
+        throw new AppError(
+          `No inventory items with sufficient stock found for product ${productDoc.name}`,
+          404
+        );
+      }
     }
 
     // Check if enough stock is available
@@ -181,9 +204,10 @@ export const createSale = asyncHandler(async (req: Request, res: Response) => {
 
     await productDoc.save();
 
-    // Calculate item subtotal
-    const itemSubtotal = quantity * unitPrice - discount;
-    subtotal += itemSubtotal;
+    // Calculate item subtotal and finalPrice
+    const itemSubtotal = quantity * unitPrice;
+    const itemFinalPrice = itemSubtotal - discount;
+    subtotal += itemFinalPrice;
 
     // Add to processed items
     processedItems.push({
@@ -192,8 +216,9 @@ export const createSale = asyncHandler(async (req: Request, res: Response) => {
       unitPrice,
       discount,
       subtotal: itemSubtotal,
-      batchNumber,
-      expiryDate,
+      finalPrice: itemFinalPrice, // Add finalPrice field
+      batchNumber: batchNumber || inventoryItem.batchNumber, // Use the selected inventory item's batch number if none provided
+      expiryDate: expiryDate || inventoryItem.expiryDate, // Use the selected inventory item's expiry date if none provided
       notes,
     });
   }
@@ -222,12 +247,21 @@ export const createSale = asyncHandler(async (req: Request, res: Response) => {
     paymentStatus = PaymentStatus.UNPAID;
   }
 
+  // Generate a sale number if not provided
+  const generatedSaleNumber = saleNumber || (() => {
+    const date = new Date();
+    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+    return `SALE-${dateStr}-${generateRandomString(5).toUpperCase()}`;
+  })();
+
   // Create sale record
   const sale = await Sale.create({
     customer,
+    saleNumber: generatedSaleNumber, // Explicitly set the sale number
     saleDate: saleDate || new Date(),
     items: processedItems,
     subtotal,
+    totalDiscount: discountAmount, // Set totalDiscount field
     discount: discountAmount,
     tax: taxAmount,
     total,
@@ -335,32 +369,36 @@ export const generateReceipt = asyncHandler(
     sale.receiptGenerated = true;
     await sale.save();
 
-    // Format receipt data
+    // Convert to plain object to avoid Mongoose virtuals issues
+    const saleObj = sale.toObject({ virtuals: false });
+
+    // Type assertions for populated fields
+    const customer = saleObj.customer as { firstName?: string; lastName?: string; customerNumber?: string } || {};
+    const createdBy = saleObj.createdBy as { firstName?: string; lastName?: string } || {};
+    const location = saleObj.location as { name?: string } || {};
+
+    // Format receipt data with defensive checks
     const receiptData = {
-      saleNumber: sale.saleNumber,
-      date: sale.saleDate,
+      saleNumber: saleObj.saleNumber || '',
+      date: saleObj.saleDate || new Date(),
       customer: {
-        name: `${(sale.customer as any).firstName} ${
-          (sale.customer as any).lastName
-        }`,
-        id: (sale.customer as any).customerNumber,
+        name: `${customer.firstName || ''} ${customer.lastName || ''}`.trim(),
+        id: customer.customerNumber || '',
       },
-      soldBy: `${(sale.createdBy as any).firstName} ${
-        (sale.createdBy as any).lastName
-      }`,
-      location: (sale.location as any).name,
-      items: sale.items.map((item: any) => ({
-        product: item.product.name,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        discount: item.discount,
-        subtotal: item.subtotal,
-      })),
-      subtotal: sale.subtotal,
-      discount: sale.discount,
-      tax: sale.tax,
-      total: sale.total,
-      paymentMethod: sale.paymentMethod,
+      soldBy: `${createdBy.firstName || ''} ${createdBy.lastName || ''}`.trim(),
+      location: location.name || '',
+      items: Array.isArray(saleObj.items) ? saleObj.items.map((item: any) => ({
+        product: item.product?.name || 'Unknown Product',
+        quantity: item.quantity || 0,
+        unitPrice: item.unitPrice || 0,
+        discount: item.discount || 0,
+        subtotal: item.subtotal || 0,
+      })) : [],
+      subtotal: saleObj.subtotal || 0,
+      discount: saleObj.discount || 0,
+      tax: saleObj.tax || 0,
+      total: saleObj.total || 0,
+      paymentMethod: saleObj.paymentMethod || 'cash',
     };
 
     res.status(200).json({
