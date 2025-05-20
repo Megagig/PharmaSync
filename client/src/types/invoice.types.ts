@@ -26,6 +26,8 @@ export interface InvoiceItem {
   discount: number;
   tax: number;
   subtotal: number;
+  batchNumber?: string;
+  expiryDate?: string;
 }
 
 export interface Invoice {
@@ -76,6 +78,7 @@ export interface Invoice {
 }
 
 export interface InvoiceFormData {
+  invoiceNumber?: string;
   invoiceDate?: string;
   dueDate: string;
   customer?: string;
@@ -88,6 +91,8 @@ export interface InvoiceFormData {
     unitPrice: number;
     discount?: number;
     tax?: number;
+    batchNumber?: string;
+    expiryDate?: string;
   }[];
   discount?: number;
   tax?: number;
@@ -108,6 +113,8 @@ export interface InvoiceUpdateData {
     unitPrice: number;
     discount?: number;
     tax?: number;
+    batchNumber?: string;
+    expiryDate?: string;
   }[];
   discount?: number;
   tax?: number;

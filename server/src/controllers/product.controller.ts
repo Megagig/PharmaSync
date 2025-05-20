@@ -104,8 +104,7 @@ export const createProduct = asyncHandler(
       brand,
       manufacturer,
       requiresPrescription,
-      defaultPrice,
-      priceLevels,
+      salesPriceLevels,
       minimumStockLevel,
       maximumStockLevel,
       reorderPoint,
@@ -145,8 +144,7 @@ export const createProduct = asyncHandler(
       brand,
       manufacturer,
       requiresPrescription: requiresPrescription || false,
-      defaultPrice,
-      priceLevels: priceLevels || [],
+      salesPriceLevels: salesPriceLevels || [],
       minimumStockLevel: minimumStockLevel || 10,
       maximumStockLevel,
       reorderPoint: reorderPoint || 5,
@@ -364,119 +362,6 @@ export const removeInventoryItem = asyncHandler(
 );
 
 /**
- * @desc    Add price level to product
- * @route   POST /api/products/:id/price-levels
- * @access  Private
- */
-export const addPriceLevel = asyncHandler(
-  async (req: Request, res: Response) => {
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      throw new AppError('Product not found', 404);
-    }
-
-    const { name, price } = req.body;
-
-    // Check if price level already exists
-    const priceLevelExists = product.priceLevels.some(
-      (level) => level.name === name
-    );
-    if (priceLevelExists) {
-      throw new AppError('Price level already exists for this product', 400);
-    }
-
-    // Add price level
-    product.priceLevels.push({
-      name,
-      price,
-    });
-
-    await product.save();
-
-    res.status(201).json({
-      status: 'success',
-      data: product,
-    });
-  }
-);
-
-/**
- * @desc    Update price level
- * @route   PATCH /api/products/:id/price-levels/:levelId
- * @access  Private
- */
-export const updatePriceLevel = asyncHandler(
-  async (req: Request, res: Response) => {
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      throw new AppError('Product not found', 404);
-    }
-
-    const priceLevel = product.priceLevels.find(
-      (level) => level._id?.toString() === req.params.levelId
-    );
-
-    if (!priceLevel) {
-      throw new AppError('Price level not found', 404);
-    }
-
-    // Update price level fields
-    const { name, price } = req.body;
-
-    if (name !== undefined) {
-      priceLevel.name = name;
-    }
-
-    if (price !== undefined) {
-      priceLevel.price = price;
-    }
-
-    await product.save();
-
-    res.status(200).json({
-      status: 'success',
-      data: product,
-    });
-  }
-);
-
-/**
- * @desc    Remove price level
- * @route   DELETE /api/products/:id/price-levels/:levelId
- * @access  Private
- */
-export const removePriceLevel = asyncHandler(
-  async (req: Request, res: Response) => {
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-      throw new AppError('Product not found', 404);
-    }
-
-    const priceLevel = product.priceLevels.find(
-      (level) => level._id?.toString() === req.params.levelId
-    );
-
-    if (!priceLevel) {
-      throw new AppError('Price level not found', 404);
-    }
-
-    // Remove the price level from the array
-    product.priceLevels = product.priceLevels.filter(
-      (level) => level._id?.toString() !== req.params.levelId
-    );
-    await product.save();
-
-    res.status(200).json({
-      status: 'success',
-      data: null,
-    });
-  }
-);
-
-/**
  * @desc    Get product history
  * @route   GET /api/products/:id/history
  * @access  Private
@@ -573,3 +458,127 @@ export const getProductHistory = asyncHandler(
     });
   }
 );
+
+// Sales Price Level Controllers
+export const addSalesPriceLevel = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, price } = req.body;
+  const product = await Product.findById(id);
+  if (!product) throw new AppError('Product not found', 404);
+
+  if (product.salesPriceLevels.some((level: any) => level.name === name)) {
+    throw new AppError('Sales price level already exists', 400);
+  }
+  product.salesPriceLevels.push({ name, price });
+  await product.save();
+  res.status(201).json({ status: 'success', data: product });
+});
+
+export const updateSalesPriceLevel = asyncHandler(async (req: Request, res: Response) => {
+  const { id, levelId } = req.params;
+  const { name, price } = req.body;
+  const product = await Product.findById(id);
+  if (!product) throw new AppError('Product not found', 404);
+
+  const level = product.salesPriceLevels.find(
+    (level) => level._id?.toString() === levelId
+  );
+
+  if (!level) {
+    throw new AppError('Sales price level not found', 404);
+  }
+
+  // Update price level fields
+  if (name !== undefined) {
+    level.name = name;
+  }
+
+  if (price !== undefined) {
+    level.price = price;
+  }
+
+  await product.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: product,
+  });
+});
+
+export const deleteSalesPriceLevel = asyncHandler(async (req: Request, res: Response) => {
+  const { id, levelId } = req.params;
+  const product = await Product.findById(id);
+  if (!product) throw new AppError('Product not found', 404);
+
+  product.salesPriceLevels = product.salesPriceLevels.filter(
+    (level) => level._id?.toString() !== levelId
+  );
+  await product.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: null,
+  });
+});
+
+// Purchase Price Level Controllers
+export const addPurchasePriceLevel = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { name, price } = req.body;
+  const product = await Product.findById(id);
+  if (!product) throw new AppError('Product not found', 404);
+
+  if (product.purchasePriceLevels.some((level: any) => level.name === name)) {
+    throw new AppError('Purchase price level already exists', 400);
+  }
+  product.purchasePriceLevels.push({ name, price });
+  await product.save();
+  res.status(201).json({ status: 'success', data: product });
+});
+
+export const updatePurchasePriceLevel = asyncHandler(async (req: Request, res: Response) => {
+  const { id, levelId } = req.params;
+  const { name, price } = req.body;
+  const product = await Product.findById(id);
+  if (!product) throw new AppError('Product not found', 404);
+
+  const level = product.purchasePriceLevels.find(
+    (level) => level._id?.toString() === levelId
+  );
+
+  if (!level) {
+    throw new AppError('Purchase price level not found', 404);
+  }
+
+  // Update price level fields
+  if (name !== undefined) {
+    level.name = name;
+  }
+
+  if (price !== undefined) {
+    level.price = price;
+  }
+
+  await product.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: product,
+  });
+});
+
+export const deletePurchasePriceLevel = asyncHandler(async (req: Request, res: Response) => {
+  const { id, levelId } = req.params;
+  const product = await Product.findById(id);
+  if (!product) throw new AppError('Product not found', 404);
+
+  product.purchasePriceLevels = product.purchasePriceLevels.filter(
+    (level) => level._id?.toString() !== levelId
+  );
+  await product.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: null,
+  });
+});

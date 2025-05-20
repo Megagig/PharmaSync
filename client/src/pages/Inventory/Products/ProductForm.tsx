@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, Control, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Card from '@/components/common/Card/Card';
@@ -20,49 +20,27 @@ const productSchema = z.object({
   barcode: z.string().optional(),
   description: z.string().optional(),
   type: z.enum(Object.values(ProductType) as [string, ...string[]]),
-  category: z
-    .enum(Object.values(ProductCategory) as [string, ...string[]])
-    .or(z.string()),
+  category: z.enum(Object.values(ProductCategory) as [string, ...string[]]).or(z.string()),
   brand: z.string().optional(),
   manufacturer: z.string().optional(),
-  requiresPrescription: z.boolean().default(false),
+  requiresPrescription: z.boolean(),
   costPrice: z.number().min(0, 'Cost price must be non-negative'),
   sellingPrice: z.number().min(0, 'Selling price must be non-negative'),
-  wholesalePrice: z
-    .number()
-    .min(0, 'Wholesale price must be non-negative')
-    .optional(),
-  retailPrice: z
-    .number()
-    .min(0, 'Retail price must be non-negative')
-    .optional(),
-  defaultPrice: z.number().min(0, 'Price must be non-negative'),
-  minimumStockLevel: z
-    .number()
-    .int()
-    .min(0, 'Minimum stock level must be non-negative'),
-  maximumStockLevel: z
-    .number()
-    .int()
-    .min(0, 'Maximum stock level must be non-negative')
-    .optional(),
+  minimumStockLevel: z.number().int().min(0, 'Minimum stock level must be non-negative'),
+  maximumStockLevel: z.number().int().min(0, 'Maximum stock level must be non-negative').optional(),
   reorderPoint: z.number().int().min(0, 'Reorder point must be non-negative'),
-  reorderQuantity: z
-    .number()
-    .int()
-    .min(0, 'Reorder quantity must be non-negative')
-    .optional(),
-  isActive: z.boolean().default(true),
-  isTaxable: z.boolean().default(true),
-  taxRate: z
-    .number()
-    .min(0, 'Tax rate must be non-negative')
-    .max(100, 'Tax rate cannot exceed 100%')
-    .optional(),
+  reorderQuantity: z.number().int().min(0, 'Reorder quantity must be non-negative').optional(),
+  isActive: z.boolean(),
+  isTaxable: z.boolean(),
+  taxRate: z.number().min(0, 'Tax rate must be non-negative').max(100, 'Tax rate cannot exceed 100%').optional(),
   notes: z.string().optional(),
   medicationId: z.string().optional(),
   customType: z.string().optional(),
   customCategory: z.string().optional(),
+  salesPriceLevels: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
+  purchasePriceLevels: z.array(z.object({ name: z.string(), price: z.number() })).optional(),
+  defaultSalesPrice: z.number().min(0, 'Default sales price must be non-negative'),
+  defaultPurchasePrice: z.number().min(0, 'Default purchase price must be non-negative'),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -96,15 +74,16 @@ const ProductForm = () => {
       requiresPrescription: false,
       costPrice: 0,
       sellingPrice: 0,
-      wholesalePrice: 0,
-      retailPrice: 0,
-      defaultPrice: 0,
       minimumStockLevel: 10,
       reorderPoint: 5,
       isActive: true,
       isTaxable: true,
       customType: '',
       customCategory: '',
+      salesPriceLevels: [],
+      purchasePriceLevels: [],
+      defaultSalesPrice: 0,
+      defaultPurchasePrice: 0,
     },
   });
 
@@ -427,72 +406,6 @@ const ProductForm = () => {
 
             <div>
               <Controller
-                name="wholesalePrice"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    label="Wholesale Price (₦)"
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    placeholder="Enter wholesale price (optional)"
-                    error={errors.wholesalePrice?.message}
-                    {...field}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value ? parseFloat(e.target.value) : undefined
-                      )
-                    }
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <Controller
-                name="retailPrice"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    label="Retail Price (₦)"
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    placeholder="Enter retail price (optional)"
-                    error={errors.retailPrice?.message}
-                    {...field}
-                    onChange={(e) =>
-                      field.onChange(
-                        e.target.value ? parseFloat(e.target.value) : undefined
-                      )
-                    }
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <Controller
-                name="defaultPrice"
-                control={control}
-                render={({ field }) => (
-                  <Input
-                    label="Default Price (₦)"
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    placeholder="Enter default price"
-                    error={errors.defaultPrice?.message}
-                    required
-                    {...field}
-                    onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                  />
-                )}
-              />
-            </div>
-
-            <div>
-              <Controller
                 name="minimumStockLevel"
                 control={control}
                 render={({ field }) => (
@@ -585,9 +498,8 @@ const ProductForm = () => {
                         { value: '', label: 'None' },
                         ...medications.map((med) => ({
                           value: med._id,
-                          label: `${med.name} ${med.strength || ''} ${
-                            med.dosageForm || ''
-                          }`.trim(),
+                          label: `${med.name} ${med.strength || ''} ${med.dosageForm || ''
+                            }`.trim(),
                         })),
                       ]}
                       error={errors.medicationId?.message}
@@ -701,6 +613,53 @@ const ProductForm = () => {
             )}
           </div>
 
+          <Card className="mb-6">
+            <div className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Sales Price Levels</h2>
+              <Controller
+                name="defaultSalesPrice"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    label="Default Sales Price (₦)"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    {...field}
+                  />
+                )}
+              />
+              <PriceLevelManager
+                control={control}
+                name="salesPriceLevels"
+                label="Sales Price Levels"
+              />
+            </div>
+          </Card>
+          <Card className="mb-6">
+            <div className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Purchase Price Levels</h2>
+              <Controller
+                name="defaultPurchasePrice"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    label="Default Purchase Price (₦)"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    {...field}
+                  />
+                )}
+              />
+              <PriceLevelManager
+                control={control}
+                name="purchasePriceLevels"
+                label="Purchase Price Levels"
+              />
+            </div>
+          </Card>
+
           <div className="flex justify-end space-x-3 pt-4">
             <Button
               variant="outline"
@@ -715,6 +674,61 @@ const ProductForm = () => {
           </div>
         </form>
       </Card>
+    </div>
+  );
+};
+
+interface PriceLevelManagerProps {
+  control: Control<any>;
+  name: string;
+  label: string;
+}
+
+const PriceLevelManager = ({ control, name, label }: PriceLevelManagerProps) => {
+  const { fields, append, remove, update } = useFieldArray({ control, name });
+  return (
+    <div>
+      <table className="min-w-full mb-2">
+        <thead>
+          <tr>
+            <th className="text-left">Name</th>
+            <th className="text-left">Price (₦)</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {fields.map((field, idx) => (
+            <tr key={field.id}>
+              <td>
+                <Controller
+                  name={`${name}.${idx}.name`}
+                  control={control}
+                  render={({ field }) => (
+                    <Input {...field} placeholder="Level name" />
+                  )}
+                />
+              </td>
+              <td>
+                <Controller
+                  name={`${name}.${idx}.price`}
+                  control={control}
+                  render={({ field }) => (
+                    <Input {...field} type="number" min={0} step={0.01} placeholder="Price" value={field.value ?? ''} onChange={e => field.onChange(Number(e.target.value))} />
+                  )}
+                />
+              </td>
+              <td>
+                <Button type="button" variant="danger" size="sm" onClick={() => remove(idx)}>
+                  Remove
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <Button type="button" variant="secondary" size="sm" onClick={() => append({ name: '', price: 0 })}>
+        Add Price Level
+      </Button>
     </div>
   );
 };

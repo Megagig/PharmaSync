@@ -11,13 +11,17 @@ import Input from '@/components/common/Input/Input';
 import Select from '@/components/common/Select/Select';
 import DatePicker from '@/components/common/DatePicker/DatePicker';
 import ProductSearch from '@/components/common/ProductSearch/ProductSearch';
+import CustomerSearch from '@/components/common/CustomerSearch/CustomerSearch';
+import SupplierSearch from '@/components/common/SupplierSearch/SupplierSearch';
 import { formatCurrency } from '@/utils/formatters';
+import { useToast } from '@/hooks/useToast';
 import api from '@/services/api';
 
 const CreateInvoice = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const { showToast } = useToast();
   const { isLoading, error } = useSelector(
     (state: RootState) => state.invoices
   );
@@ -31,8 +35,8 @@ const CreateInvoice = () => {
   const initialSaleId = queryParams.get('sale') || '';
   const initialPurchaseOrderId = queryParams.get('purchaseOrder') || '';
 
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [sales, setSales] = useState<any[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
@@ -43,6 +47,8 @@ const CreateInvoice = () => {
   const [unitPrice, setUnitPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
   const [tax, setTax] = useState(0);
+  const [batchNumber, setBatchNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
   const [productDetails, setProductDetails] = useState<any>(null);
 
   const [formData, setFormData] = useState<InvoiceFormData>({
@@ -62,58 +68,39 @@ const CreateInvoice = () => {
   });
 
   useEffect(() => {
-    // Load customers if sales invoice
+    // Reset customer/supplier when type changes
     if (formData.type === InvoiceType.SALES) {
-      const fetchCustomers = async () => {
-        try {
-          const response = await api.get('/customers?isActive=true');
-          // Check if response.data.data exists and is an array
-          if (
-            response.data &&
-            response.data.data &&
-            Array.isArray(response.data.data)
-          ) {
-            setCustomers(response.data.data);
-          } else if (response.data && Array.isArray(response.data)) {
-            // Handle case where API returns array directly
-            setCustomers(response.data);
-          } else {
-            console.error('Unexpected API response format:', response.data);
-            setCustomers([]);
+      setSelectedSupplier(null);
+      // If we have a customer ID but no customer object, try to fetch it
+      if (formData.customer && !selectedCustomer) {
+        const fetchCustomer = async () => {
+          try {
+            const response = await api.get(`/customers/${formData.customer}`);
+            if (response.data && response.data.data) {
+              setSelectedCustomer(response.data.data);
+            }
+          } catch (error) {
+            console.error('Error fetching customer details:', error);
           }
-        } catch (error) {
-          console.error('Error fetching customers:', error);
-          setCustomers([]);
-        }
-      };
-      fetchCustomers();
-    }
-
-    // Load suppliers if purchase invoice
-    if (formData.type === InvoiceType.PURCHASE) {
-      const fetchSuppliers = async () => {
-        try {
-          const response = await api.get('/suppliers?isActive=true');
-          // Check if response.data.data exists and is an array
-          if (
-            response.data &&
-            response.data.data &&
-            Array.isArray(response.data.data)
-          ) {
-            setSuppliers(response.data.data);
-          } else if (response.data && Array.isArray(response.data)) {
-            // Handle case where API returns array directly
-            setSuppliers(response.data);
-          } else {
-            console.error('Unexpected API response format:', response.data);
-            setSuppliers([]);
+        };
+        fetchCustomer();
+      }
+    } else if (formData.type === InvoiceType.PURCHASE) {
+      setSelectedCustomer(null);
+      // If we have a supplier ID but no supplier object, try to fetch it
+      if (formData.supplier && !selectedSupplier) {
+        const fetchSupplier = async () => {
+          try {
+            const response = await api.get(`/suppliers/${formData.supplier}`);
+            if (response.data && response.data.data) {
+              setSelectedSupplier(response.data.data);
+            }
+          } catch (error) {
+            console.error('Error fetching supplier details:', error);
           }
-        } catch (error) {
-          console.error('Error fetching suppliers:', error);
-          setSuppliers([]);
-        }
-      };
-      fetchSuppliers();
+        };
+        fetchSupplier();
+      }
     }
 
     // Load products
@@ -265,6 +252,14 @@ const CreateInvoice = () => {
 
   const handleTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newType = e.target.value as InvoiceType;
+
+    // Reset customer/supplier based on type
+    if (newType === InvoiceType.SALES) {
+      setSelectedSupplier(null);
+    } else {
+      setSelectedCustomer(null);
+    }
+
     setFormData((prev) => ({
       ...prev,
       type: newType,
@@ -275,8 +270,9 @@ const CreateInvoice = () => {
 
   const handleAddItem = () => {
     if (!selectedProduct || !productDescription || quantity <= 0) {
-      alert(
-        'Please select a product, enter a description, and specify a valid quantity'
+      showToast(
+        'Please select a product, enter a description, and specify a valid quantity',
+        'error'
       );
       return;
     }
@@ -288,6 +284,8 @@ const CreateInvoice = () => {
       unitPrice,
       discount: discount || 0,
       tax: tax || 0,
+      batchNumber,
+      expiryDate,
     };
 
     setFormData((prev) => ({
@@ -302,6 +300,8 @@ const CreateInvoice = () => {
     setUnitPrice(0);
     setDiscount(0);
     setTax(0);
+    setBatchNumber('');
+    setExpiryDate('');
   };
 
   const handleRemoveItem = (index: number) => {
@@ -343,27 +343,29 @@ const CreateInvoice = () => {
     e.preventDefault();
 
     if (formData.type === InvoiceType.SALES && !formData.customer) {
-      alert('Please select a customer');
+      showToast('Please select a customer', 'error');
       return;
     }
 
     if (formData.type === InvoiceType.PURCHASE && !formData.supplier) {
-      alert('Please select a supplier');
+      showToast('Please select a supplier', 'error');
       return;
     }
 
     if (formData.items.length === 0) {
-      alert('Please add at least one item');
+      showToast('Please add at least one item', 'error');
       return;
     }
 
     try {
       const resultAction = await dispatch(createInvoice(formData) as any);
       if (createInvoice.fulfilled.match(resultAction)) {
+        showToast('Invoice created successfully', 'success');
         navigate(`/invoices/${resultAction.payload._id}`);
       }
     } catch (error) {
       console.error('Failed to create invoice:', error);
+      showToast('Failed to create invoice. Please try again.', 'error');
     }
   };
 
@@ -403,52 +405,69 @@ const CreateInvoice = () => {
                 </Select>
 
                 {formData.type === InvoiceType.SALES && (
-                  <Select
-                    label="Customer"
-                    name="customer"
-                    value={formData.customer || ''}
-                    onChange={handleInputChange}
-                    required
-                    disabled={!!initialSaleId}
-                  >
-                    <option value="">Select Customer</option>
-                    {Array.isArray(customers) && customers.length > 0 ? (
-                      customers.map((customer) => (
-                        <option key={customer._id} value={customer._id}>
-                          {customer.firstName} {customer.lastName} (
-                          {customer.customerNumber})
-                        </option>
-                      ))
-                    ) : (
-                      <option value="" disabled>
-                        No customers available
-                      </option>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Customer <span className="text-red-500">*</span>
+                    </label>
+                    <CustomerSearch
+                      value={selectedCustomer}
+                      onSelect={(customer) => {
+                        console.log('Customer selected in CreateInvoice:', customer);
+                        if (customer && customer._id) {
+                          setSelectedCustomer(customer);
+                          setFormData((prev) => ({
+                            ...prev,
+                            customer: customer._id,
+                          }));
+                          showToast(
+                            `Customer ${customer.firstName} ${customer.lastName} selected`,
+                            'success'
+                          );
+                        }
+                      }}
+                      placeholder="Search for a customer"
+                      allowCreate={true}
+                      disabled={!!initialSaleId}
+                    />
+                    {!formData.customer && (
+                      <p className="mt-1 text-sm text-red-600">
+                        Please select a customer
+                      </p>
                     )}
-                  </Select>
+                  </div>
                 )}
 
                 {formData.type === InvoiceType.PURCHASE && (
-                  <Select
-                    label="Supplier"
-                    name="supplier"
-                    value={formData.supplier || ''}
-                    onChange={handleInputChange}
-                    required
-                    disabled={!!initialPurchaseOrderId}
-                  >
-                    <option value="">Select Supplier</option>
-                    {Array.isArray(suppliers) && suppliers.length > 0 ? (
-                      suppliers.map((supplier) => (
-                        <option key={supplier._id} value={supplier._id}>
-                          {supplier.name} ({supplier.supplierCode})
-                        </option>
-                      ))
-                    ) : (
-                      <option value="" disabled>
-                        No suppliers available
-                      </option>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Supplier <span className="text-red-500">*</span>
+                    </label>
+                    <SupplierSearch
+                      value={selectedSupplier}
+                      onSelect={(supplier) => {
+                        console.log('Supplier selected in CreateInvoice:', supplier);
+                        if (supplier && supplier._id) {
+                          setSelectedSupplier(supplier);
+                          setFormData((prev) => ({
+                            ...prev,
+                            supplier: supplier._id,
+                          }));
+                          showToast(
+                            `Supplier ${supplier.name} selected`,
+                            'success'
+                          );
+                        }
+                      }}
+                      placeholder="Search for a supplier"
+                      allowCreate={true}
+                      disabled={!!initialPurchaseOrderId}
+                    />
+                    {!formData.supplier && (
+                      <p className="mt-1 text-sm text-red-600">
+                        Please select a supplier
+                      </p>
                     )}
-                  </Select>
+                  </div>
                 )}
 
                 <DatePicker
@@ -529,14 +548,56 @@ const CreateInvoice = () => {
                       setProductDescription(product.name);
                       setUnitPrice(product.defaultPrice);
                     }}
+                    placeholder="Search products by name, SKU, or barcode"
                   />
                 </div>
 
-                <Input
-                  label="Description"
-                  value={productDescription}
-                  onChange={(e) => setProductDescription(e.target.value)}
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Batch (Optional)
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    value={batchNumber}
+                    onChange={(e) => setBatchNumber(e.target.value)}
+                  >
+                    <option value="">Select Batch (Optional)</option>
+                    {productDetails?.inventory?.map((item) => (
+                      <option key={item.batchNumber} value={item.batchNumber}>
+                        {item.batchNumber} - Exp: {new Date(item.expiryDate).toLocaleDateString()} - Stock: {item.quantity}
+                      </option>
+                    )) || (
+                      <option value="" disabled>No batches available</option>
+                    )}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Price Level
+                  </label>
+                  <select
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
+                    onChange={(e) => {
+                      // Find the price level and set the unit price
+                      if (productDetails?.priceLevels) {
+                        const priceLevel = productDetails.priceLevels.find(pl => pl.name === e.target.value);
+                        if (priceLevel) {
+                          setUnitPrice(priceLevel.price);
+                        } else {
+                          setUnitPrice(productDetails.defaultPrice);
+                        }
+                      }
+                    }}
+                  >
+                    <option value="default">Default Price (₦{productDetails?.defaultPrice || 0})</option>
+                    {productDetails?.priceLevels?.map((level) => (
+                      <option key={level.name} value={level.name}>
+                        {level.name} (₦{level.price})
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
                 <Input
                   type="number"
@@ -565,13 +626,12 @@ const CreateInvoice = () => {
                   step="0.01"
                 />
 
-                <Input
-                  type="number"
-                  label="Tax (%)"
-                  value={tax}
-                  onChange={(e) => setTax(Number(e.target.value))}
-                  min="0"
-                  step="0.01"
+                <DatePicker
+                  label="Expiry Date (Optional)"
+                  value={expiryDate}
+                  onChange={(date) => setExpiryDate(date)}
+                  min={new Date().toISOString().split('T')[0]}
+                  placeholder="Select expiry date"
                 />
 
                 <Button
@@ -618,6 +678,12 @@ const CreateInvoice = () => {
                         Tax (%)
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Batch
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Expiry
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Subtotal
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -658,6 +724,12 @@ const CreateInvoice = () => {
                             {item.tax || 0}%
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
+                            {item.batchNumber || '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {item.expiryDate ? new Date(item.expiryDate).toLocaleDateString() : '-'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             {formatCurrency(subtotal)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -677,7 +749,7 @@ const CreateInvoice = () => {
                   <tfoot>
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={8}
                         className="px-6 py-4 text-right font-medium"
                       >
                         Subtotal:
@@ -689,7 +761,7 @@ const CreateInvoice = () => {
                     </tr>
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={8}
                         className="px-6 py-4 text-right font-medium"
                       >
                         Discount:
@@ -701,7 +773,7 @@ const CreateInvoice = () => {
                     </tr>
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={8}
                         className="px-6 py-4 text-right font-medium"
                       >
                         Tax:
@@ -713,7 +785,7 @@ const CreateInvoice = () => {
                     </tr>
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={8}
                         className="px-6 py-4 text-right font-bold"
                       >
                         Total:

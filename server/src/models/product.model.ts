@@ -98,24 +98,10 @@ const productSchema = new Schema<IProduct>(
       default: false,
     },
     inventory: [productInventoryItemSchema],
-    priceLevels: [productPriceLevelSchema],
-    defaultPrice: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    retailPrice: {
-      type: Number,
-      min: 0,
-    },
-    wholesalePrice: {
-      type: Number,
-      min: 0,
-    },
-    costPrice: {
-      type: Number,
-      min: 0,
-    },
+    salesPriceLevels: [productPriceLevelSchema],
+    purchasePriceLevels: [productPriceLevelSchema],
+    defaultSalesPrice: { type: Number, required: true, min: 0 },
+    defaultPurchasePrice: { type: Number, required: true, min: 0 },
     minimumStockLevel: {
       type: Number,
       required: true,
@@ -197,11 +183,12 @@ productSchema.virtual('totalStock').get(function (this: IProduct) {
 
 // Generate SKU before validation if not provided
 productSchema.pre('validate', function (next) {
-  if (!this.sku) {
+  const doc = this as any;
+  if (!doc.sku) {
     // Format: PT-XXXXX (where PT is product type prefix and XXXXX is a sequential number)
-    const typePrefix = this.type.substring(0, 2).toUpperCase();
+    const typePrefix = doc.type.substring(0, 2).toUpperCase();
     const randomNum = Math.floor(10000 + Math.random() * 90000);
-    this.sku = `${typePrefix}-${randomNum}`;
+    doc.sku = `${typePrefix}-${randomNum}`;
   }
   next();
 });

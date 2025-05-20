@@ -142,8 +142,6 @@ export const createPurchase = asyncHandler(
         product,
         quantity,
         unitPrice,
-        retailPrice: retailPrice || productExists.retailPrice || 0,
-        wholesalePrice: wholesalePrice || productExists.wholesalePrice || 0,
         subtotal: itemSubtotal,
         notes,
         batchNumber,
@@ -186,17 +184,6 @@ export const createPurchase = asyncHandler(
     for (const item of processedItems) {
       const product = await Product.findById(item.product);
       if (product) {
-        // Update product prices if they've changed
-        if (item.retailPrice) {
-          product.retailPrice = item.retailPrice;
-        }
-        if (item.wholesalePrice) {
-          product.wholesalePrice = item.wholesalePrice;
-        }
-        if (item.unitPrice) {
-          product.costPrice = item.unitPrice;
-        }
-
         // Add to inventory with batch and expiry information if provided
         if (item.batchNumber) {
           // Check if batch already exists

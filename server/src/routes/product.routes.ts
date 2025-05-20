@@ -8,9 +8,12 @@ import {
   addInventoryItem,
   updateInventoryItem,
   removeInventoryItem,
-  addPriceLevel,
-  updatePriceLevel,
-  removePriceLevel,
+  addSalesPriceLevel,
+  updateSalesPriceLevel,
+  deleteSalesPriceLevel,
+  addPurchasePriceLevel,
+  updatePurchasePriceLevel,
+  deletePurchasePriceLevel,
   getProductHistory,
   getProductBatches,
 } from '../controllers/product.controller';
@@ -21,8 +24,6 @@ import {
   updateProductSchema,
   addProductInventoryItemSchema,
   updateProductInventoryItemSchema,
-  addProductPriceLevelSchema,
-  updateProductPriceLevelSchema,
 } from '../validators/product.validator';
 import { RoleType } from '../interfaces/role.interface';
 
@@ -87,22 +88,14 @@ router
     removeInventoryItem
   );
 
-// Price level management
-router
-  .route('/:id/price-levels')
-  .post(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
-    validate(addProductPriceLevelSchema),
-    addPriceLevel
-  );
+// Sales price level management
+router.post('/:id/sales-price-levels', addSalesPriceLevel);
+router.patch('/:id/sales-price-levels/:levelId', updateSalesPriceLevel);
+router.delete('/:id/sales-price-levels/:levelId', deleteSalesPriceLevel);
 
-router
-  .route('/:id/price-levels/:levelId')
-  .patch(
-    restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]),
-    validate(updateProductPriceLevelSchema),
-    updatePriceLevel
-  )
-  .delete(restrictTo([RoleType.ADMIN, RoleType.PHARMACIST]), removePriceLevel);
+// Purchase price level management
+router.post('/:id/purchase-price-levels', addPurchasePriceLevel);
+router.patch('/:id/purchase-price-levels/:levelId', updatePurchasePriceLevel);
+router.delete('/:id/purchase-price-levels/:levelId', deletePurchasePriceLevel);
 
 export default router;

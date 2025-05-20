@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store/store';
 import { createSale } from '@/store/slices/salesSlice';
 import { SaleFormData } from '@/types/sale.types';
-import { Product } from '@/types/product';
+import { Product, ProductPriceLevel } from '@/types/product';
 import Card from '@/components/common/Card/Card';
 import Button from '@/components/common/Button/Button';
 import Input from '@/components/common/Input/Input';
@@ -28,9 +28,11 @@ const CreateSale = () => {
   const [locations, setLocations] = useState<any[]>([]);
   const [selectedProduct, setSelectedProduct] = useState('');
   const [selectedBatch, setSelectedBatch] = useState('');
+  const [selectedPriceLevel, setSelectedPriceLevel] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [unitPrice, setUnitPrice] = useState(0);
   const [discount, setDiscount] = useState(0);
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('fixed');
   const [availableBatches, setAvailableBatches] = useState<any[]>([]);
   const [productDetails, setProductDetails] = useState<any>(null);
 
@@ -108,7 +110,7 @@ const CreateSale = () => {
       const product = response.data.data;
       setProductDetails(product);
 
-      // Get available batches with stock
+      // Get available batches with stock and sort by expiry date
       const batches = product.inventory
         .filter((item: any) => item.quantity > 0)
         .map((item: any) => ({
@@ -116,17 +118,20 @@ const CreateSale = () => {
           quantity: item.quantity,
           expiryDate: item.expiryDate,
           costPrice: item.costPrice,
-        }));
+        }))
+        .sort((a: any, b: any) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime());
 
       setAvailableBatches(batches);
 
       // Set default price
       setUnitPrice(product.defaultPrice);
 
-      // Clear selected batch
+      // Clear selected batch and price level
       setSelectedBatch('');
+      setSelectedPriceLevel('');
     } catch (error) {
       console.error('Error fetching product details:', error);
+      showToast('Failed to load product details', 'error');
     }
   };
 
@@ -149,6 +154,64 @@ const CreateSale = () => {
     }));
   };
 
+  const handlePriceLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const priceLevelName = e.target.value;
+    setSelectedPriceLevel(priceLevelName);
+
+    if (priceLevelName && productDetails) {
+      const priceLevel = productDetails.priceLevels.find(
+        (level: ProductPriceLevel) => level.name === priceLevelName
+      );
+      if (priceLevel) {
+        setUnitPrice(priceLevel.price);
+      }
+    } else {
+      // Reset to default price if no price level selected
+      setUnitPrice(productDetails?.defaultPrice || 0);
+    }
+  };
+
+  const handleDiscountTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setDiscountType(e.target.value as 'percentage' | 'fixed');
+    setDiscount(0); // Reset discount when changing type
+  };
+
+  const handleProductSelect = (product: Product) => {
+    console.log('Product selected in CreateSale:', product);
+    if (!product || !product._id) {
+      showToast('Invalid product selected', 'error');
+      return;
+    }
+
+    setSelectedProduct(product._id);
+    setProductDetails(product);
+
+    // Get available batches with stock and sort by expiry date
+    const batches = product.inventory
+      ? product.inventory
+        .filter((item: any) => item && item.quantity > 0)
+        .map((item: any) => ({
+          batchNumber: item.batchNumber || '',
+          quantity: item.quantity || 0,
+          expiryDate: item.expiryDate || '',
+          costPrice: item.costPrice || 0,
+        }))
+        .sort((a: any, b: any) => new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime())
+      : [];
+
+    console.log('Available batches:', batches);
+    setAvailableBatches(batches);
+
+    // Set default price
+    setUnitPrice(product.defaultPrice || 0);
+
+    // Clear selected batch and price level
+    setSelectedBatch('');
+    setSelectedPriceLevel('');
+
+    showToast(`Product ${product.name} selected`, 'success');
+  };
+
   const handleAddItem = () => {
     if (!selectedProduct || quantity <= 0) {
       showToast('Please select a product and valid quantity', 'error');
@@ -162,7 +225,7 @@ const CreateSale = () => {
       return;
     }
 
-    // Get product information from productDetails (from ProductSearch)
+    // Get product information from productDetails
     if (!productDetails || productDetails._id !== selectedProduct) {
       console.error('Product details not found for:', selectedProduct);
       showToast('Product information not found. Please select the product again.', 'error');
@@ -170,8 +233,17 @@ const CreateSale = () => {
     }
 
     // Calculate subtotal and finalPrice
-    const itemDiscount = discount || 0;
     const itemSubtotal = quantity * unitPrice;
+    let itemDiscount = 0;
+
+    if (discount > 0) {
+      if (discountType === 'percentage') {
+        itemDiscount = (itemSubtotal * discount) / 100;
+      } else {
+        itemDiscount = discount;
+      }
+    }
+
     const itemFinalPrice = itemSubtotal - itemDiscount;
 
     // Get product name from productDetails
@@ -179,16 +251,16 @@ const CreateSale = () => {
 
     let newItem = {
       product: selectedProduct,
-      productName: productName, // Store product name for display
+      productName: productName,
       quantity,
       unitPrice,
       discount: itemDiscount,
       subtotal: itemSubtotal,
       finalPrice: itemFinalPrice,
-      batchNumber: '', // Default empty string for batch number
+      batchNumber: selectedBatch || '',
+      priceLevel: selectedPriceLevel || '',
+      expiryDate: undefined as string | undefined,
     };
-
-    console.log('Adding item with finalPrice:', itemFinalPrice, 'and subtotal:', itemSubtotal);
 
     // Add batch information if a batch is selected
     if (selectedBatch) {
@@ -203,7 +275,6 @@ const CreateSale = () => {
         return;
       }
 
-      // Add batch number and expiry date if available
       newItem = {
         ...newItem,
         batchNumber: selectedBatch,
@@ -222,9 +293,11 @@ const CreateSale = () => {
     // Reset item form
     setSelectedProduct('');
     setSelectedBatch('');
+    setSelectedPriceLevel('');
     setQuantity(1);
     setUnitPrice(0);
     setDiscount(0);
+    setDiscountType('fixed');
   };
 
   const handleRemoveItem = (index: number) => {
@@ -606,67 +679,37 @@ const CreateSale = () => {
                     Product
                   </label>
                   <ProductSearch
-                    onSelect={(product: Product) => {
-                      console.log('Product selected in CreateSale:', product);
-                      if (!product || !product._id) {
-                        showToast('Invalid product selected', 'error');
-                        return;
-                      }
-
-                      setSelectedProduct(product._id);
-                      setProductDetails(product);
-
-                      // Get available batches with stock
-                      const batches = product.inventory
-                        ? product.inventory
-                            .filter((item: any) => item && item.quantity > 0)
-                            .map((item: any) => ({
-                              batchNumber: item.batchNumber || '',
-                              quantity: item.quantity || 0,
-                              expiryDate: item.expiryDate || '',
-                              costPrice: item.costPrice || 0,
-                            }))
-                        : [];
-
-                      console.log('Available batches:', batches);
-                      setAvailableBatches(batches);
-
-                      // Set default price
-                      setUnitPrice(product.defaultPrice || 0);
-
-                      // Clear selected batch
-                      setSelectedBatch('');
-
-                      showToast(`Product ${product.name} selected`, 'success');
-                    }}
+                    onSelect={handleProductSelect}
+                    placeholder="Search for a product"
                   />
                 </div>
 
-                {selectedProduct && (
+                {selectedProduct && productDetails && (
                   <>
                     <Select
                       label="Batch (Optional)"
                       value={selectedBatch}
                       onChange={(e) => setSelectedBatch(e.target.value)}
                     >
-                      <option value="">Select Batch (Optional)</option>
-                      {Array.isArray(availableBatches) &&
-                      availableBatches.length > 0 ? (
-                        availableBatches.map((batch) => (
-                          <option
-                            key={batch.batchNumber}
-                            value={batch.batchNumber}
-                          >
-                            {batch.batchNumber} - Qty: {batch.quantity} -
-                            Expires:{' '}
-                            {new Date(batch.expiryDate).toLocaleDateString()}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="" disabled>
-                          No batches available
+                      <option value="">Select Batch</option>
+                      {availableBatches.map((batch) => (
+                        <option key={batch.batchNumber} value={batch.batchNumber}>
+                          {batch.batchNumber} - Expires: {new Date(batch.expiryDate).toLocaleDateString()} (Qty: {batch.quantity})
                         </option>
-                      )}
+                      ))}
+                    </Select>
+
+                    <Select
+                      label="Price Level"
+                      value={selectedPriceLevel}
+                      onChange={handlePriceLevelChange}
+                    >
+                      <option value="">Default Price</option>
+                      {productDetails.priceLevels && productDetails.priceLevels.map((level: ProductPriceLevel) => (
+                        <option key={level.name} value={level.name}>
+                          {level.name} - {formatCurrency(level.price)}
+                        </option>
+                      ))}
                     </Select>
 
                     <Input
@@ -675,29 +718,39 @@ const CreateSale = () => {
                       value={quantity}
                       onChange={(e) => setQuantity(Number(e.target.value))}
                       min="1"
-                      max={
-                        selectedBatch
-                          ? availableBatches.find(
-                              (b) => b.batchNumber === selectedBatch
-                            )?.quantity || 1
-                          : 1
-                      }
+                      required
                     />
+
+                    <div className="space-y-2">
+                      <label className="block text-sm font-medium text-gray-700">
+                        Discount
+                      </label>
+                      <div className="flex space-x-2">
+                        <Select
+                          value={discountType}
+                          onChange={handleDiscountTypeChange}
+                          className="w-1/3"
+                        >
+                          <option value="fixed">Fixed Amount</option>
+                          <option value="percentage">Percentage</option>
+                        </Select>
+                        <Input
+                          type="number"
+                          value={discount}
+                          onChange={(e) => setDiscount(Number(e.target.value))}
+                          min="0"
+                          step={discountType === 'percentage' ? '1' : '0.01'}
+                          className="w-2/3"
+                          placeholder={discountType === 'percentage' ? 'Enter percentage' : 'Enter amount'}
+                        />
+                      </div>
+                    </div>
 
                     <Input
                       type="number"
                       label="Unit Price (₦)"
                       value={unitPrice}
                       onChange={(e) => setUnitPrice(Number(e.target.value))}
-                      min="0"
-                      step="0.01"
-                    />
-
-                    <Input
-                      type="number"
-                      label="Discount (₦)"
-                      value={discount}
-                      onChange={(e) => setDiscount(Number(e.target.value))}
                       min="0"
                       step="0.01"
                     />

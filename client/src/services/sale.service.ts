@@ -67,7 +67,7 @@ const saleService = {
 
       // Create a new object with only the fields expected by the server
       // Explicitly include only the fields that the server expects
-      const serverData = {
+      const serverData: any = {
         customer: saleData.customer,
         saleDate: saleData.saleDate || new Date().toISOString(),
         location: saleData.location,
@@ -94,13 +94,14 @@ const saleService = {
             finalPrice: itemFinalPrice, // Ensure this is set
             batchNumber: item.batchNumber || '',
             expiryDate: item.expiryDate || null,
+            priceLevel: item.priceLevel || null,
             notes: item.notes || ''
           };
         })
       };
 
       // Calculate overall subtotal
-      const subtotal = serverData.items.reduce((sum, item) => sum + item.subtotal, 0);
+      const subtotal = serverData.items.reduce((sum: number, item: any) => sum + item.subtotal, 0);
       serverData.subtotal = subtotal;
 
       // Calculate total
@@ -114,7 +115,7 @@ const saleService = {
       }
 
       // Double-check that all items have finalPrice set
-      const itemsWithoutFinalPrice = serverData.items.filter(item => item.finalPrice === undefined);
+      const itemsWithoutFinalPrice = serverData.items.filter((item: any) => item.finalPrice === undefined);
       if (itemsWithoutFinalPrice.length > 0) {
         console.error('Items missing finalPrice:', itemsWithoutFinalPrice);
         throw new Error('Some items are missing final price');
@@ -130,31 +131,35 @@ const saleService = {
       console.log('Creating sale with server data:', JSON.stringify(serverData, null, 2));
       const response = await api.post('/sales', serverData);
       return response.data.data;
-    } catch (error) {
-      console.error('Error creating sale:', error);
+    } catch (error: any) {
+      // Extract detailed error information
+      let errorMessage = 'Failed to create sale';
 
-      // Log the error response for debugging
-      if (error.response) {
-        console.error('Error response data:', error.response.data);
+      if (error.response && error.response.data) {
+        console.error('Error response data in slice:', error.response.data);
 
-        // Check for validation errors in the response
-        if (error.response.data && error.response.data.errors) {
-          console.error('Validation errors:', error.response.data.errors);
+        if (error.response.data.message) {
+          errorMessage = error.response.data.message;
         }
 
-        // Check for stack trace in the response
-        if (error.response.data && error.response.data.stack) {
-          console.error('Server stack trace:', error.response.data.stack);
+        // Check for validation errors
+        if (error.response.data.errors && Array.isArray(error.response.data.errors)) {
+          const errorDetails = error.response.data.errors
+            .map((err: any) => `${err.field || err.path}: ${err.message}`)
+            .join('\n');
+          errorMessage = `Validation errors:\n${errorDetails}`;
+        }
 
-          // Try to extract validation errors from the stack trace
+        // Try to extract validation errors from stack trace
+        if (error.response.data.stack) {
           const validationMatch = error.response.data.stack.match(/Sale validation failed: ([^\n]+)/);
           if (validationMatch && validationMatch[1]) {
-            console.error('Extracted validation errors from stack:', validationMatch[1]);
+            errorMessage = `Validation errors: ${validationMatch[1]}`;
           }
         }
       }
 
-      throw error;
+      throw new Error(errorMessage);
     }
   },
 
